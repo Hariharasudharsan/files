@@ -2,23 +2,24 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Check, Package, Plus } from "lucide-react";
+import Link from "next/link";
+import { Check, Package, Plus, Star } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import type { Product } from "@/lib/domain/product";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);
   const [justAdded, setJustAdded] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
     addItem(product, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1500);
   };
 
-  // Product structured data so Google can show price/availability directly
-  // in search results (Merchant Listing rich results). Price is a plain
-  // numeric string per Google's spec — never "₹120" or "1,200".
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -38,51 +39,64 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm transition-shadow hover:shadow-lg">
+    <Link href={`/product/${product.slug}`} className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm border border-surface-200 transition-all hover:shadow-xl hover:border-primary-300">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <div className="relative aspect-square overflow-hidden bg-orange-50">
+      <div className="relative aspect-[4/5] overflow-hidden bg-surface-100">
         {product.image ? (
           <Image
             src={product.image}
             alt={product.item_name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Package className="h-10 w-10 text-orange-200" aria-hidden="true" />
+            <Package className="h-12 w-12 text-primary-200" aria-hidden="true" />
           </div>
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-medium text-orange-700 backdrop-blur">
-          {product.item_group}
-        </span>
-      </div>
-
-      <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-display font-semibold text-orange-950">{product.item_name}</h3>
-        {product.description && (
-          <p className="mt-1 line-clamp-2 text-sm text-orange-800/60">{product.description}</p>
-        )}
-
-        <div className="mt-auto flex items-center justify-between pt-4">
-          <span className="font-display text-lg font-bold text-orange-950">
-            ₹{product.standard_rate}
-          </span>
-          <button
-            type="button"
-            onClick={handleAdd}
-            aria-label={`Add ${product.item_name} to cart`}
-            className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium text-white transition-colors ${
-              justAdded ? "bg-green-600" : "bg-orange-600 hover:bg-orange-700"
-            }`}
-          >
-            {justAdded ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-            {justAdded ? "Added" : "Add"}
-          </button>
+        <div className="absolute left-4 top-4">
+          <Badge variant="secondary" className="backdrop-blur bg-white/90 shadow-sm border-white/50 border">
+            {product.item_group}
+          </Badge>
         </div>
       </div>
-    </div>
+
+      <div className="flex flex-1 flex-col p-6">
+        <div className="flex gap-1 mb-3 text-accent-500">
+          <Star className="w-3.5 h-3.5 fill-current" />
+          <Star className="w-3.5 h-3.5 fill-current" />
+          <Star className="w-3.5 h-3.5 fill-current" />
+          <Star className="w-3.5 h-3.5 fill-current" />
+          <Star className="w-3.5 h-3.5 fill-current" />
+        </div>
+        
+        <h3 className="font-display font-bold text-lg text-surface-950 group-hover:text-primary-700 transition-colors">{product.item_name}</h3>
+        {product.description && (
+          <p className="mt-2 line-clamp-2 text-sm text-surface-900/60 font-light leading-relaxed">{product.description}</p>
+        )}
+
+        <div className="mt-auto flex items-end justify-between pt-6">
+          <div className="flex flex-col">
+            <span className="text-xs text-surface-900/50 mb-0.5 uppercase tracking-wider font-semibold">Price</span>
+            <span className="font-display text-2xl font-bold text-surface-950">
+              ₹{product.standard_rate}
+            </span>
+          </div>
+          
+          <Button
+            size="sm"
+            onClick={handleAdd}
+            aria-label={`Add ${product.item_name} to cart`}
+            className={`rounded-full h-12 w-12 p-0 shadow-sm transition-all ${
+              justAdded ? "bg-green-600 hover:bg-green-700" : ""
+            }`}
+          >
+            {justAdded ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
+    </Link>
   );
 }

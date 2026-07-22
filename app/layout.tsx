@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, Outfit } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
@@ -59,7 +70,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="flex min-h-screen flex-col bg-orange-50 font-sans text-orange-950 antialiased">
+      <body className={`${inter.variable} ${outfit.variable} flex min-h-screen flex-col bg-surface-50 font-sans text-surface-900 antialiased`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}

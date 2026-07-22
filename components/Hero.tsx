@@ -1,53 +1,54 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowDown } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
-/**
- * Decorative concentric-ring motif behind the headline — a quiet nod to the
- * actual shape of a papadam/vadam disc (and the sun-drying process behind
- * it), rather than a generic gradient blob. Pure SVG, no external image.
- */
-function DiscMotif() {
+function DecorativeElement() {
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
-    >
-      <svg width="820" height="820" viewBox="0 0 820 820" className="text-orange-900/[0.06]">
-        <circle cx="410" cy="410" r="380" fill="none" stroke="currentColor" strokeWidth="1" />
-        <circle cx="410" cy="410" r="300" fill="none" stroke="currentColor" strokeWidth="1" />
-        <circle cx="410" cy="410" r="220" fill="none" stroke="currentColor" strokeWidth="1" />
-        <circle cx="410" cy="410" r="140" fill="none" stroke="currentColor" strokeWidth="1" />
-      </svg>
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary-800/20 blur-3xl" />
+      <div className="absolute bottom-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent-500/10 blur-3xl" />
     </div>
   );
 }
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-orange-100 via-orange-50 to-orange-50 px-4 py-20 text-center sm:py-28">
-      <DiscMotif />
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="relative mx-auto max-w-3xl"
-      >
-        <h1 className="font-display text-4xl font-bold tracking-tight text-orange-950 sm:text-5xl md:text-6xl">
-          Authentic Heritage, Crisp in Every Bite.
-        </h1>
-        <p className="mx-auto mt-5 max-w-xl text-lg text-orange-800/80">
-          Factory-direct, sun-dried papadams, vadams &amp; appalams — made the traditional way and
-          shipped straight from our unit to your kitchen.
-        </p>
-        <a
-          href="#products"
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-orange-600 px-7 py-3.5 font-semibold text-white shadow-lg shadow-orange-600/20 transition-colors hover:bg-orange-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-700"
+    <section className="relative bg-surface-950 text-primary-50 px-4 py-24 sm:py-32 lg:py-40 overflow-hidden">
+      <DecorativeElement />
+      <div className="relative mx-auto max-w-7xl flex flex-col items-center text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-4xl"
         >
-          Shop the Range <ArrowDown className="h-4 w-4" aria-hidden="true" />
-        </a>
-      </motion.div>
+          <span className="text-accent-500 tracking-widest uppercase text-sm font-semibold mb-6 block">
+            Heritage Redefined
+          </span>
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight">
+            The Authentic Taste of <br />
+            <span className="text-primary-300">South Indian Tradition.</span>
+          </h1>
+          <p className="mx-auto max-w-2xl text-lg sm:text-xl text-primary-100/70 mb-10 font-light">
+            Premium factory-direct Appalams, Vadams, and Pickles. Sun-dried, hygienically packed, and delivered straight to your kitchen.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="#products">
+              <Button size="lg" className="bg-primary-600 hover:bg-primary-700 text-white w-full sm:w-auto">
+                Explore Collection
+              </Button>
+            </Link>
+            <Link href="/category/combo-packs">
+              <Button size="lg" variant="outline" className="border-primary-400 text-primary-300 hover:bg-primary-900 w-full sm:w-auto">
+                View Combo Offers <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     </section>
   );
 }

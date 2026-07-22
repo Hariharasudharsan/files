@@ -3,7 +3,11 @@ import type { Product } from "@/lib/domain/product";
 export interface CheckoutContact {
   name: string;
   email: string;
+  phone: string;
   address: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 export interface OrderItemInput {

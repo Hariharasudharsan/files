@@ -13,6 +13,7 @@ function isProduct(value: unknown): value is Product {
   return (
     typeof candidate.item_code === "string" &&
     typeof candidate.item_name === "string" &&
+    typeof candidate.slug === "string" &&
     typeof candidate.standard_rate === "number" &&
     typeof candidate.description === "string" &&
     typeof candidate.item_group === "string" &&

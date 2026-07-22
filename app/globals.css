@@ -1,14 +1,35 @@
 @import "tailwindcss";
 
-/*
- * Two font roles, per the brief: a characterful display face for headings
- * and a clean body/UI face. These use local system fallbacks so the app can
- * build without reaching external font services.
- *
- * No other custom CSS lives here — everything else in the app is styled
- * with Tailwind utility classes directly in components, per the brief.
- */
 @theme inline {
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-display: Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-outfit);
+  
+  /* Premium Terracotta/Earthy palette */
+  --color-primary-50: #fdf8f5;
+  --color-primary-100: #f8ece8;
+  --color-primary-200: #eed5cc;
+  --color-primary-300: #e1b4a5;
+  --color-primary-400: #d18d76;
+  --color-primary-500: #c26c4f;
+  --color-primary-600: #b15538;
+  --color-primary-700: #93432a;
+  --color-primary-800: #7b3925;
+  --color-primary-900: #653121;
+  --color-primary-950: #36160d;
+
+  /* Gold Accent */
+  --color-accent-500: #d4af37;
+  --color-accent-600: #aa8c2c;
+
+  /* Dark sophisticated text/surface */
+  --color-surface-50: #faf9f8;
+  --color-surface-100: #f3f1ee;
+  --color-surface-900: #1c1917;
+  --color-surface-950: #0c0a09;
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg border border-white/30 shadow-sm;
+  }
 }

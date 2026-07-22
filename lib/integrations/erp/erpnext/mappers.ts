@@ -32,12 +32,16 @@ export function resolveErpImageUrl(baseUrl: string | undefined, path: string | n
 }
 
 export function mapErpItemToProduct(raw: ERPNextItem, baseUrl: string | undefined): Product {
+  const slug = raw.item_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
   return {
     item_code: raw.name,
     item_name: raw.item_name,
+    slug: slug,
     standard_rate: raw.standard_rate ?? 0,
     image: resolveErpImageUrl(baseUrl, raw.image),
+    gallery: [],
     description: raw.description?.replace(/<[^>]*>/g, "").trim() || "",
+    ingredients: "",
     item_group: raw.item_group,
     stock_qty: raw.actual_qty,
     updated_at: raw.modified,

@@ -1,7 +1,9 @@
-import { Factory, Leaf, ShieldCheck, Sun } from "lucide-react";
+import { Factory, Leaf, ShieldCheck, Sun, Star } from "lucide-react";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import { getStorefrontProducts } from "@/lib/services/catalog-service";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
 
 const USPS = [
   { icon: Factory, label: "Factory Direct", desc: "No middlemen — priced at source" },
@@ -12,61 +14,98 @@ const USPS = [
 
 export default async function Home() {
   const products = await getStorefrontProducts();
+  const featured = products.slice(0, 4);
 
   return (
     <>
       <Hero />
 
-      {/* Trust strip — genuine differentiators for a factory-direct food brand */}
-      <section className="border-y border-orange-100 bg-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-4 py-10 sm:grid-cols-4">
+      {/* Trust strip */}
+      <section className="bg-surface-50 border-b border-surface-200">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:grid-cols-4 lg:py-16">
           {USPS.map(({ icon: Icon, label, desc }) => (
             <div key={label} className="flex flex-col items-center text-center">
-              <Icon className="mb-2 h-6 w-6 text-orange-600" aria-hidden="true" />
-              <p className="text-sm font-semibold text-orange-950">{label}</p>
-              <p className="text-xs text-orange-700/60">{desc}</p>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                <Icon className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <p className="text-base font-semibold text-surface-950">{label}</p>
+              <p className="mt-1 text-sm text-surface-900/60">{desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Product grid */}
-      <section id="products" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="mb-10 text-center">
-          <h2 className="font-display text-3xl font-bold text-orange-950">
-            Our Range of Vadams, Papadams &amp; Appalams
-          </h2>
-          <p className="mx-auto mt-2 max-w-2xl text-orange-800/70">
-            Every batch is ground, shaped and sun-dried in small runs — the same recipes passed
-            down through generations of the Mathuram kitchen.
-          </p>
+      {/* Featured Products */}
+      <section id="products" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
+        <div className="mb-12 flex flex-col items-center justify-between sm:flex-row">
+          <div>
+            <h2 className="font-display text-4xl font-bold text-surface-950">
+              Curated Favorites
+            </h2>
+            <p className="mt-2 text-surface-900/70">
+              Our most loved traditional recipes, made fresh every week.
+            </p>
+          </div>
+          <Link href="/search" className="mt-6 sm:mt-0">
+            <Button variant="outline">View All Products</Button>
+          </Link>
         </div>
 
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
+        {featured.length > 0 ? (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.map((product) => (
               <ProductCard key={product.item_code} product={product} />
             ))}
           </div>
         ) : (
-          <p className="text-center text-orange-700/70">
+          <p className="text-center text-surface-900/60 py-10">
             Our catalog is being freshly stocked — please check back shortly.
           </p>
         )}
       </section>
 
-      {/* Brand story — keyword-rich SEO copy grounded in the actual product */}
-      <section className="bg-orange-950 px-4 py-16 text-orange-50">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-display text-2xl font-bold">
-            From Our Vadam &amp; Vathal Unit to Your Table
-          </h2>
-          <p className="mt-4 text-orange-100/80">
-            Vadam, appalam and papad are more than snacks in a South Indian kitchen — they&apos;re
-            a tradition of sun-drying rice, sago and lentils into crisp discs that fry up golden
-            in seconds. At Mathuram Foods, every kuchi, ompodi and bakoda is made in small
-            factory-direct batches, so what reaches you is as close as possible to homemade.
-          </p>
+      {/* Category Showcase (Split Layout) */}
+      <section className="bg-primary-950 text-white overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          <div className="px-6 py-20 lg:px-20 lg:py-32 flex flex-col justify-center">
+            <h2 className="font-display text-4xl font-bold mb-6">Mastering the Art of Pickles & Spices</h2>
+            <p className="text-primary-100/80 text-lg mb-8 font-light">
+              We source the finest raw mangoes, sun-dry them to perfection, and marinate them in cold-pressed gingelly oil and traditional spices. Taste the nostalgia in every bite.
+            </p>
+            <Link href="/category/pickles">
+              <Button variant="secondary" size="lg">Shop Pickles</Button>
+            </Link>
+          </div>
+          <div className="bg-primary-900 relative min-h-[400px] lg:min-h-full flex items-center justify-center p-12">
+            <div className="absolute inset-0 bg-gradient-to-t from-primary-950/50 to-transparent z-10" />
+            <p className="text-2xl font-display italic text-primary-200 z-20 text-center max-w-md">
+              &quot;A meal is incomplete without a touch of spice and a crunch of tradition.&quot;
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews */}
+      <section className="bg-surface-50 py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center">
+          <h2 className="font-display text-3xl font-bold text-surface-950 mb-12">Loved by Families</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass rounded-2xl p-8 text-left">
+                <div className="flex gap-1 mb-4 text-accent-500">
+                  <Star className="fill-current w-5 h-5" />
+                  <Star className="fill-current w-5 h-5" />
+                  <Star className="fill-current w-5 h-5" />
+                  <Star className="fill-current w-5 h-5" />
+                  <Star className="fill-current w-5 h-5" />
+                </div>
+                <p className="text-surface-900/80 mb-6 italic">
+                  &quot;Absolutely amazing! Reminds me of my grandmother&apos;s cooking. The Appalams are so crispy and perfectly spiced.&quot;
+                </p>
+                <p className="font-bold text-surface-950">- Happy Customer {i}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </>

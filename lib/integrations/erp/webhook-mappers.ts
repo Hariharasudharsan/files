@@ -19,9 +19,11 @@ function readNumber(payload: Record<string, unknown>, keys: string[], fallback =
 }
 
 export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
+  const itemName = readString(event.payload, ["item_name", "title", "name"]);
   return {
     item_code: readString(event.payload, ["item_code", "name"]),
-    item_name: readString(event.payload, ["item_name", "title", "name"]),
+    item_name: itemName,
+    slug: itemName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
     standard_rate: readNumber(event.payload, ["standard_rate", "rate", "price"]),
     image: readString(event.payload, ["image"]) || null,
     description: readString(event.payload, ["description"]),
