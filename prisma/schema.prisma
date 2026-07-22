@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------
+// Core E-Commerce Entities
+// ----------------------------------------------------
+
+model Product {
+  id           String   @id @default(uuid())
+  itemCode     String   @unique
+  name         String
+  description  String?
+  standardRate Float
+  stockQty     Int      @default(0)
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orderItems   OrderItem[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  total           Float
+  status          String      @default("pending")
+  erpSyncStatus   String      @default("queued")
+  erpSalesOrderId String?     
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  rate      Float
+}
+
+// ----------------------------------------------------
+// Admin CMS & Audit
+// ----------------------------------------------------
+
+model CmsBlock {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g., "hero-banner-main"
+  type      String   // "html", "json", "text"
+  content   String   // The actual block content
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g., "ERP_SYNC_ORDER", "WEBHOOK_RECEIVED"
+  status    String   // "SUCCESS", "FAILED"
+  payload   Json?
+  error     String?
+  createdAt DateTime @default(now())
+}

@@ -6,5 +6,5 @@ export interface CreateOrderResponse extends CreateOrderResult {
 }
 
 export function createOrderRequest(input: CreateOrderInput): Promise<CreateOrderResponse> {
-  return postJson<CreateOrderResponse, CreateOrderInput>("/api/orders", input);
+  return postJson<CreateOrderResponse, CreateOrderInput>("/api/v1/orders", input);
 }

@@ -33,8 +33,8 @@ export default function CheckoutPage() {
     try {
       // Note: this calls OUR OWN Next.js route, not ERPNext directly.
       // ERPNEXT_AUTH_TOKEN is a secret and must never reach the browser —
-      // see app/api/orders/route.ts and lib/erpnext.ts for why.
-      const res = await fetch("/api/orders", {
+      // see app/api/v1/orders/route.ts and lib/erpnext.ts for why.
+      const res = await fetch("/api/v1/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
