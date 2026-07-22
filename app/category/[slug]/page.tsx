@@ -3,11 +3,13 @@ import { getProductsByCategory } from "@/lib/services/catalog-service";
 import ProductCard from "@/components/ProductCard";
 
 // Categories available mapping
-const CATEGORIES = ["Appalam", "Papadam", "Vadam", "Pickles", "Combo Packs", "Masala", "Rice Products", "Gift Boxes"];
+const CATEGORIES = ["Appalam", "Papadam", "Vadam", "Combo Packs", "Masala", "Rice Products", "Gift Boxes", "Snacks", "Chips"];
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
   // Convert slug back to readable category, e.g., combo-packs -> Combo Packs
-  const categoryName = CATEGORIES.find(c => c.toLowerCase().replace(" ", "-") === params.slug.toLowerCase());
+  const categoryName = CATEGORIES.find(c => c.toLowerCase().replace(" ", "-") === slug.toLowerCase());
 
   if (!categoryName) {
     notFound();

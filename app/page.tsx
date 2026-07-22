@@ -64,26 +64,6 @@ export default async function Home() {
         )}
       </section>
 
-      {/* Category Showcase (Split Layout) */}
-      <section className="bg-primary-950 text-white overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2">
-          <div className="px-6 py-20 lg:px-20 lg:py-32 flex flex-col justify-center">
-            <h2 className="font-display text-4xl font-bold mb-6">Mastering the Art of Pickles & Spices</h2>
-            <p className="text-primary-100/80 text-lg mb-8 font-light">
-              We source the finest raw mangoes, sun-dry them to perfection, and marinate them in cold-pressed gingelly oil and traditional spices. Taste the nostalgia in every bite.
-            </p>
-            <Link href="/category/pickles">
-              <Button variant="secondary" size="lg">Shop Pickles</Button>
-            </Link>
-          </div>
-          <div className="bg-primary-900 relative min-h-[400px] lg:min-h-full flex items-center justify-center p-12">
-            <div className="absolute inset-0 bg-gradient-to-t from-primary-950/50 to-transparent z-10" />
-            <p className="text-2xl font-display italic text-primary-200 z-20 text-center max-w-md">
-              &quot;A meal is incomplete without a touch of spice and a crunch of tradition.&quot;
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Reviews */}
       <section className="bg-surface-50 py-24">

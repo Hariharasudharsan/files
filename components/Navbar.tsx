@@ -35,7 +35,6 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-surface-900/80">
           <Link href="/category/appalam" className="hover:text-primary-600 transition">Appalam</Link>
           <Link href="/category/vadam" className="hover:text-primary-600 transition">Vadam</Link>
-          <Link href="/category/pickles" className="hover:text-primary-600 transition">Pickles</Link>
           <Link href="/category/combo-packs" className="hover:text-primary-600 transition text-accent-600">Combos</Link>
         </nav>
 
