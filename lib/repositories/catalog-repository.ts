@@ -1,7 +1,7 @@
 import "server-only";
 
 import products from "@/data/products.json";
-import type { InventorySnapshot, Product } from "@/lib/domain/product";
+import type { InventorySnapshot, Product } from "@/lib/domain/models/product";
 import { logger } from "@/lib/utils/logger";
 
 const syncedProducts = new Map<string, Product>();

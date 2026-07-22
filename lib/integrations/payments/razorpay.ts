@@ -5,7 +5,7 @@
  * Currently, it simulates order creation for the checkout flow without actual payment processing.
  */
 
-import type { StorefrontOrder } from "@/lib/domain/order";
+import type { StorefrontOrder } from "@/lib/domain/models/order";
 
 export interface PaymentInitResult {
   orderId: string;

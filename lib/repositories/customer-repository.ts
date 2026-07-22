@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CustomerProfile } from "@/lib/domain/customer";
+import type { CustomerProfile } from "@/lib/domain/models/customer";
 
 const customers = new Map<string, CustomerProfile>();
 

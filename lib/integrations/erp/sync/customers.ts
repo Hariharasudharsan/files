@@ -1,4 +1,4 @@
-import type { CheckoutContact } from "@/lib/domain/order";
+import type { CheckoutContact } from "@/lib/domain/models/order";
 import { ErpQueue } from "../queue";
 
 /**

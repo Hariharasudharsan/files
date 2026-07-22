@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/store/useCartStore";
-import type { Product } from "@/lib/domain/product";
+import type { Product } from "@/lib/domain/models/product";
 
 export default function AddToCartButton({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);

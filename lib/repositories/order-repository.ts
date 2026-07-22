@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "crypto";
-import type { CreateOrderInput, StorefrontOrder } from "@/lib/domain/order";
+import type { CreateOrderInput, StorefrontOrder } from "@/lib/domain/models/order";
 
 const orders = new Map<string, StorefrontOrder>();
 

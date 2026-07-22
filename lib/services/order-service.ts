@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CreateOrderInput, CreateOrderResult } from "@/lib/domain/order";
+import type { CreateOrderInput, CreateOrderResult } from "@/lib/domain/models/order";
 import { enqueueErpSyncJob } from "@/lib/integrations/erp/sync-queue";
 import { createStorefrontOrder } from "@/lib/repositories/order-repository";
 import { logger } from "@/lib/utils/logger";

@@ -1,4 +1,4 @@
-import type { CreateOrderInput, OrderItemInput } from "@/lib/domain/order";
+import type { CreateOrderInput, OrderItemInput } from "@/lib/domain/models/order";
 import { fail, ok, type ValidationResult } from "@/lib/validation/result";
 import { sanitizeInput } from "@/lib/core/security/sanitizer";
 

@@ -1,6 +1,6 @@
-import type { StorefrontOrder } from "@/lib/domain/order";
-import type { CustomerProfile } from "@/lib/domain/customer";
-import type { InventorySnapshot, Product } from "@/lib/domain/product";
+import type { StorefrontOrder } from "@/lib/domain/models/order";
+import type { CustomerProfile } from "@/lib/domain/models/customer";
+import type { InventorySnapshot, Product } from "@/lib/domain/models/product";
 import type { ErpWebhookEvent } from "@/lib/validation/webhooks";
 
 export type ErpSyncJobType =

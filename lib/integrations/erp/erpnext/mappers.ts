@@ -1,5 +1,5 @@
-import type { StorefrontOrder } from "@/lib/domain/order";
-import type { Product } from "@/lib/domain/product";
+import type { StorefrontOrder } from "@/lib/domain/models/order";
+import type { Product } from "@/lib/domain/models/product";
 
 export interface ERPNextItem {
   name: string;

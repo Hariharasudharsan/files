@@ -1,4 +1,4 @@
-import type { StorefrontOrder } from "@/lib/domain/order";
+import type { StorefrontOrder } from "@/lib/domain/models/order";
 import { ErpQueue } from "../queue";
 
 /**
