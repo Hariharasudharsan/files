@@ -2,26 +2,25 @@ import type { NextConfig } from "next";
 
 /**
  * next/image needs remote hosts allow-listed before it will optimize
- * external images. ERPNext's URL isn't known until deploy time (it's an
- * env var), so we parse it here at build time and scope image loading to
- * just that host. Falls back to a wildcard only if the env var is missing,
- * so `next dev` doesn't hard-fail before it's configured.
+ * external images. The storefront owns its catalog, but product images may
+ * still be hosted by an ERP/CDN, so hosts are controlled by environment.
  */
-const erpHostname = (() => {
+const externalImageHostname = (() => {
+  const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST || process.env.ERP_BASE_URL;
+
   try {
-    return process.env.NEXT_PUBLIC_ERPNEXT_URL
-      ? new URL(process.env.NEXT_PUBLIC_ERPNEXT_URL).hostname
-      : "**";
+    return imageHost ? new URL(imageHost).hostname : "**";
   } catch {
     return "**";
   }
 })();
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: erpHostname },
-      { protocol: "http", hostname: erpHostname },
+      { protocol: "https", hostname: externalImageHostname },
+      { protocol: "http", hostname: externalImageHostname },
     ],
   },
 };

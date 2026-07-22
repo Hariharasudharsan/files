@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import CartDrawer from "@/components/CartDrawer";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["600", "700", "900"],
-  variable: "--font-fraunces",
-});
-
-// TODO: replace with your production domain before deploying.
-const SITE_URL = "https://www.mathuramfoods.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -67,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${fraunces.variable} scroll-smooth`}>
+    <html lang="en" className="scroll-smooth">
       <body className="flex min-h-screen flex-col bg-orange-50 font-sans text-orange-950 antialiased">
         <script
           type="application/ld+json"

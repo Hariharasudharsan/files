@@ -1,11 +1,7 @@
 import { Factory, Leaf, ShieldCheck, Sun } from "lucide-react";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
-import { getProducts } from "@/lib/erpnext";
-
-// Products come from ERPNext, which can change independently of a deploy —
-// revalidate this page's data at most once an hour (see the `next.revalidate`
-// option on the fetch call inside getProducts()) rather than only at build time.
+import { getStorefrontProducts } from "@/lib/services/catalog-service";
 
 const USPS = [
   { icon: Factory, label: "Factory Direct", desc: "No middlemen — priced at source" },
@@ -15,7 +11,7 @@ const USPS = [
 ] as const;
 
 export default async function Home() {
-  const products = await getProducts();
+  const products = await getStorefrontProducts();
 
   return (
     <>

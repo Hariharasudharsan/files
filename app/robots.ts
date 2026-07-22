@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// TODO: replace with your production domain before deploying.
-const SITE_URL = "https://www.mathuramfoods.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {

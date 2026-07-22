@@ -1,0 +1,11 @@
+.next
+node_modules
+npm-debug.log
+.env
+.env.local
+.env*.local
+.git
+.agents
+mnt
+Dockerfile
+README.md

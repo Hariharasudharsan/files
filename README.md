@@ -1,63 +1,60 @@
-# Mathuram Foods — Storefront
+# Mathuram Foods Storefront
 
-A headless e-commerce storefront for Mathuram Foods (papadam, vadam, appalam
-and South Indian snacks), built on Next.js 16 (App Router) and backed by an
-ERPNext (Frappe) server.
+Independent e-commerce storefront for Mathuram Foods, built with Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, and Next.js Route Handlers.
 
-## Stack
+ERPNext/Frappe Cloud is an external ERP integration only. It is used for inventory, finance, customer records, purchase orders, sales orders, and accounting sync. It is not the website backend, and the storefront is designed to keep browsing and checkout available when ERPNext is temporarily unavailable.
 
-- Next.js 16 · App Router · TypeScript
-- Tailwind CSS v4 (utility classes only, no component CSS files)
-- Zustand for cart state (persisted to localStorage)
-- Framer Motion for the cart drawer and hero entrance
-- lucide-react for icons
-
-## Getting started
+## Getting Started
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill in your ERPNext URL + token
+cp .env.example .env.local
 npm run dev
 ```
 
 Open http://localhost:3000.
 
-## Environment variables
+On Windows PowerShell, use `npm.cmd run dev` if script execution policy blocks `npm`.
 
-| Variable                     | Where it's used                  | Secret? |
-| ----------------------------- | --------------------------------- | ------- |
-| `NEXT_PUBLIC_ERPNEXT_URL`     | Server (API calls) + client (image URLs) | No |
-| `ERPNEXT_AUTH_TOKEN`          | Server only, via `lib/erpnext.ts` | **Yes** |
+## Architecture
 
-`ERPNEXT_AUTH_TOKEN` is deliberately **not** prefixed with `NEXT_PUBLIC_`.
-`lib/erpnext.ts` is marked with the `server-only` package so it can never be
-imported into a Client Component — the build fails loudly if that's ever
-attempted by mistake, instead of silently leaking your API secret.
+- `app`: pages, layouts, API routes, and webhooks.
+- `components`: reusable UI components.
+- `store`: client cart state.
+- `lib/domain`: storefront product, order, customer, and inventory types.
+- `lib/services`: application use cases.
+- `lib/repositories`: internal persistence boundaries.
+- `lib/integrations/erp`: ERPNext adapter, sync queue, retry, and webhook handling.
+- `lib/api`: browser API service helpers.
+- `lib/validation`: request validation.
+- `data`: internal catalog seed/snapshot data.
 
-## How data flows
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full analysis, dependency inventory, missing production infrastructure, and the reason behind each architectural improvement.
 
-- **Products (GET):** fetched server-side in `app/page.tsx`, a Server
-  Component, via `getProducts()`. Revalidated at most once an hour (ISR).
-  If ERPNext is unreachable, the page renders an empty-state message
-  instead of crashing.
-- **Orders (POST):** the checkout page is a Client Component, so it can't
-  hold the ERPNext secret. It posts to `app/api/orders/route.ts`, a Route
-  Handler that runs server-side and is the only place `createSalesOrder()`
-  is actually called.
+## Data Flow
 
-## Known extension points
+- Products are read through the storefront catalog service, not directly from ERPNext.
+- Checkout posts to the storefront API route at `/api/orders`.
+- The order API validates the request, accepts a storefront order, and queues ERP sync asynchronously.
+- ERP webhook events post to `/api/webhooks/erpnext` and are queued for internal synchronization.
 
-- **Individual product pages.** There's no `/products/[slug]` route yet —
-  everything lives on one page. For long-tail SEO (e.g. "buy jeera vadam
-  online"), consider adding dynamic product pages with their own
-  `generateMetadata` and Product JSON-LD; extend `app/sitemap.ts` to list
-  them once you do.
-- **Customer address on the Sales Order.** The ERPNext payload sent here
-  matches your specified `{ customer, items }` shape plus best-effort
-  `customer_name` / `contact_email`. Standard Sales Order doesn't have a
-  free-text delivery address field — in production you'd typically create
-  or look up a `Customer` + `Address` record first and link it. See the
-  comment in `lib/erpnext.ts`.
-- **`SITE_URL`** in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`
-  is a placeholder (`https://www.mathuramfoods.com`) — update it to your
-  real domain before deploying.
+## Environment Variables
+
+| Variable | Visibility | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Public | Canonical storefront URL for metadata, sitemap, and robots. |
+| `NEXT_PUBLIC_IMAGE_HOST` | Public | Optional host for externally stored product images. |
+| `ERP_BASE_URL` | Server-only | ERPNext/Frappe Cloud base URL for async sync. |
+| `ERP_AUTH_TOKEN` | Server-only | ERP API token. Format: `token API_KEY:API_SECRET`. |
+| `ERP_WEBHOOK_SECRET` | Server-only | HMAC secret used to verify ERP webhook payloads. |
+
+Legacy `NEXT_PUBLIC_ERPNEXT_URL` and `ERPNEXT_AUTH_TOKEN` are still read as fallbacks so existing local environments do not break immediately, but new deployments should use the variables above.
+
+## Docker
+
+```bash
+docker build -t mathuram-foods .
+docker run --env-file .env.local -p 3000:3000 mathuram-foods
+```
+
+The app uses Next.js standalone output for smaller production images.

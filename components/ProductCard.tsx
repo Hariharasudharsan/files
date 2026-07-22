@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Check, Package, Plus } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import type { Product } from "@/lib/erpnext";
+import type { Product } from "@/lib/domain/product";
 
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);

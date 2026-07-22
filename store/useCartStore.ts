@@ -2,12 +2,8 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Product } from "@/lib/erpnext";
-
-/** A line item in the cart — a Product plus the quantity selected. */
-export interface CartItem extends Product {
-  qty: number;
-}
+import type { CartItem } from "@/lib/domain/order";
+import type { Product } from "@/lib/domain/product";
 
 interface CartState {
   items: CartItem[];
