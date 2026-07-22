@@ -1,4 +1,4 @@
-import type { CreateOrderInput, CreateOrderResult } from "@/lib/domain/models/order";
+import type { CreateOrderInput, CreateOrderResult } from "@/lib/domain/entities/order";
 import { postJson } from "@/lib/api/http";
 
 export interface CreateOrderResponse extends CreateOrderResult {

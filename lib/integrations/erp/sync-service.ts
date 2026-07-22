@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { StorefrontOrder } from "@/lib/domain/models/order";
+import type { StorefrontOrder } from "@/lib/domain/entities/order";
 import { erpNextClient } from "@/lib/integrations/erp/erpnext/client";
 import type { ErpSyncJob } from "@/lib/integrations/erp/types";
 import {

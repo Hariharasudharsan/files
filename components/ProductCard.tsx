@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, Package, Plus, Star } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import type { Product } from "@/lib/domain/models/product";
+import type { Product } from "@/lib/domain/entities/product";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Product } from "@/lib/domain/models/product";
+import type { Product } from "@/lib/domain/entities/product";
 import { listPublishedProducts } from "@/lib/repositories/catalog-repository";
 
 export async function getStorefrontProducts(): Promise<Product[]> {

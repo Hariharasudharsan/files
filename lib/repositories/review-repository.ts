@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Review } from "@/lib/domain/models/commerce";
+import type { Review } from "@/lib/domain/entities/commerce";
 
 export class ReviewRepository implements IRepository<Review, string> {
   async findById(id: string): Promise<Review | null> { return null; }

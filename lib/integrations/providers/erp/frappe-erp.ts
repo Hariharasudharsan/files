@@ -1,7 +1,7 @@
 import type { IErpAdapter } from "../../adapters/erp-adapter";
-import type { StorefrontOrder } from "@/lib/domain/models/order";
-import type { CustomerProfile } from "@/lib/domain/models/customer";
-import type { Product, InventorySnapshot } from "@/lib/domain/models/product";
+import type { StorefrontOrder } from "@/lib/domain/entities/order";
+import type { CustomerProfile } from "@/lib/domain/entities/customer";
+import type { Product, InventorySnapshot } from "@/lib/domain/entities/product";
 import { ErpApiClient } from "@/lib/integrations/erp/client";
 
 export class FrappeErpProvider implements IErpAdapter {

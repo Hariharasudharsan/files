@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { InventorySnapshot } from "@/lib/domain/models/product";
+import type { InventorySnapshot } from "@/lib/domain/entities/product";
 
 export class InventoryRepository implements IRepository<InventorySnapshot, string> {
   async findById(id: string): Promise<InventorySnapshot | null> {

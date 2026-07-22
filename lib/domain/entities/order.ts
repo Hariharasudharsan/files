@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/domain/models/product";
+import type { Product } from "@/lib/domain/entities/product";
 
 export interface CheckoutContact {
   name: string;

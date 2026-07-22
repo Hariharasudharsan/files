@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Product } from "@/lib/domain/models/product";
+import type { Product } from "@/lib/domain/entities/product";
 
 export class ProductRepository implements IRepository<Product, string> {
   async findById(id: string): Promise<Product | null> {

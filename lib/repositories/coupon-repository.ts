@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Coupon } from "@/lib/domain/models/commerce";
+import type { Coupon } from "@/lib/domain/entities/commerce";
 
 export class CouponRepository implements IRepository<Coupon, string> {
   async findById(id: string): Promise<Coupon | null> { return null; }

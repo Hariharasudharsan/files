@@ -1,4 +1,4 @@
-import type { StorefrontOrder } from "@/lib/domain/models/order";
+import type { StorefrontOrder } from "@/lib/domain/entities/order";
 
 export interface ShippingRates {
   courierId: string;
