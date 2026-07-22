@@ -1,4 +1,4 @@
-import { env } from "../config/env";
+import { env } from "@/lib/core/config/env";
 
 /**
  * Enterprise Structured Logging Interface

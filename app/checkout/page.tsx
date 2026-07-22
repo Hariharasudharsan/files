@@ -5,7 +5,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, Package } from "lucide-react";
 import Link from "next/link";
-import { createOrderRequest } from "@/lib/api/v1/orders";
+import { createOrderRequest } from "@/lib/api/orders";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/Button";
 
