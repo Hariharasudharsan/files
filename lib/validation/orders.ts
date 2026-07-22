@@ -1,6 +1,6 @@
 import type { CreateOrderInput, OrderItemInput } from "@/lib/domain/order";
 import { fail, ok, type ValidationResult } from "@/lib/validation/result";
-import { sanitizeInput } from "@/lib/utils/sanitize";
+import { sanitizeInput } from "@/lib/core/security/sanitizer";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_PATTERN = /^[A-Za-z\s]+$/;
