@@ -1,63 +1,90 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient } from "../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+import productsData from "../data/products.json";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Starting seed...");
+  console.log("Seeding Database...");
 
-  // Seed Admin User
-  const admin = await prisma.customer.upsert({
-    where: { email: "admin@mathuramfoods.com" },
-    update: {},
-    create: {
-      email: "admin@mathuramfoods.com",
-      name: "System Admin",
-      phone: "0000000000",
-    },
-  });
-  console.log("Admin seeded:", admin.email);
+  // 1. Seed Categories
+  const categoryValues = [...new Set(productsData.map((p) => p.item_group))];
 
-  // Seed Products
-  const products = [
-    { itemCode: "appalam-jeera-01", name: "Jeera Kuchli", standardRate: 150, stockQty: 100, description: "Premium Jeera Kuchli." },
-    { itemCode: "vadam-gc-01", name: "Green Chilli Kuchli", standardRate: 160, stockQty: 50, description: "Spicy Green Chilli Kuchli." },
-    { itemCode: "appalam-ompodi-01", name: "Ompodi", standardRate: 140, stockQty: 200, description: "Crispy Ompodi." },
-  ];
-
-  for (const product of products) {
-    const p = await prisma.product.upsert({
-      where: { itemCode: product.itemCode },
+  for (const catName of categoryValues) {
+    const slug = catName.toLowerCase().replace(/\s+/g, "-");
+    await prisma.category.upsert({
+      where: { slug },
       update: {},
-      create: product,
+      create: {
+        id: crypto.randomUUID(),
+        name: catName,
+        slug,
+        description: `Premium quality ${catName}`,
+      },
     });
-    console.log("Product seeded:", p.itemCode);
   }
 
-  // Seed CMS Block
-  const heroBlock = await prisma.cmsBlock.upsert({
-    where: { key: "hero-banner-main" },
+  // 2. Seed Products
+  for (const p of productsData) {
+    const category = await prisma.category.findUnique({
+      where: { slug: p.item_group.toLowerCase().replace(/\s+/g, "-") },
+    });
+
+    if (!category) continue;
+
+    await prisma.product.upsert({
+      where: { itemCode: p.item_code },
+      update: {
+        name: p.item_name,
+        price: p.standard_rate,
+        inventory: p.stock_qty,
+        categoryId: category.id,
+      },
+      create: {
+        id: crypto.randomUUID(),
+        itemCode: p.item_code,
+        name: p.item_name,
+        slug: p.slug,
+        description: `Authentic ${p.item_name} made with traditional recipes.`,
+        price: p.standard_rate,
+        inventory: p.stock_qty,
+        categoryId: category.id,
+        imageUrl: p.image || "/images/placeholders/product.webp",
+      },
+    });
+  }
+
+  // 3. Admin Settings & CMS blocks (Phase 4 Foundation)
+  await prisma.cmsBlock.upsert({
+    where: { key: "homepage-hero" },
     update: {},
     create: {
-      key: "hero-banner-main",
+      id: crypto.randomUUID(),
+      key: "homepage-hero",
       type: "json",
       content: JSON.stringify({
-        title: "Taste the Tradition",
-        subtitle: "Premium Appalams & Vadams",
-        buttonText: "Shop Now",
+        title: "Authentic South Indian Flavors",
+        subtitle: "Experience the tradition of handcrafted Appalams and Vadams",
+        ctaText: "Shop Now",
+        ctaLink: "/products",
       }),
+      active: true,
     },
   });
-  console.log("CMS Block seeded:", heroBlock.key);
 
-  console.log("Seeding finished.");
+  console.log("Database Seeding Completed Successfully.");
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

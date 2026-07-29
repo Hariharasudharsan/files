@@ -3,7 +3,7 @@ import "server-only";
 import crypto from "crypto";
 import { processErpSyncJob } from "@/lib/integrations/erp/sync-service";
 import type { ErpSyncJob, ErpSyncJobType, ErpSyncPayload } from "@/lib/integrations/erp/types";
-import { logger } from "@/lib/utils/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 
 const queuedJobs = new Map<string, ErpSyncJob>();
 
@@ -20,7 +20,7 @@ export function enqueueErpSyncJob(input: {
   };
 
   queuedJobs.set(job.id, job);
-  logger.info("ERP sync job queued", { jobId: job.id, type: job.type });
+  Logger.info("ERP sync job queued", { jobId: job.id, type: job.type });
 
   setTimeout(() => {
     void runJob(job.id);
@@ -36,10 +36,10 @@ async function runJob(jobId: string): Promise<void> {
   try {
     await processErpSyncJob({ ...job, attempts: job.attempts + 1 });
     queuedJobs.delete(jobId);
-    logger.info("ERP sync job completed", { jobId, type: job.type });
+    Logger.info("ERP sync job completed", { jobId, type: job.type });
   } catch (err) {
     queuedJobs.set(jobId, { ...job, attempts: job.attempts + 1 });
-    logger.error("ERP sync job failed", {
+    Logger.error("ERP sync job failed", {
       jobId,
       type: job.type,
       attempts: job.attempts + 1,

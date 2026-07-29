@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+echo "Husky is running"
+
+node -v
+npm -v
+npx -v

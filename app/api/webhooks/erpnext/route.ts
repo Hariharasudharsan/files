@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enqueueErpSyncJob } from "@/lib/integrations/erp/sync-queue";
 import { verifyErpWebhookSignature } from "@/lib/integrations/erp/webhook-security";
-import { logger } from "@/lib/utils/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 import { validateErpWebhookPayload } from "@/lib/validation/webhooks";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-signature");
 
   if (!verifyErpWebhookSignature(body, signature)) {
-    logger.warn("Rejected ERP webhook with invalid signature");
+    Logger.warn("Rejected ERP webhook with invalid signature");
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
   }
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { error: "Webhook payload is invalid.", errors: validation.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, queued: true }, { status: 202 });
   } catch (err) {
-    logger.error("ERP webhook handling failed", {
+    Logger.error("ERP webhook handling failed", {
       error: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json({ error: "Webhook could not be processed." }, { status: 400 });

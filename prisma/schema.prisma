@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -10,14 +11,27 @@ datasource db {
 // Core E-Commerce Entities
 // ----------------------------------------------------
 
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
 model Product {
   id           String   @id @default(uuid())
   itemCode     String   @unique
   name         String
+  slug         String   @unique
   description  String?
-  standardRate Float
-  stockQty     Int      @default(0)
+  price        Float
+  inventory    Int      @default(0)
   imageUrl     String?
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orderItems   OrderItem[]

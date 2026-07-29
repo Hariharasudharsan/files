@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getServerEnv } from "@/lib/config/env";
+import { getServerEnv } from "@/lib/core/config/env";
 import type { StorefrontOrder } from "@/lib/domain/entities/order";
 import type { Product } from "@/lib/domain/entities/product";
 import {
@@ -8,7 +8,7 @@ import {
   mapOrderToErpSalesOrder,
   type ERPNextItem,
 } from "@/lib/integrations/erp/erpnext/mappers";
-import { logger } from "@/lib/utils/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 import { withRetry } from "@/lib/utils/retry";
 
 interface ERPNextListResponse<T> {
@@ -43,16 +43,16 @@ export class ERPNextClient {
 
   async fetchVisibleProducts(): Promise<Product[]> {
     if (!this.isConfigured()) {
-      logger.warn("ERPNext product fetch skipped because ERP integration is not configured");
+      Logger.warn("ERPNext product fetch skipped because ERP integration is not configured");
       return [];
     }
 
     const fields = encodeURIComponent(
-      JSON.stringify(["name", "item_name", "standard_rate", "image", "description", "item_group"])
+      JSON.stringify(["name", "item_name", "standard_rate", "image", "description", "item_group"]),
     );
     const filters = encodeURIComponent(JSON.stringify([["show_in_website", "=", 1]]));
     const url = this.endpoint(
-      `/api/resource/Item?fields=${fields}&filters=${filters}&limit_page_length=0`
+      `/api/resource/Item?fields=${fields}&filters=${filters}&limit_page_length=0`,
     );
 
     return withRetry(
@@ -69,7 +69,7 @@ export class ERPNextClient {
         const json = (await res.json()) as ERPNextListResponse<ERPNextItem>;
         return (json.data ?? []).map((item) => mapErpItemToProduct(item, this.baseUrl));
       },
-      { attempts: 3, delayMs: 500, operationName: "erpnext.fetchVisibleProducts" }
+      { attempts: 3, delayMs: 500, operationName: "erpnext.fetchVisibleProducts" },
     );
   }
 
@@ -94,7 +94,7 @@ export class ERPNextClient {
         const json = (await res.json()) as ERPNextDocumentResponse<{ name?: string }>;
         return { name: json.data?.name ?? "unknown" };
       },
-      { attempts: 3, delayMs: 750, operationName: "erpnext.createSalesOrder" }
+      { attempts: 3, delayMs: 750, operationName: "erpnext.createSalesOrder" },
     );
   }
 }

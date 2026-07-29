@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "crypto";
-import { getServerEnv } from "@/lib/config/env";
+import { getServerEnv } from "@/lib/core/config/env";
 
 function normalizeSignature(value: string): string {
   return value.startsWith("sha256=") ? value.slice("sha256=".length) : value;

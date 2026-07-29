@@ -1,0 +1,4 @@
+# Ensure Node.js is in PATH for Git GUI clients on Windows
+export PATH="$PATH:/c/Program Files/nodejs"
+
+npx --no -- commitlint --edit ${1}

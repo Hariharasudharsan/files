@@ -7,33 +7,32 @@ export interface RetryOptions {
   operationName: string;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  { attempts, delayMs, factor = 2, operationName }: RetryOptions
+  options: {
+    attempts: number;
+    delayMs: number;
+    operationName: string;
+  },
 ): Promise<T> {
   let lastError: unknown;
 
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+  for (let attempt = 1; attempt <= options.attempts; attempt++) {
     try {
       return await operation();
     } catch (err) {
       lastError = err;
-      logger.warn("Retryable operation failed", {
-        operationName,
-        attempt,
-        attempts,
-        error: err instanceof Error ? err.message : String(err),
+      Logger.warn(`Retry ${attempt}/${options.attempts} failed for ${options.operationName}`, {
+        error: err,
       });
-
-      if (attempt < attempts) {
-        await sleep(delayMs * Math.pow(factor, attempt - 1));
+      if (attempt < options.attempts) {
+        await new Promise((resolve) => setTimeout(resolve, options.delayMs));
       }
     }
   }
 
+  Logger.error(`All ${options.attempts} retries failed for ${options.operationName}`, {
+    error: lastError,
+  });
   throw lastError;
 }

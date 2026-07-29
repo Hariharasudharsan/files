@@ -15,20 +15,20 @@ import {
 } from "@/lib/repositories/catalog-repository";
 import { upsertCustomerProfile } from "@/lib/repositories/customer-repository";
 import { markOrderErpFailed, markOrderErpSynced } from "@/lib/repositories/order-repository";
-import { logger } from "@/lib/utils/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 import type { ErpWebhookEvent } from "@/lib/validation/webhooks";
 
 async function syncOrder(order: StorefrontOrder): Promise<void> {
   const erpOrder = await erpNextClient.createSalesOrder(order);
   await markOrderErpSynced(order.id);
-  logger.info("Storefront order synced to ERPNext", {
+  Logger.info("Storefront order synced to ERPNext", {
     orderId: order.id,
     erpOrderName: erpOrder.name,
   });
 }
 
 async function handleWebhook(event: ErpWebhookEvent): Promise<void> {
-  logger.info("ERP webhook processing started", {
+  Logger.info("ERP webhook processing started", {
     entity: event.entity,
     action: event.action,
     eventId: event.event_id,
@@ -54,7 +54,7 @@ async function handleWebhook(event: ErpWebhookEvent): Promise<void> {
     return;
   }
 
-  logger.info("ERP order webhook acknowledged for reconciliation", {
+  Logger.info("ERP order webhook acknowledged for reconciliation", {
     eventId: event.event_id,
     action: event.action,
   });

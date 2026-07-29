@@ -2,7 +2,7 @@ import "server-only";
 
 import products from "@/data/products.json";
 import type { InventorySnapshot, Product } from "@/lib/domain/entities/product";
-import { logger } from "@/lib/utils/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 
 const syncedProducts = new Map<string, Product>();
 const inventorySnapshots = new Map<string, InventorySnapshot>();
@@ -25,7 +25,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
   const validProducts = (products as unknown[]).filter(isProduct);
 
   if (validProducts.length !== (products as unknown[]).length) {
-    logger.warn("Some catalog records were skipped because they are invalid");
+    Logger.warn("Some catalog records were skipped because they are invalid");
   }
 
   const merged = new Map(validProducts.map((product) => [product.item_code, product]));
