@@ -13,28 +13,32 @@ export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);
   const [justAdded, setJustAdded] = useState(false);
 
+  const defaultVariant = product.variants[0];
+
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
-    addItem(product, 1);
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1500);
+    if (defaultVariant) {
+      addItem(product, defaultVariant, 1);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1500);
+    }
   };
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.item_name,
+    name: product.name,
     description:
-      product.description || `${product.item_name} — authentic, factory-direct from Mathuram Foods.`,
-    image: product.image || undefined,
-    sku: product.item_code,
-    category: product.item_group || undefined,
+      product.description || `${product.name} — authentic, factory-direct from Mathuram Foods.`,
+    image: defaultVariant?.image || undefined,
+    sku: defaultVariant?.item_code,
+    category: "Mathuram Foods", // Assuming static or fetched category
     brand: { "@type": "Brand", name: "Mathuram Foods" },
     offers: {
       "@type": "Offer",
       priceCurrency: "INR",
-      price: product.standard_rate.toFixed(2),
-      availability: "https://schema.org/InStock",
+      price: defaultVariant?.price?.toFixed(2) || "0.00",
+      availability: defaultVariant?.available_stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     },
   };
 
@@ -43,10 +47,10 @@ export default function ProductCard({ product }: { product: Product }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <div className="relative aspect-[4/5] overflow-hidden bg-surface-100">
-        {product.image ? (
+        {defaultVariant?.image ? (
           <Image
-            src={product.image}
-            alt={product.item_name}
+            src={defaultVariant.image}
+            alt={product.name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -58,7 +62,7 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
         <div className="absolute left-4 top-4">
           <Badge variant="secondary" className="backdrop-blur bg-white/90 shadow-sm border-white/50 border">
-            {product.item_group}
+            {defaultVariant?.name || "Standard Pack"}
           </Badge>
         </div>
       </div>
@@ -72,7 +76,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <Star className="w-3.5 h-3.5 fill-current" />
         </div>
         
-        <h3 className="font-display font-bold text-lg text-surface-950 group-hover:text-primary-700 transition-colors">{product.item_name}</h3>
+        <h3 className="font-display font-bold text-lg text-surface-950 group-hover:text-primary-700 transition-colors">{product.name}</h3>
         {product.description && (
           <p className="mt-2 line-clamp-2 text-sm text-surface-900/60 font-light leading-relaxed">{product.description}</p>
         )}
@@ -81,14 +85,15 @@ export default function ProductCard({ product }: { product: Product }) {
           <div className="flex flex-col">
             <span className="text-xs text-surface-900/50 mb-0.5 uppercase tracking-wider font-semibold">Price</span>
             <span className="font-display text-2xl font-bold text-surface-950">
-              ₹{product.standard_rate}
+              ₹{defaultVariant?.price || 0}
             </span>
           </div>
           
           <Button
             size="sm"
             onClick={handleAdd}
-            aria-label={`Add ${product.item_name} to cart`}
+            disabled={!defaultVariant || defaultVariant.available_stock <= 0}
+            aria-label={`Add ${product.name} to cart`}
             className={`rounded-full h-12 w-12 p-0 shadow-sm transition-all ${
               justAdded ? "bg-green-600 hover:bg-green-700" : ""
             }`}

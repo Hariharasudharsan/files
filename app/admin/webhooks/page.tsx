@@ -61,10 +61,10 @@ export default async function WebhooksPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-surface-900/80 whitespace-nowrap">
-                      {hook.processedAt ? format(new Date(hook.processedAt), "MMM d, HH:mm:ss") : "-"}
+                      {hook.processedAt ? new Date(hook.processedAt).toLocaleString() : "-"}
                     </td>
                     <td className="px-6 py-4 text-surface-900/80 whitespace-nowrap">
-                      {format(new Date(hook.createdAt), "MMM d, HH:mm:ss")}
+                      {new Date(hook.createdAt).toLocaleString()}
                     </td>
                     <td className="px-6 py-4">
                       <button className="text-primary-600 hover:text-primary-800 font-medium text-xs">

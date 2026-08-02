@@ -1,18 +1,24 @@
-export interface Product {
+export interface ProductVariant {
+  id: string;
   item_code: string;
-  item_name: string;
-  slug: string;
-  standard_rate: number;
+  name: string;
+  price: number;
+  available_stock: number;
   image: string | null;
-  gallery?: string[];
+}
+
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
   description: string;
-  item_group: string;
-  stock_qty?: number;
-  ingredients?: string;
-  nutrition?: string;
-  shelfLife?: string;
-  variants?: { name: string; price: number }[];
-  updated_at?: string;
+  category_id: string | null;
+  ingredients: string | null;
+  nutritional_info: string | null;
+  shelf_life_days: number | null;
+  variants: ProductVariant[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface InventorySnapshot {

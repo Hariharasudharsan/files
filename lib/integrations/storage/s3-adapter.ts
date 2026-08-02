@@ -21,7 +21,7 @@ export class S3StorageAdapter implements IStorageAdapter {
     const env = getServerEnv();
     if (env.s3.accessKeyId && env.s3.secretAccessKey && env.s3.bucket) {
       this.bucket = env.s3.bucket;
-      this.publicUrl = env.s3.publicUrl;
+      this.publicUrl = env.s3.publicUrl || "";
       this.client = new S3Client({
         region: env.s3.region || "us-east-1",
         endpoint: env.s3.endpoint || undefined, // For Cloudflare R2 or DigitalOcean Spaces

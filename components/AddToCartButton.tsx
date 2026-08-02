@@ -11,9 +11,11 @@ export default function AddToCartButton({ product }: { product: Product }) {
   const [justAdded, setJustAdded] = useState(false);
 
   const handleAdd = () => {
-    addItem(product, 1);
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 1500);
+    if (product.variants && product.variants.length > 0) {
+      addItem(product as any, product.variants[0] as any, 1);
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1500);
+    }
   };
 
   return (

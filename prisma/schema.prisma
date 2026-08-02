@@ -1,10 +1,52 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ----------------------------------------------------
+// Enums
+// ----------------------------------------------------
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  MANAGER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum PaymentStatus {
+  UNPAID
+  AUTHORIZED
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIALLY_SHIPPED
+  SHIPPED
+  DELIVERED
+  RETURN_REQUESTED
+  RETURNED
+}
+
+enum AddressType {
+  BILLING
+  SHIPPING
 }
 
 // ----------------------------------------------------
@@ -16,28 +58,95 @@ model Category {
   name        String
   slug        String    @unique
   description String?
+  isDeleted   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
   products    Product[]
 }
 
 model Product {
-  id            String    @id @default(uuid())
-  itemCode      String    @unique // ERP SKU
-  name          String
-  slug          String    @unique
-  description   String?
-  price         Float
-  availableStock Int       @default(0) // Mastered by ERP, synced via webhook
-  imageUrl      String?
-  categoryId    String?
-  category      Category? @relation(fields: [categoryId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(uuid())
+  name                String
+  slug                String    @unique
+  description         String?
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id])
   
-  orderItems    OrderItem[]
-  reservations  InventoryReservation[]
+  // Food Industry Specifics
+  ingredients         String?   @db.Text
+  nutritionalInfo     String?   @db.Text
+  shelfLifeDays       Int?
+  storageInstructions String?   @db.Text
+  countryOfOrigin     String    @default("India")
+  fssaiLicense        String?
+  hsnCode             String?
+  gstRate             Float     @default(0) // e.g., 5.0, 12.0, 18.0
+
+  // SEO Fields
+  metaTitle           String?
+  metaDescription     String?
+  canonicalUrl        String?
+  
+  // State
+  isDeleted           Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  
+  // Relations
+  variants            ProductVariant[]
+  reviews             Review[]
 }
+
+model ProductVariant {
+  id              String    @id @default(uuid())
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  itemCode        String    @unique // ERP SKU
+  barcode         String?   @unique
+  name            String    // e.g., "250g Pack", "500g Pack"
+  price           Float
+  compareAtPrice  Float?
+  
+  // Physical properties
+  weightGrams     Float?
+  dimensionsCm    String?   // "LxWxH"
+  
+  // Inventory
+  availableStock  Int       @default(0) // Mastered by ERP, synced via webhook
+  
+  // Media
+  imageUrl        String?
+  
+  // State
+  isDeleted       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  orderItems      OrderItem[]
+  reservations    InventoryReservation[]
+}
+
+model Review {
+  id          String    @id @default(uuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  rating      Int       // 1 to 5
+  title       String?
+  comment     String?   @db.Text
+  isApproved  Boolean   @default(false)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ----------------------------------------------------
+// User & Auth
+// ----------------------------------------------------
 
 model User {
   id            String    @id @default(cuid())
@@ -47,12 +156,38 @@ model User {
   image         String?
   phone         String?
   erpId         String?   @unique // ERP Customer ID
+  role          Role      @default(CUSTOMER)
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
   accounts      Account[]
   sessions      Session[]
   orders        Order[]
+  addresses     Address[]
+  reviews       Review[]
+}
+
+model Address {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        AddressType
+  
+  firstName   String
+  lastName    String
+  company     String?
+  addressLine1 String
+  addressLine2 String?
+  city        String
+  state       String
+  postalCode  String
+  country     String      @default("India")
+  phone       String?
+  
+  isDefault   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Account {
@@ -90,16 +225,51 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// ----------------------------------------------------
+// Order Management
+// ----------------------------------------------------
+
+model Coupon {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  description     String?
+  discountType    String    // PERCENTAGE, FIXED
+  discountValue   Float
+  minOrderValue   Float?
+  maxDiscount     Float?
+  usageLimit      Int?
+  usedCount       Int       @default(0)
+  validFrom       DateTime
+  validUntil      DateTime
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  orders          Order[]
+}
+
 model Order {
-  id                String      @id @default(uuid())
+  id                String            @id @default(uuid())
   userId            String
-  user              User        @relation(fields: [userId], references: [id])
+  user              User              @relation(fields: [userId], references: [id])
+  
+  // Financials
+  subTotal          Float
+  taxTotal          Float
+  shippingTotal     Float
+  discountTotal     Float
   total             Float
-  status            String      @default("pending") // e.g., pending, confirmed, cancelled
-  paymentStatus     String      @default("unpaid")  // e.g., unpaid, paid, partially_refunded, refunded
-  fulfillmentStatus String      @default("unfulfilled") // e.g., unfulfilled, partially_shipped, shipped, delivered
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  
+  couponId          String?
+  coupon            Coupon?           @relation(fields: [couponId], references: [id])
+  
+  status            OrderStatus       @default(PENDING)
+  paymentStatus     PaymentStatus     @default(UNPAID)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   
   items             OrderItem[]
   payments          Payment[]
@@ -108,28 +278,31 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  qty       Int
-  rate      Float
+  id                String          @id @default(uuid())
+  orderId           String
+  order             Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariantId  String
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id])
+  qty               Int
+  rate              Float           // Price at time of purchase
+  taxRate           Float           // GST rate applied
+  taxAmount         Float
+  total             Float
 }
 
 // ----------------------------------------------------
-// Inventory, Payments & Shipping (New Architecture)
+// Inventory, Payments & Shipping
 // ----------------------------------------------------
 
 model InventoryReservation {
-  id        String   @id @default(uuid())
-  productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  orderId   String?  // Can be null if reserved before order creation
-  qty       Int
-  expiresAt DateTime
-  status    String   @default("active") // active, committed, released
-  createdAt DateTime @default(now())
+  id                String          @id @default(uuid())
+  productVariantId  String
+  productVariant    ProductVariant  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  orderId           String?
+  qty               Int
+  expiresAt         DateTime
+  status            String          @default("active") // active, committed, released
+  createdAt         DateTime        @default(now())
 }
 
 model Payment {
@@ -176,13 +349,13 @@ model WebhookEvent {
 }
 
 model OutboxEvent {
-  id          String   @id @default(uuid())
-  aggregateId String   // ID of the entity that changed
-  aggregateType String // e.g., Order, Customer
-  eventType   String   // e.g., OrderPaid
-  payload     Json
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  aggregateId   String   // ID of the entity that changed
+  aggregateType String   // e.g., Order, Customer
+  eventType     String   // e.g., OrderPaid
+  payload       Json
+  published     Boolean  @default(false)
+  createdAt     DateTime @default(now())
 }
 
 model SyncLog {
@@ -194,7 +367,7 @@ model SyncLog {
   status        String   // pending, success, failed
   attempts      Int      @default(0)
   lastError     String?
-  orderId       String?  // Optional link if the sync log is specifically about an order
+  orderId       String?
   order         Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -203,15 +376,26 @@ model SyncLog {
 }
 
 // ----------------------------------------------------
-// Admin CMS
+// Admin CMS & Audit
 // ----------------------------------------------------
 
 model CmsBlock {
   id        String   @id @default(uuid())
   key       String   @unique
   type      String   // html, json, text
-  content   String   
+  content   String   @db.Text
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  // Who performed the action
+  action    String   // e.g., PRODUCT_UPDATED, ORDER_REFUNDED
+  entity    String   // e.g., Product, Order
+  entityId  String
+  details   Json?    // Changes made
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

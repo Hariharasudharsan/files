@@ -34,17 +34,24 @@ export function resolveErpImageUrl(baseUrl: string | undefined, path: string | n
 export function mapErpItemToProduct(raw: ERPNextItem, baseUrl: string | undefined): Product {
   const slug = raw.item_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
   return {
-    item_code: raw.name,
-    item_name: raw.item_name,
+    id: raw.name,
+    name: raw.item_name,
     slug: slug,
-    standard_rate: raw.standard_rate ?? 0,
-    image: resolveErpImageUrl(baseUrl, raw.image),
-    gallery: [],
     description: raw.description?.replace(/<[^>]*>/g, "").trim() || "",
-    ingredients: "",
-    item_group: raw.item_group,
-    stock_qty: raw.actual_qty,
-    updated_at: raw.modified,
+    category_id: null, // To be mapped separately
+    ingredients: null,
+    nutritional_info: null,
+    shelf_life_days: null,
+    created_at: raw.modified || new Date().toISOString(),
+    updated_at: raw.modified || new Date().toISOString(),
+    variants: [{
+      id: raw.name, // Usually erp item code
+      item_code: raw.name,
+      name: "Standard Pack",
+      price: raw.standard_rate ?? 0,
+      available_stock: raw.actual_qty ?? 0,
+      image: resolveErpImageUrl(baseUrl, raw.image),
+    }]
   };
 }
 
@@ -55,7 +62,7 @@ export function mapOrderToErpSalesOrder(order: StorefrontOrder): ERPNextSalesOrd
     contact_email: order.contact.email,
     custom_storefront_order_id: order.id,
     items: order.items.map((item) => ({
-      item_code: item.item_code,
+      item_code: item.productVariantId,
       qty: item.qty,
       rate: item.rate,
     })),

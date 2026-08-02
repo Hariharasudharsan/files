@@ -15,7 +15,7 @@ export class PostgresSearchAdapter implements ISearchAdapter {
     const skip = (page - 1) * limit;
 
     // Build the query where clause
-    const where: any = {};
+    const where: any = { isDeleted: false };
 
     // 1. Text Search (using PostgreSQL full text search natively supported by Prisma)
     if (query) {
@@ -24,18 +24,28 @@ export class PostgresSearchAdapter implements ISearchAdapter {
 
     // 2. Filters
     if (filters?.category) {
-      // Assuming a relation or string field. Adjust to schema later.
       where.category = { slug: filters.category };
     }
 
     if (filters?.minPrice !== undefined || filters?.maxPrice !== undefined) {
-      where.price = {};
-      if (filters.minPrice !== undefined) where.price.gte = filters.minPrice;
-      if (filters.maxPrice !== undefined) where.price.lte = filters.maxPrice;
+      where.variants = {
+        some: {
+          price: {
+            ...(filters.minPrice !== undefined ? { gte: filters.minPrice } : {}),
+            ...(filters.maxPrice !== undefined ? { lte: filters.maxPrice } : {}),
+          },
+        },
+      };
     }
 
     if (filters?.inStock) {
-      where.availableStock = { gt: 0 };
+      where.variants = {
+        ...(where.variants || {}),
+        some: {
+          ...(where.variants?.some || {}),
+          availableStock: { gt: 0 },
+        },
+      };
     }
 
     // Run query
@@ -44,26 +54,35 @@ export class PostgresSearchAdapter implements ISearchAdapter {
         prisma.product.count({ where }),
         prisma.product.findMany({
           where,
+          include: { variants: true },
           skip,
           take: limit,
           orderBy: {
-            // Rank exact matches higher or default to created date
             createdAt: "desc",
           },
         }),
       ]);
 
       // Map back to Domain Product
-      const hits: Product[] = records.map((r) => ({
-        item_code: r.id, // Or itemCode if available
-        item_name: r.name,
-        slug: r.slug,
-        standard_rate: r.price,
-        image: r.imageUrl,
-        description: r.description || "",
-        item_group: "Unknown", // Needs to be fetched from category relation
-        stock_qty: r.inventory,
-        updated_at: r.updatedAt.toISOString(),
+      const hits: Product[] = records.map((p) => ({
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description || "",
+        category_id: p.categoryId,
+        ingredients: p.ingredients,
+        nutritional_info: p.nutritionalInfo,
+        shelf_life_days: p.shelfLifeDays,
+        created_at: p.createdAt.toISOString(),
+        updated_at: p.updatedAt.toISOString(),
+        variants: p.variants.map(v => ({
+          id: v.id,
+          item_code: v.itemCode,
+          name: v.name,
+          price: v.price,
+          available_stock: v.availableStock,
+          image: v.imageUrl,
+        })),
       }));
 
       return {

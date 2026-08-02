@@ -28,7 +28,7 @@ async function main() {
     });
   }
 
-  // 2. Seed Products
+  // 2. Seed Products and Variants
   for (const p of productsData) {
     const category = await prisma.category.findUnique({
       where: { slug: p.item_group.toLowerCase().replace(/\s+/g, "-") },
@@ -36,25 +36,40 @@ async function main() {
 
     if (!category) continue;
 
-    await prisma.product.upsert({
-      where: { itemCode: p.item_code },
+    // Use slug as the unique identifier for the product
+    const productSlug = p.slug || p.item_name.toLowerCase().replace(/\s+/g, "-");
+
+    const product = await prisma.product.upsert({
+      where: { slug: productSlug },
       update: {
         name: p.item_name,
-        price: p.standard_rate,
-        availableStock: p.stock_qty || 0,
         categoryId: category.id,
-        imageUrl: p.image || null,
       },
       create: {
-        id: category.id === "633b8ed7-b895-496a-8f75-708add4632a4" ? "7407fb8c-06e5-4cb5-8066-94a923961aed" : undefined,
-        itemCode: p.item_code,
         name: p.item_name,
-        slug: p.slug,
+        slug: productSlug,
         description: p.description,
+        categoryId: category.id,
+      },
+    });
+
+    // Create or update the default variant for this product
+    await prisma.productVariant.upsert({
+      where: { itemCode: p.item_code },
+      update: {
+        name: "Standard Pack",
         price: p.standard_rate,
         availableStock: p.stock_qty || 0,
-        categoryId: category.id,
         imageUrl: p.image || null,
+        productId: product.id,
+      },
+      create: {
+        itemCode: p.item_code,
+        name: "Standard Pack",
+        price: p.standard_rate,
+        availableStock: p.stock_qty || 0,
+        imageUrl: p.image || null,
+        productId: product.id,
       },
     });
   }

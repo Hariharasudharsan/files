@@ -17,7 +17,7 @@ export default async function AccountPage() {
   const orders = await prisma.order.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: true } } },
+    include: { items: { include: { productVariant: true } } },
   });
 
   return (
@@ -63,7 +63,7 @@ export default async function AccountPage() {
                     <div className="text-right flex flex-col items-end gap-3">
                       <div>
                         <p className="font-bold text-lg text-surface-950">₹{order.total.toLocaleString("en-IN")}</p>
-                        <p className="text-sm text-surface-500">{order.items.length} items</p>
+                        <p className="text-sm text-surface-500">{(order as any).items?.length || 0} items</p>
                       </div>
                       <Link href={`/account/orders/${order.id}`}>
                         <Button variant="outline" size="sm">View Details</Button>

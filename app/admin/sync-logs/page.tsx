@@ -65,7 +65,7 @@ export default async function SyncLogsPage() {
                     <td className="px-6 py-4 font-mono text-xs text-surface-900/80">{log.targetId || "-"}</td>
                     <td className="px-6 py-4 text-surface-900/80">{log.attempts}</td>
                     <td className="px-6 py-4 text-surface-900/80 whitespace-nowrap">
-                      {format(new Date(log.updatedAt), "MMM d, yyyy HH:mm:ss")}
+                      {new Date(log.updatedAt).toLocaleString()}
                     </td>
                   </tr>
                 ))

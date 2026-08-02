@@ -95,7 +95,7 @@ export default function LoginPage() {
           </form>
           
           <div className="mt-6 text-center text-sm text-surface-900/60">
-            Don't have an account? <span className="font-medium text-primary-700">Just enter your email to create one.</span>
+            Don&apos;t have an account? <span className="font-medium text-primary-700">Just enter your email to create one.</span>
           </div>
         </motion.div>
       </div>

@@ -3,6 +3,7 @@ import "server-only";
 import crypto from "crypto";
 import type { CreateOrderInput, StorefrontOrder } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/infrastructure/database/prisma";
+import { OrderStatus, PaymentStatus, FulfillmentStatus } from "@prisma/client";
 
 function createOrderId(): string {
   return `MF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${crypto
@@ -12,7 +13,13 @@ function createOrderId(): string {
 }
 
 export async function createStorefrontOrder(input: CreateOrderInput): Promise<StorefrontOrder> {
-  const total = input.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
+  const subTotal = input.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
+  // Default tax rate 0 for simplicity if not provided. In real world, we'd calculate from item.
+  const taxTotal = 0; 
+  const shippingTotal = 0;
+  const discountTotal = 0;
+  const total = subTotal + taxTotal + shippingTotal - discountTotal;
+  
   const id = createOrderId();
 
   // Create customer or connect if they exist
@@ -29,20 +36,40 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     },
   });
 
+  // Resolve item_code to productVariantId
+  const itemsForCreation = await Promise.all(
+    input.items.map(async (item) => {
+      const variant = await prisma.productVariant.findUnique({
+        where: { id: item.productVariantId }
+      });
+      if (!variant) {
+        throw new Error(`Variant with productVariantId ${item.productVariantId} not found`);
+      }
+      return {
+        productVariantId: variant.id,
+        qty: item.qty,
+        rate: item.rate,
+        taxRate: 0,
+        taxAmount: 0,
+        total: item.qty * item.rate,
+      };
+    })
+  );
+
   const orderRecord = await prisma.order.create({
     data: {
       id,
       userId: user.id,
+      subTotal,
+      taxTotal,
+      shippingTotal,
+      discountTotal,
       total,
-      status: "accepted",
-      paymentStatus: "unpaid",
-      fulfillmentStatus: "unfulfilled",
+      status: OrderStatus.PENDING,
+      paymentStatus: PaymentStatus.UNPAID,
+      fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
       items: {
-        create: input.items.map(item => ({
-          productId: item.item_code, // assuming product itemCode is used as relation ID or we need to find it
-          qty: item.qty,
-          rate: item.rate
-        }))
+        create: itemsForCreation,
       }
     }
   });
@@ -52,8 +79,8 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     items: input.items,
     contact: input.contact,
     total: orderRecord.total,
-    status: orderRecord.status as any,
-    erp_sync_status: "queued" as any, // Mocked for backward compatibility in legacy code
+    status: "accepted", // Mapping back to domain status
+    erp_sync_status: "queued",
     created_at: orderRecord.createdAt.toISOString(),
   };
 

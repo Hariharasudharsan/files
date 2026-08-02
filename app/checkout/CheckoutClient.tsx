@@ -63,7 +63,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
 
     try {
       await createOrderRequest({
-        items: items.map((i) => ({ item_code: i.item_code, qty: i.qty, rate: i.standard_rate })),
+        items: items.map((i) => ({ productVariantId: i.id, qty: i.qty, rate: i.price })),
         contact: form,
       });
 
@@ -287,10 +287,10 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                 {items.map((item) => (
                   <li key={item.item_code} className="flex justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="font-medium text-surface-950">{item.item_name}</span>
+                      <span className="font-medium text-surface-950">{item.product_name}</span>
                       <span className="text-sm text-surface-900/60">Qty: {item.qty}</span>
                     </div>
-                    <span className="font-medium text-surface-950">₹{(item.standard_rate * item.qty).toLocaleString("en-IN")}</span>
+                    <span className="font-medium text-surface-950">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
                   </li>
                 ))}
               </ul>

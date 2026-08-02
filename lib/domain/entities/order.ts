@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product, ProductVariant } from "@/lib/domain/entities/product";
 
 export interface CheckoutContact {
   name: string;
@@ -11,12 +11,14 @@ export interface CheckoutContact {
 }
 
 export interface OrderItemInput {
-  item_code: string;
+  productVariantId: string;
   qty: number;
   rate: number;
 }
 
-export interface CartItem extends Product {
+export interface CartItem extends ProductVariant {
+  product_name: string;
+  product_slug: string;
   qty: number;
 }
 

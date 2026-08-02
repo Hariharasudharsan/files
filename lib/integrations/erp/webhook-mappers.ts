@@ -20,16 +20,26 @@ function readNumber(payload: Record<string, unknown>, keys: string[], fallback =
 
 export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
   const itemName = readString(event.payload, ["item_name", "title", "name"]);
+  const itemCode = readString(event.payload, ["item_code", "name"]);
   return {
-    item_code: readString(event.payload, ["item_code", "name"]),
-    item_name: itemName,
+    id: itemCode,
+    name: itemName,
     slug: itemName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
-    standard_rate: readNumber(event.payload, ["standard_rate", "rate", "price"]),
-    image: readString(event.payload, ["image"]) || null,
     description: readString(event.payload, ["description"]),
-    item_group: readString(event.payload, ["item_group", "category"]),
-    stock_qty: readNumber(event.payload, ["actual_qty", "available_qty", "stock_qty"]),
+    category_id: null,
+    ingredients: null,
+    nutritional_info: null,
+    shelf_life_days: null,
+    created_at: event.occurred_at,
     updated_at: event.occurred_at,
+    variants: [{
+      id: itemCode,
+      item_code: itemCode,
+      name: "Standard Pack",
+      price: readNumber(event.payload, ["standard_rate", "rate", "price"]),
+      available_stock: readNumber(event.payload, ["actual_qty", "available_qty", "stock_qty"]),
+      image: readString(event.payload, ["image"]) || null,
+    }]
   };
 }
 

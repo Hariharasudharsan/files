@@ -36,7 +36,7 @@ export type InventoryReservationSumAggregateOutputType = {
 
 export type InventoryReservationMinAggregateOutputType = {
   id: string | null
-  productId: string | null
+  productVariantId: string | null
   orderId: string | null
   qty: number | null
   expiresAt: Date | null
@@ -46,7 +46,7 @@ export type InventoryReservationMinAggregateOutputType = {
 
 export type InventoryReservationMaxAggregateOutputType = {
   id: string | null
-  productId: string | null
+  productVariantId: string | null
   orderId: string | null
   qty: number | null
   expiresAt: Date | null
@@ -56,7 +56,7 @@ export type InventoryReservationMaxAggregateOutputType = {
 
 export type InventoryReservationCountAggregateOutputType = {
   id: number
-  productId: number
+  productVariantId: number
   orderId: number
   qty: number
   expiresAt: number
@@ -76,7 +76,7 @@ export type InventoryReservationSumAggregateInputType = {
 
 export type InventoryReservationMinAggregateInputType = {
   id?: true
-  productId?: true
+  productVariantId?: true
   orderId?: true
   qty?: true
   expiresAt?: true
@@ -86,7 +86,7 @@ export type InventoryReservationMinAggregateInputType = {
 
 export type InventoryReservationMaxAggregateInputType = {
   id?: true
-  productId?: true
+  productVariantId?: true
   orderId?: true
   qty?: true
   expiresAt?: true
@@ -96,7 +96,7 @@ export type InventoryReservationMaxAggregateInputType = {
 
 export type InventoryReservationCountAggregateInputType = {
   id?: true
-  productId?: true
+  productVariantId?: true
   orderId?: true
   qty?: true
   expiresAt?: true
@@ -193,7 +193,7 @@ export type InventoryReservationGroupByArgs<ExtArgs extends runtime.Types.Extens
 
 export type InventoryReservationGroupByOutputType = {
   id: string
-  productId: string
+  productVariantId: string
   orderId: string | null
   qty: number
   expiresAt: Date
@@ -226,24 +226,24 @@ export type InventoryReservationWhereInput = {
   OR?: Prisma.InventoryReservationWhereInput[]
   NOT?: Prisma.InventoryReservationWhereInput | Prisma.InventoryReservationWhereInput[]
   id?: Prisma.StringFilter<"InventoryReservation"> | string
-  productId?: Prisma.StringFilter<"InventoryReservation"> | string
+  productVariantId?: Prisma.StringFilter<"InventoryReservation"> | string
   orderId?: Prisma.StringNullableFilter<"InventoryReservation"> | string | null
   qty?: Prisma.IntFilter<"InventoryReservation"> | number
   expiresAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
   status?: Prisma.StringFilter<"InventoryReservation"> | string
   createdAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
-  product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
+  productVariant?: Prisma.XOR<Prisma.ProductVariantScalarRelationFilter, Prisma.ProductVariantWhereInput>
 }
 
 export type InventoryReservationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
-  productId?: Prisma.SortOrder
+  productVariantId?: Prisma.SortOrder
   orderId?: Prisma.SortOrderInput | Prisma.SortOrder
   qty?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
   status?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
-  product?: Prisma.ProductOrderByWithRelationInput
+  productVariant?: Prisma.ProductVariantOrderByWithRelationInput
 }
 
 export type InventoryReservationWhereUniqueInput = Prisma.AtLeast<{
@@ -251,18 +251,18 @@ export type InventoryReservationWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.InventoryReservationWhereInput | Prisma.InventoryReservationWhereInput[]
   OR?: Prisma.InventoryReservationWhereInput[]
   NOT?: Prisma.InventoryReservationWhereInput | Prisma.InventoryReservationWhereInput[]
-  productId?: Prisma.StringFilter<"InventoryReservation"> | string
+  productVariantId?: Prisma.StringFilter<"InventoryReservation"> | string
   orderId?: Prisma.StringNullableFilter<"InventoryReservation"> | string | null
   qty?: Prisma.IntFilter<"InventoryReservation"> | number
   expiresAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
   status?: Prisma.StringFilter<"InventoryReservation"> | string
   createdAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
-  product?: Prisma.XOR<Prisma.ProductScalarRelationFilter, Prisma.ProductWhereInput>
+  productVariant?: Prisma.XOR<Prisma.ProductVariantScalarRelationFilter, Prisma.ProductVariantWhereInput>
 }, "id">
 
 export type InventoryReservationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
-  productId?: Prisma.SortOrder
+  productVariantId?: Prisma.SortOrder
   orderId?: Prisma.SortOrderInput | Prisma.SortOrder
   qty?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -280,7 +280,7 @@ export type InventoryReservationScalarWhereWithAggregatesInput = {
   OR?: Prisma.InventoryReservationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.InventoryReservationScalarWhereWithAggregatesInput | Prisma.InventoryReservationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"InventoryReservation"> | string
-  productId?: Prisma.StringWithAggregatesFilter<"InventoryReservation"> | string
+  productVariantId?: Prisma.StringWithAggregatesFilter<"InventoryReservation"> | string
   orderId?: Prisma.StringNullableWithAggregatesFilter<"InventoryReservation"> | string | null
   qty?: Prisma.IntWithAggregatesFilter<"InventoryReservation"> | number
   expiresAt?: Prisma.DateTimeWithAggregatesFilter<"InventoryReservation"> | Date | string
@@ -295,12 +295,12 @@ export type InventoryReservationCreateInput = {
   expiresAt: Date | string
   status?: string
   createdAt?: Date | string
-  product: Prisma.ProductCreateNestedOneWithoutReservationsInput
+  productVariant: Prisma.ProductVariantCreateNestedOneWithoutReservationsInput
 }
 
 export type InventoryReservationUncheckedCreateInput = {
   id?: string
-  productId: string
+  productVariantId: string
   orderId?: string | null
   qty: number
   expiresAt: Date | string
@@ -315,12 +315,12 @@ export type InventoryReservationUpdateInput = {
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  product?: Prisma.ProductUpdateOneRequiredWithoutReservationsNestedInput
+  productVariant?: Prisma.ProductVariantUpdateOneRequiredWithoutReservationsNestedInput
 }
 
 export type InventoryReservationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  productId?: Prisma.StringFieldUpdateOperationsInput | string
+  productVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   qty?: Prisma.IntFieldUpdateOperationsInput | number
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -330,7 +330,7 @@ export type InventoryReservationUncheckedUpdateInput = {
 
 export type InventoryReservationCreateManyInput = {
   id?: string
-  productId: string
+  productVariantId: string
   orderId?: string | null
   qty: number
   expiresAt: Date | string
@@ -349,7 +349,7 @@ export type InventoryReservationUpdateManyMutationInput = {
 
 export type InventoryReservationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  productId?: Prisma.StringFieldUpdateOperationsInput | string
+  productVariantId?: Prisma.StringFieldUpdateOperationsInput | string
   orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   qty?: Prisma.IntFieldUpdateOperationsInput | number
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -369,7 +369,7 @@ export type InventoryReservationOrderByRelationAggregateInput = {
 
 export type InventoryReservationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  productId?: Prisma.SortOrder
+  productVariantId?: Prisma.SortOrder
   orderId?: Prisma.SortOrder
   qty?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -383,7 +383,7 @@ export type InventoryReservationAvgOrderByAggregateInput = {
 
 export type InventoryReservationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  productId?: Prisma.SortOrder
+  productVariantId?: Prisma.SortOrder
   orderId?: Prisma.SortOrder
   qty?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -393,7 +393,7 @@ export type InventoryReservationMaxOrderByAggregateInput = {
 
 export type InventoryReservationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  productId?: Prisma.SortOrder
+  productVariantId?: Prisma.SortOrder
   orderId?: Prisma.SortOrder
   qty?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -405,49 +405,49 @@ export type InventoryReservationSumOrderByAggregateInput = {
   qty?: Prisma.SortOrder
 }
 
-export type InventoryReservationCreateNestedManyWithoutProductInput = {
-  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput> | Prisma.InventoryReservationCreateWithoutProductInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductInput[]
-  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductInput | Prisma.InventoryReservationCreateOrConnectWithoutProductInput[]
-  createMany?: Prisma.InventoryReservationCreateManyProductInputEnvelope
+export type InventoryReservationCreateNestedManyWithoutProductVariantInput = {
+  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput> | Prisma.InventoryReservationCreateWithoutProductVariantInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput[]
+  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput | Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput[]
+  createMany?: Prisma.InventoryReservationCreateManyProductVariantInputEnvelope
   connect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
 }
 
-export type InventoryReservationUncheckedCreateNestedManyWithoutProductInput = {
-  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput> | Prisma.InventoryReservationCreateWithoutProductInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductInput[]
-  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductInput | Prisma.InventoryReservationCreateOrConnectWithoutProductInput[]
-  createMany?: Prisma.InventoryReservationCreateManyProductInputEnvelope
+export type InventoryReservationUncheckedCreateNestedManyWithoutProductVariantInput = {
+  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput> | Prisma.InventoryReservationCreateWithoutProductVariantInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput[]
+  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput | Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput[]
+  createMany?: Prisma.InventoryReservationCreateManyProductVariantInputEnvelope
   connect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
 }
 
-export type InventoryReservationUpdateManyWithoutProductNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput> | Prisma.InventoryReservationCreateWithoutProductInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductInput[]
-  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductInput | Prisma.InventoryReservationCreateOrConnectWithoutProductInput[]
-  upsert?: Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductInput | Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductInput[]
-  createMany?: Prisma.InventoryReservationCreateManyProductInputEnvelope
+export type InventoryReservationUpdateManyWithoutProductVariantNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput> | Prisma.InventoryReservationCreateWithoutProductVariantInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput[]
+  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput | Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput[]
+  upsert?: Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductVariantInput | Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductVariantInput[]
+  createMany?: Prisma.InventoryReservationCreateManyProductVariantInputEnvelope
   set?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   disconnect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   delete?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   connect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
-  update?: Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductInput | Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductInput[]
-  updateMany?: Prisma.InventoryReservationUpdateManyWithWhereWithoutProductInput | Prisma.InventoryReservationUpdateManyWithWhereWithoutProductInput[]
+  update?: Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductVariantInput | Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductVariantInput[]
+  updateMany?: Prisma.InventoryReservationUpdateManyWithWhereWithoutProductVariantInput | Prisma.InventoryReservationUpdateManyWithWhereWithoutProductVariantInput[]
   deleteMany?: Prisma.InventoryReservationScalarWhereInput | Prisma.InventoryReservationScalarWhereInput[]
 }
 
-export type InventoryReservationUncheckedUpdateManyWithoutProductNestedInput = {
-  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput> | Prisma.InventoryReservationCreateWithoutProductInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductInput[]
-  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductInput | Prisma.InventoryReservationCreateOrConnectWithoutProductInput[]
-  upsert?: Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductInput | Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductInput[]
-  createMany?: Prisma.InventoryReservationCreateManyProductInputEnvelope
+export type InventoryReservationUncheckedUpdateManyWithoutProductVariantNestedInput = {
+  create?: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput> | Prisma.InventoryReservationCreateWithoutProductVariantInput[] | Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput[]
+  connectOrCreate?: Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput | Prisma.InventoryReservationCreateOrConnectWithoutProductVariantInput[]
+  upsert?: Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductVariantInput | Prisma.InventoryReservationUpsertWithWhereUniqueWithoutProductVariantInput[]
+  createMany?: Prisma.InventoryReservationCreateManyProductVariantInputEnvelope
   set?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   disconnect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   delete?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
   connect?: Prisma.InventoryReservationWhereUniqueInput | Prisma.InventoryReservationWhereUniqueInput[]
-  update?: Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductInput | Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductInput[]
-  updateMany?: Prisma.InventoryReservationUpdateManyWithWhereWithoutProductInput | Prisma.InventoryReservationUpdateManyWithWhereWithoutProductInput[]
+  update?: Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductVariantInput | Prisma.InventoryReservationUpdateWithWhereUniqueWithoutProductVariantInput[]
+  updateMany?: Prisma.InventoryReservationUpdateManyWithWhereWithoutProductVariantInput | Prisma.InventoryReservationUpdateManyWithWhereWithoutProductVariantInput[]
   deleteMany?: Prisma.InventoryReservationScalarWhereInput | Prisma.InventoryReservationScalarWhereInput[]
 }
 
-export type InventoryReservationCreateWithoutProductInput = {
+export type InventoryReservationCreateWithoutProductVariantInput = {
   id?: string
   orderId?: string | null
   qty: number
@@ -456,7 +456,7 @@ export type InventoryReservationCreateWithoutProductInput = {
   createdAt?: Date | string
 }
 
-export type InventoryReservationUncheckedCreateWithoutProductInput = {
+export type InventoryReservationUncheckedCreateWithoutProductVariantInput = {
   id?: string
   orderId?: string | null
   qty: number
@@ -465,30 +465,30 @@ export type InventoryReservationUncheckedCreateWithoutProductInput = {
   createdAt?: Date | string
 }
 
-export type InventoryReservationCreateOrConnectWithoutProductInput = {
+export type InventoryReservationCreateOrConnectWithoutProductVariantInput = {
   where: Prisma.InventoryReservationWhereUniqueInput
-  create: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput>
+  create: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput>
 }
 
-export type InventoryReservationCreateManyProductInputEnvelope = {
-  data: Prisma.InventoryReservationCreateManyProductInput | Prisma.InventoryReservationCreateManyProductInput[]
+export type InventoryReservationCreateManyProductVariantInputEnvelope = {
+  data: Prisma.InventoryReservationCreateManyProductVariantInput | Prisma.InventoryReservationCreateManyProductVariantInput[]
   skipDuplicates?: boolean
 }
 
-export type InventoryReservationUpsertWithWhereUniqueWithoutProductInput = {
+export type InventoryReservationUpsertWithWhereUniqueWithoutProductVariantInput = {
   where: Prisma.InventoryReservationWhereUniqueInput
-  update: Prisma.XOR<Prisma.InventoryReservationUpdateWithoutProductInput, Prisma.InventoryReservationUncheckedUpdateWithoutProductInput>
-  create: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductInput, Prisma.InventoryReservationUncheckedCreateWithoutProductInput>
+  update: Prisma.XOR<Prisma.InventoryReservationUpdateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedUpdateWithoutProductVariantInput>
+  create: Prisma.XOR<Prisma.InventoryReservationCreateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedCreateWithoutProductVariantInput>
 }
 
-export type InventoryReservationUpdateWithWhereUniqueWithoutProductInput = {
+export type InventoryReservationUpdateWithWhereUniqueWithoutProductVariantInput = {
   where: Prisma.InventoryReservationWhereUniqueInput
-  data: Prisma.XOR<Prisma.InventoryReservationUpdateWithoutProductInput, Prisma.InventoryReservationUncheckedUpdateWithoutProductInput>
+  data: Prisma.XOR<Prisma.InventoryReservationUpdateWithoutProductVariantInput, Prisma.InventoryReservationUncheckedUpdateWithoutProductVariantInput>
 }
 
-export type InventoryReservationUpdateManyWithWhereWithoutProductInput = {
+export type InventoryReservationUpdateManyWithWhereWithoutProductVariantInput = {
   where: Prisma.InventoryReservationScalarWhereInput
-  data: Prisma.XOR<Prisma.InventoryReservationUpdateManyMutationInput, Prisma.InventoryReservationUncheckedUpdateManyWithoutProductInput>
+  data: Prisma.XOR<Prisma.InventoryReservationUpdateManyMutationInput, Prisma.InventoryReservationUncheckedUpdateManyWithoutProductVariantInput>
 }
 
 export type InventoryReservationScalarWhereInput = {
@@ -496,7 +496,7 @@ export type InventoryReservationScalarWhereInput = {
   OR?: Prisma.InventoryReservationScalarWhereInput[]
   NOT?: Prisma.InventoryReservationScalarWhereInput | Prisma.InventoryReservationScalarWhereInput[]
   id?: Prisma.StringFilter<"InventoryReservation"> | string
-  productId?: Prisma.StringFilter<"InventoryReservation"> | string
+  productVariantId?: Prisma.StringFilter<"InventoryReservation"> | string
   orderId?: Prisma.StringNullableFilter<"InventoryReservation"> | string | null
   qty?: Prisma.IntFilter<"InventoryReservation"> | number
   expiresAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
@@ -504,7 +504,7 @@ export type InventoryReservationScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"InventoryReservation"> | Date | string
 }
 
-export type InventoryReservationCreateManyProductInput = {
+export type InventoryReservationCreateManyProductVariantInput = {
   id?: string
   orderId?: string | null
   qty: number
@@ -513,7 +513,7 @@ export type InventoryReservationCreateManyProductInput = {
   createdAt?: Date | string
 }
 
-export type InventoryReservationUpdateWithoutProductInput = {
+export type InventoryReservationUpdateWithoutProductVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   qty?: Prisma.IntFieldUpdateOperationsInput | number
@@ -522,7 +522,7 @@ export type InventoryReservationUpdateWithoutProductInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InventoryReservationUncheckedUpdateWithoutProductInput = {
+export type InventoryReservationUncheckedUpdateWithoutProductVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   qty?: Prisma.IntFieldUpdateOperationsInput | number
@@ -531,7 +531,7 @@ export type InventoryReservationUncheckedUpdateWithoutProductInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type InventoryReservationUncheckedUpdateManyWithoutProductInput = {
+export type InventoryReservationUncheckedUpdateManyWithoutProductVariantInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   orderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   qty?: Prisma.IntFieldUpdateOperationsInput | number
@@ -544,40 +544,40 @@ export type InventoryReservationUncheckedUpdateManyWithoutProductInput = {
 
 export type InventoryReservationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  productId?: boolean
+  productVariantId?: boolean
   orderId?: boolean
   qty?: boolean
   expiresAt?: boolean
   status?: boolean
   createdAt?: boolean
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryReservation"]>
 
 export type InventoryReservationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  productId?: boolean
+  productVariantId?: boolean
   orderId?: boolean
   qty?: boolean
   expiresAt?: boolean
   status?: boolean
   createdAt?: boolean
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryReservation"]>
 
 export type InventoryReservationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
-  productId?: boolean
+  productVariantId?: boolean
   orderId?: boolean
   qty?: boolean
   expiresAt?: boolean
   status?: boolean
   createdAt?: boolean
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["inventoryReservation"]>
 
 export type InventoryReservationSelectScalar = {
   id?: boolean
-  productId?: boolean
+  productVariantId?: boolean
   orderId?: boolean
   qty?: boolean
   expiresAt?: boolean
@@ -585,25 +585,25 @@ export type InventoryReservationSelectScalar = {
   createdAt?: boolean
 }
 
-export type InventoryReservationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productId" | "orderId" | "qty" | "expiresAt" | "status" | "createdAt", ExtArgs["result"]["inventoryReservation"]>
+export type InventoryReservationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "productVariantId" | "orderId" | "qty" | "expiresAt" | "status" | "createdAt", ExtArgs["result"]["inventoryReservation"]>
 export type InventoryReservationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }
 export type InventoryReservationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }
 export type InventoryReservationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  product?: boolean | Prisma.ProductDefaultArgs<ExtArgs>
+  productVariant?: boolean | Prisma.ProductVariantDefaultArgs<ExtArgs>
 }
 
 export type $InventoryReservationPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "InventoryReservation"
   objects: {
-    product: Prisma.$ProductPayload<ExtArgs>
+    productVariant: Prisma.$ProductVariantPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    productId: string
+    productVariantId: string
     orderId: string | null
     qty: number
     expiresAt: Date
@@ -1003,7 +1003,7 @@ readonly fields: InventoryReservationFieldRefs;
  */
 export interface Prisma__InventoryReservationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  product<T extends Prisma.ProductDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductDefaultArgs<ExtArgs>>): Prisma.Prisma__ProductClient<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  productVariant<T extends Prisma.ProductVariantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProductVariantDefaultArgs<ExtArgs>>): Prisma.Prisma__ProductVariantClient<runtime.Types.Result.GetResult<Prisma.$ProductVariantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1034,7 +1034,7 @@ export interface Prisma__InventoryReservationClient<T, Null = never, ExtArgs ext
  */
 export interface InventoryReservationFieldRefs {
   readonly id: Prisma.FieldRef<"InventoryReservation", 'String'>
-  readonly productId: Prisma.FieldRef<"InventoryReservation", 'String'>
+  readonly productVariantId: Prisma.FieldRef<"InventoryReservation", 'String'>
   readonly orderId: Prisma.FieldRef<"InventoryReservation", 'String'>
   readonly qty: Prisma.FieldRef<"InventoryReservation", 'Int'>
   readonly expiresAt: Prisma.FieldRef<"InventoryReservation", 'DateTime'>

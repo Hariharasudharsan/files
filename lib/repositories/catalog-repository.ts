@@ -1,56 +1,121 @@
 import "server-only";
 
-import products from "@/data/products.json";
-import type { InventorySnapshot, Product } from "@/lib/domain/entities/product";
+import type { InventorySnapshot, Product, ProductVariant } from "@/lib/domain/entities/product";
 import { Logger } from "@/lib/infrastructure/logger";
-
-const syncedProducts = new Map<string, Product>();
-const inventorySnapshots = new Map<string, InventorySnapshot>();
-
-function isProduct(value: unknown): value is Product {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const candidate = value as Partial<Product>;
-  return (
-    typeof candidate.item_code === "string" &&
-    typeof candidate.item_name === "string" &&
-    typeof candidate.slug === "string" &&
-    typeof candidate.standard_rate === "number" &&
-    typeof candidate.description === "string" &&
-    typeof candidate.item_group === "string" &&
-    (typeof candidate.image === "string" || candidate.image === null)
-  );
-}
+import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export async function listPublishedProducts(): Promise<Product[]> {
-  const validProducts = (products as unknown[]).filter(isProduct);
-
-  if (validProducts.length !== (products as unknown[]).length) {
-    Logger.warn("Some catalog records were skipped because they are invalid");
-  }
-
-  const merged = new Map(validProducts.map((product) => [product.item_code, product]));
-
-  for (const product of syncedProducts.values()) {
-    const inventory = inventorySnapshots.get(product.item_code);
-    merged.set(product.item_code, {
-      ...product,
-      stock_qty: inventory?.available_qty ?? product.stock_qty,
-      updated_at: inventory?.updated_at ?? product.updated_at,
+  try {
+    const products = await prisma.product.findMany({
+      where: { isDeleted: false },
+      include: {
+        variants: {
+          where: { isDeleted: false },
+        }
+      }
     });
-  }
 
-  return [...merged.values()];
+    return products.map(p => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      description: p.description || "",
+      category_id: p.categoryId,
+      ingredients: p.ingredients,
+      nutritional_info: p.nutritionalInfo,
+      shelf_life_days: p.shelfLifeDays,
+      created_at: p.createdAt.toISOString(),
+      updated_at: p.updatedAt.toISOString(),
+      variants: p.variants.map(v => ({
+        id: v.id,
+        item_code: v.itemCode,
+        name: v.name,
+        price: v.price,
+        available_stock: v.availableStock,
+        image: v.imageUrl,
+      })),
+    }));
+  } catch (error) {
+    Logger.error("Error fetching published products from DB", { error });
+    return [];
+  }
 }
 
 export async function upsertSyncedProduct(product: Product): Promise<void> {
-  syncedProducts.set(product.item_code, product);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const dbProduct = await tx.product.upsert({
+        where: { slug: product.slug },
+        create: {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          categoryId: product.category_id,
+          ingredients: product.ingredients,
+          nutritionalInfo: product.nutritional_info,
+          shelfLifeDays: product.shelf_life_days,
+          isDeleted: false,
+        },
+        update: {
+          name: product.name,
+          description: product.description,
+          categoryId: product.category_id,
+          ingredients: product.ingredients,
+          nutritionalInfo: product.nutritional_info,
+          shelfLifeDays: product.shelf_life_days,
+          isDeleted: false,
+        },
+      });
+
+      for (const variant of product.variants) {
+        await tx.productVariant.upsert({
+          where: { itemCode: variant.item_code },
+          create: {
+            id: variant.id,
+            productId: dbProduct.id,
+            itemCode: variant.item_code,
+            name: variant.name,
+            price: variant.price,
+            availableStock: variant.available_stock,
+            imageUrl: variant.image,
+            isDeleted: false,
+          },
+          update: {
+            productId: dbProduct.id,
+            name: variant.name,
+            price: variant.price,
+            availableStock: variant.available_stock,
+            imageUrl: variant.image,
+            isDeleted: false,
+          },
+        });
+      }
+    });
+  } catch (error) {
+    Logger.error("Failed to upsert product in DB", { slug: product.slug, error });
+    throw error;
+  }
 }
 
-export async function removeSyncedProduct(itemCode: string): Promise<void> {
-  syncedProducts.delete(itemCode);
-  inventorySnapshots.delete(itemCode);
+export async function removeSyncedProduct(slug: string): Promise<void> {
+  try {
+    await prisma.product.update({
+      where: { slug },
+      data: { isDeleted: true },
+    });
+  } catch (error) {
+    Logger.error("Failed to soft-delete product", { slug, error });
+  }
 }
 
 export async function updateInventorySnapshot(snapshot: InventorySnapshot): Promise<void> {
-  inventorySnapshots.set(snapshot.item_code, snapshot);
+  try {
+    await prisma.productVariant.update({
+      where: { itemCode: snapshot.item_code },
+      data: { availableStock: snapshot.available_qty },
+    });
+  } catch (error) {
+    Logger.error("Failed to update inventory snapshot", { itemCode: snapshot.item_code, error });
+  }
 }

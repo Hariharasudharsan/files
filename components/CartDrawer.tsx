@@ -15,14 +15,12 @@ export default function CartDrawer() {
   const removeItem = useCartStore((s) => s.removeItem);
   const total = useCartStore((s) => s.getTotalPrice());
 
-  // Assume standard shipping logic for preview
   const shipping = total > 500 ? 0 : 50;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -32,7 +30,6 @@ export default function CartDrawer() {
             aria-hidden="true"
           />
 
-          {/* Drawer */}
           <motion.aside
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -73,7 +70,7 @@ export default function CartDrawer() {
                         {item.image ? (
                           <Image
                             src={item.image}
-                            alt={item.item_name}
+                            alt={item.product_name}
                             fill
                             sizes="80px"
                             className="object-cover"
@@ -88,18 +85,18 @@ export default function CartDrawer() {
                       <div className="flex flex-1 flex-col">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium text-surface-950 line-clamp-2 leading-snug">
-                            {item.item_name}
+                            {item.product_name} - {item.name}
                           </p>
                           <button
                             type="button"
                             onClick={() => removeItem(item.item_code)}
-                            aria-label={`Remove ${item.item_name}`}
+                            aria-label={`Remove ${item.product_name}`}
                             className="shrink-0 text-surface-900/40 hover:text-red-500 transition"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
-                        <p className="text-sm text-surface-900/60 mt-1">₹{item.standard_rate}</p>
+                        <p className="text-sm text-surface-900/60 mt-1">₹{item.price}</p>
 
                         <div className="mt-auto pt-3 flex items-center justify-between">
                           <div className="flex items-center gap-1 rounded-full border border-surface-200 bg-surface-50 p-1">
@@ -124,7 +121,7 @@ export default function CartDrawer() {
                             </button>
                           </div>
                           <span className="font-semibold text-surface-950">
-                            ₹{(item.standard_rate * item.qty).toLocaleString("en-IN")}
+                            ₹{(item.price * item.qty).toLocaleString("en-IN")}
                           </span>
                         </div>
                       </div>

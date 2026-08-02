@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Package, Truck, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     include: {
       items: {
         include: {
-          product: true
+          productVariant: true
         }
       },
       shipments: true,
@@ -34,8 +35,8 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const shipment = order.shipments[0];
-  const payment = order.payments[0];
+  const shipment = (order.shipments && order.shipments.length > 0) ? order.shipments[0] : null;
+  const payment = (order.payments && order.payments.length > 0) ? order.payments[0] : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
@@ -55,7 +56,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary-50 text-primary-700 uppercase tracking-wider">
             {order.status}
           </span>
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wider ${order.paymentStatus === 'paid' ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
+          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wider ${order.paymentStatus === "PAID" ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
             {order.paymentStatus}
           </span>
         </div>
@@ -69,11 +70,11 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
               <Package className="h-5 w-5" /> Items
             </h2>
             <ul className="space-y-6">
-              {order.items.map((item) => (
+              {order.items.map((item: any) => (
                 <li key={item.id} className="flex gap-6">
                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-surface-100 relative">
-                    {item.product.imageUrl ? (
-                      <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover object-center" />
+                    {item.productVariant.imageUrl ? (
+                      <Image src={item.productVariant.imageUrl} alt={item.productVariant.name} fill className="object-cover object-center" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <Package className="h-8 w-8 text-primary-200" />
@@ -82,7 +83,7 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                   </div>
                   <div className="flex flex-1 flex-col justify-center">
                     <div className="flex justify-between text-base font-medium text-surface-950">
-                      <h3>{item.product.name}</h3>
+                      <h3>{item.productVariant.name}</h3>
                       <p>₹{(item.rate * item.qty).toLocaleString("en-IN")}</p>
                     </div>
                     <p className="mt-1 text-sm text-surface-900/60">Qty: {item.qty}</p>

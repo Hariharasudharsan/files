@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { RazorpayAdapter } from '../../../../lib/infrastructure/adapters/payment/RazorpayAdapter';
 import { eventBus } from '../../../../lib/infrastructure/events/EventBus';
 import { OrderPaidEvent } from '../../../../lib/core/domain/events/DomainEvent';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 const razorpayAdapter = new RazorpayAdapter();
 
@@ -50,28 +51,31 @@ export async function POST(req: Request) {
       const orderId = payload.payload.payment.entity.notes?.orderId || payload.payload.payment.entity.description;
 
       if (orderId) {
-        // Update local Order & Payment state
-        await prisma.order.update({
-          where: { id: orderId },
-          data: {
-            status: 'confirmed',
-            paymentStatus: 'paid',
-          },
-        });
+        // 5. Wrap updates, inserts, and event publication in a single database transaction
+        await prisma.$transaction(async (tx) => {
+          // Update local Order & Payment state
+          await tx.order.update({
+            where: { id: orderId },
+            data: {
+              status: OrderStatus.CONFIRMED,
+              paymentStatus: PaymentStatus.PAID,
+            },
+          });
 
-        await prisma.payment.create({
-          data: {
-            orderId,
-            amount: verification.amount || 0,
-            provider: 'razorpay',
-            transactionId: verification.transactionId,
-            status: 'captured',
-          },
-        });
+          await tx.payment.create({
+            data: {
+              orderId,
+              amount: verification.amount || 0,
+              provider: 'razorpay',
+              transactionId: verification.transactionId!,
+              status: 'captured',
+            },
+          });
 
-        // 5. Emit Domain Event (writes to Outbox table automatically)
-        const orderPaidEvent = new OrderPaidEvent(orderId, verification.amount || 0, verification.transactionId);
-        await eventBus.publish(orderPaidEvent);
+          // Emit Domain Event via Outbox inside the same transaction
+          const orderPaidEvent = new OrderPaidEvent(orderId, verification.amount || 0, verification.transactionId!);
+          await eventBus.publishWithinTransaction(tx, orderPaidEvent);
+        });
       }
     }
 

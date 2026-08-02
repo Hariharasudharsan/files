@@ -30,3 +30,27 @@ export class OrderPaidEvent implements DomainEvent {
     };
   }
 }
+
+export class OrderCreatedEvent implements DomainEvent {
+  public id: string;
+  public aggregateId: string;
+  public aggregateType = 'Order';
+  public eventType = 'OrderCreated';
+  public occurredAt: Date;
+  public payload: {
+    orderId: string;
+    userId: string;
+    total: number;
+  };
+
+  constructor(orderId: string, userId: string, total: number) {
+    this.id = crypto.randomUUID();
+    this.aggregateId = orderId;
+    this.occurredAt = new Date();
+    this.payload = {
+      orderId,
+      userId,
+      total
+    };
+  }
+}

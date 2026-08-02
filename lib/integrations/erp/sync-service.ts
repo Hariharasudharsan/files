@@ -37,7 +37,7 @@ async function handleWebhook(event: ErpWebhookEvent): Promise<void> {
   if (event.entity === "product") {
     const product = mapWebhookToProduct(event);
     if (event.action === "deleted") {
-      await removeSyncedProduct(product.item_code);
+      await removeSyncedProduct(product.slug);
     } else {
       await upsertSyncedProduct(product);
     }

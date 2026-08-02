@@ -35,7 +35,7 @@ function parseItems(value: unknown, errors: string[]): OrderItemInput[] {
       return [];
     }
 
-    return [{ item_code: itemCode, qty, rate }];
+    return [{ productVariantId: itemCode, qty, rate }];
   });
 }
 

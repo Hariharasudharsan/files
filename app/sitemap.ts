@@ -1,11 +1,18 @@
 import type { MetadataRoute } from "next";
+import { getStorefrontProducts } from "@/lib/services/catalog-service";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
-// Only static, indexable pages live here today. If you add individual
-// product detail pages later (e.g. app/products/[slug]/page.tsx), extend
-// this by mapping over getProducts() the same way app/page.tsx does.
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await getStorefrontProducts();
+
+  const productRoutes = products.map((product) => ({
+    url: `${SITE_URL}/product/${product.slug}`,
+    lastModified: product.updated_at || new Date().toISOString(),
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
   return [
     {
       url: SITE_URL,
@@ -13,5 +20,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
     },
+    ...productRoutes,
   ];
 }
