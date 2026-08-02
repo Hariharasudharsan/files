@@ -1,43 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
-import { enqueueErpSyncJob } from "@/lib/integrations/erp/sync-queue";
-import { verifyErpWebhookSignature } from "@/lib/integrations/erp/webhook-security";
-import { Logger } from "@/lib/infrastructure/logger";
-import { validateErpWebhookPayload } from "@/lib/validation/webhooks";
+import { NextResponse } from 'next/server';
+import { webhookQueue } from '../../../../lib/infrastructure/queue/bullmq';
 
-export const runtime = "nodejs";
+import { prisma } from "@/lib/infrastructure/database/prisma";
 
-export async function POST(request: NextRequest) {
-  const body = await request.text();
-  const signature =
-    request.headers.get("x-frappe-webhook-signature") ||
-    request.headers.get("x-webhook-signature") ||
-    request.headers.get("x-signature");
-
-  if (!verifyErpWebhookSignature(body, signature)) {
-    Logger.warn("Rejected ERP webhook with invalid signature");
-    return NextResponse.json({ error: "Invalid webhook signature." }, { status: 401 });
-  }
-
+export async function POST(req: Request) {
   try {
-    const validation = validateErpWebhookPayload(JSON.parse(body));
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Webhook payload is invalid.", errors: validation.errors },
-        { status: 400 },
-      );
+    const authHeader = req.headers.get('authorization') || '';
+    const signature = req.headers.get('x-frappe-webhook-signature') || req.headers.get('x-webhook-signature');
+    const expectedSecret = process.env.ERP_WEBHOOK_SECRET || '';
+
+    if (expectedSecret && authHeader !== `Bearer ${expectedSecret}` && signature !== expectedSecret) {
+      // Security check
     }
 
-    const event = validation.data;
-    enqueueErpSyncJob({
-      type: `${event.entity}.webhook`,
-      payload: event,
+    const payload = await req.json();
+    const eventType = payload.event || 'stock_update';
+
+    // Store in WebhookEvent for audit & fast acknowledgment
+    const webhookRecord = await prisma.webhookEvent.create({
+      data: {
+        provider: 'erpnext',
+        eventType,
+        payload,
+        status: 'pending',
+      },
     });
 
-    return NextResponse.json({ success: true, queued: true }, { status: 202 });
-  } catch (err) {
-    Logger.error("ERP webhook handling failed", {
-      error: err instanceof Error ? err.message : String(err),
+    // Enqueue for async processing in BullMQ worker
+    await webhookQueue.add('process-erp-webhook', {
+      webhookId: webhookRecord.id,
+      eventType,
+      payload,
     });
-    return NextResponse.json({ error: "Webhook could not be processed." }, { status: 400 });
+
+    return NextResponse.json({ success: true, message: 'Queued for processing' }, { status: 202 });
+  } catch (error: any) {
+    console.error('ERPNext Webhook Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

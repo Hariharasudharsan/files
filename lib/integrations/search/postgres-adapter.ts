@@ -35,7 +35,7 @@ export class PostgresSearchAdapter implements ISearchAdapter {
     }
 
     if (filters?.inStock) {
-      where.inventory = { gt: 0 };
+      where.availableStock = { gt: 0 };
     }
 
     // Run query

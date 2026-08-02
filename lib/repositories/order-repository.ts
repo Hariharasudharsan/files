@@ -16,19 +16,27 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
   const id = createOrderId();
 
   // Create customer or connect if they exist
-  const customer = await prisma.customer.upsert({
+  const user = await prisma.user.upsert({
     where: { email: input.contact.email },
-    update: { phone: input.contact.mobile_no, name: input.contact.first_name + " " + input.contact.last_name },
-    create: { email: input.contact.email, phone: input.contact.mobile_no, name: input.contact.first_name + " " + input.contact.last_name },
+    update: { 
+      phone: input.contact.phone, 
+      name: input.contact.name 
+    },
+    create: { 
+      email: input.contact.email, 
+      phone: input.contact.phone, 
+      name: input.contact.name 
+    },
   });
 
   const orderRecord = await prisma.order.create({
     data: {
       id,
-      customerId: customer.id,
+      userId: user.id,
       total,
       status: "accepted",
-      erpSyncStatus: "queued",
+      paymentStatus: "unpaid",
+      fulfillmentStatus: "unfulfilled",
       items: {
         create: input.items.map(item => ({
           productId: item.item_code, // assuming product itemCode is used as relation ID or we need to find it
@@ -45,7 +53,7 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     contact: input.contact,
     total: orderRecord.total,
     status: orderRecord.status as any,
-    erp_sync_status: orderRecord.erpSyncStatus as any,
+    erp_sync_status: "queued" as any, // Mocked for backward compatibility in legacy code
     created_at: orderRecord.createdAt.toISOString(),
   };
 
@@ -53,15 +61,25 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
 }
 
 export async function markOrderErpSynced(orderId: string): Promise<void> {
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { erpSyncStatus: "synced" }
+  await prisma.syncLog.create({
+    data: {
+      entityType: "Order",
+      entityId: orderId,
+      orderId: orderId,
+      targetSystem: "erpnext",
+      status: "success"
+    }
   });
 }
 
 export async function markOrderErpFailed(orderId: string): Promise<void> {
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { erpSyncStatus: "failed" }
+  await prisma.syncLog.create({
+    data: {
+      entityType: "Order",
+      entityId: orderId,
+      orderId: orderId,
+      targetSystem: "erpnext",
+      status: "failed"
+    }
   });
 }

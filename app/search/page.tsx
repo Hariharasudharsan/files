@@ -4,9 +4,10 @@ import ProductCard from "@/components/ProductCard";
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: { q?: string };
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const query = searchParams.q || "";
+  const resolvedSearchParams = await searchParams;
+  const query = resolvedSearchParams.q || "";
   const allProducts = await getStorefrontProducts();
 
   const products = query

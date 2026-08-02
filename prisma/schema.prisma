@@ -22,48 +22,95 @@ model Category {
 }
 
 model Product {
-  id           String   @id @default(uuid())
-  itemCode     String   @unique
-  name         String
-  slug         String   @unique
-  description  String?
-  price        Float
-  inventory    Int      @default(0)
-  imageUrl     String?
-  categoryId   String?
-  category     Category? @relation(fields: [categoryId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  orderItems   OrderItem[]
+  id            String    @id @default(uuid())
+  itemCode      String    @unique // ERP SKU
+  name          String
+  slug          String    @unique
+  description   String?
+  price         Float
+  availableStock Int       @default(0) // Mastered by ERP, synced via webhook
+  imageUrl      String?
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  orderItems    OrderItem[]
+  reservations  InventoryReservation[]
 }
 
-model Customer {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  erpId         String?   @unique // ERP Customer ID
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  customerId      String
-  customer        Customer    @relation(fields: [customerId], references: [id])
-  total           Float
-  status          String      @default("pending")
-  erpSyncStatus   String      @default("queued")
-  erpSalesOrderId String?     
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  items           OrderItem[]
+  id                String      @id @default(uuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id])
+  total             Float
+  status            String      @default("pending") // e.g., pending, confirmed, cancelled
+  paymentStatus     String      @default("unpaid")  // e.g., unpaid, paid, partially_refunded, refunded
+  fulfillmentStatus String      @default("unfulfilled") // e.g., unfulfilled, partially_shipped, shipped, delivered
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  items             OrderItem[]
+  payments          Payment[]
+  shipments         Shipment[]
+  syncLogs          SyncLog[]
 }
 
 model OrderItem {
   id        String  @id @default(uuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
   product   Product @relation(fields: [productId], references: [id])
   qty       Int
@@ -71,24 +118,100 @@ model OrderItem {
 }
 
 // ----------------------------------------------------
-// Admin CMS & Audit
+// Inventory, Payments & Shipping (New Architecture)
+// ----------------------------------------------------
+
+model InventoryReservation {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId   String?  // Can be null if reserved before order creation
+  qty       Int
+  expiresAt DateTime
+  status    String   @default("active") // active, committed, released
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Float
+  currency      String   @default("INR")
+  provider      String   @default("razorpay")
+  transactionId String   @unique // e.g., razorpay_payment_id
+  status        String   // authorized, captured, failed, refunded
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Shipment {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  trackingCode  String?
+  courier       String?  // e.g., Delhivery, BlueDart via Shiprocket
+  status        String   // pending, shipped, out_for_delivery, delivered
+  dispatchedAt  DateTime?
+  deliveredAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ----------------------------------------------------
+// Event-Driven & Async Infrastructure
+// ----------------------------------------------------
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  provider    String   // e.g., razorpay, erpnext, shiprocket
+  eventType   String   // e.g., payment.captured, order.shipped
+  payload     Json
+  status      String   @default("pending") // pending, processing, processed, failed
+  error       String?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  
+  @@index([provider, eventType, status])
+}
+
+model OutboxEvent {
+  id          String   @id @default(uuid())
+  aggregateId String   // ID of the entity that changed
+  aggregateType String // e.g., Order, Customer
+  eventType   String   // e.g., OrderPaid
+  payload     Json
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  entityType    String   // e.g., Order, Customer, Product
+  entityId      String   // ID in our local DB
+  targetSystem  String   @default("erpnext")
+  targetId      String?  // e.g., ERPNext Sales Order name
+  status        String   // pending, success, failed
+  attempts      Int      @default(0)
+  lastError     String?
+  orderId       String?  // Optional link if the sync log is specifically about an order
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([entityType, entityId, status])
+}
+
+// ----------------------------------------------------
+// Admin CMS
 // ----------------------------------------------------
 
 model CmsBlock {
   id        String   @id @default(uuid())
-  key       String   @unique // e.g., "hero-banner-main"
-  type      String   // "html", "json", "text"
-  content   String   // The actual block content
+  key       String   @unique
+  type      String   // html, json, text
+  content   String   
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  action    String   // e.g., "ERP_SYNC_ORDER", "WEBHOOK_RECEIVED"
-  status    String   // "SUCCESS", "FAILED"
-  payload   Json?
-  error     String?
-  createdAt DateTime @default(now())
 }

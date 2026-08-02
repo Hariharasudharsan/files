@@ -4,7 +4,7 @@
  * Sets up Redis connection and exports a generic job dispatcher.
  */
 
-import { Logger } from "../core/logger";
+import { Logger } from "@/lib/infrastructure/logger";
 
 export const EnqueueJob = async <T>(queueName: string, jobName: string, payload: T) => {
   Logger.info(`[Queue: ${queueName}] Enqueued job: ${jobName}`);

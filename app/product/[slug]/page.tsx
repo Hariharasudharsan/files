@@ -4,8 +4,9 @@ import { Package } from "lucide-react";
 import { getProductBySlug } from "@/lib/services/catalog-service";
 import AddToCartButton from "@/components/AddToCartButton";
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const product = await getProductBySlug(params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
@@ -42,15 +43,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
             <p>{product.description}</p>
           </div>
 
-          <div className="mt-10 border-t border-surface-200 pt-8">
-            <h3 className="font-semibold text-surface-950">Ingredients</h3>
-            <p className="mt-2 text-sm text-surface-900/70">{product.ingredients || "N/A"}</p>
-          </div>
-
-          <div className="mt-4">
-            <h3 className="font-semibold text-surface-950">Shelf Life</h3>
-            <p className="mt-2 text-sm text-surface-900/70">{product.shelfLife || "N/A"}</p>
-          </div>
+          {/* Schema removed ingredients and shelfLife as they are part of description */}
 
           <div className="mt-10">
             <AddToCartButton product={product} />

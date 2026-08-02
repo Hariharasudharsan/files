@@ -10,5 +10,6 @@ type Props = {
 };
 
 export function ReactSwagger({ spec }: Props) {
+  // @ts-ignore
   return <SwaggerUI spec={spec} />;
 }

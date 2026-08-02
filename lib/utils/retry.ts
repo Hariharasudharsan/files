@@ -22,7 +22,7 @@ export async function withRetry<T>(
       return await operation();
     } catch (err) {
       lastError = err;
-      Logger.warn(`Retry ${attempt}/${options.attempts} failed for ${options.operationName}`, {
+      logger.warn(`Retry ${attempt}/${options.attempts} failed for ${options.operationName}`, {
         error: err,
       });
       if (attempt < options.attempts) {
@@ -31,7 +31,7 @@ export async function withRetry<T>(
     }
   }
 
-  Logger.error(`All ${options.attempts} retries failed for ${options.operationName}`, {
+  logger.error(`All ${options.attempts} retries failed for ${options.operationName}`, {
     error: lastError,
   });
   throw lastError;

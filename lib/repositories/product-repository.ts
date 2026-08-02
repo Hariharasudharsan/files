@@ -10,12 +10,12 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
     return {
       item_code: p.itemCode,
       item_name: p.name,
-      slug: p.itemCode,
-      standard_rate: p.standardRate,
+      slug: p.slug,
+      standard_rate: p.price,
       image: p.imageUrl,
       description: p.description || "",
       item_group: "Default",
-      stock_qty: p.stockQty,
+      stock_qty: p.availableStock,
     };
   }
 
@@ -24,12 +24,12 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
     return products.map(p => ({
       item_code: p.itemCode,
       item_name: p.name,
-      slug: p.itemCode,
-      standard_rate: p.standardRate,
+      slug: p.slug,
+      standard_rate: p.price,
       image: p.imageUrl,
       description: p.description || "",
       item_group: "Default",
-      stock_qty: p.stockQty,
+      stock_qty: p.availableStock,
     }));
   }
 
@@ -38,8 +38,9 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
       data: {
         itemCode: entity.item_code!,
         name: entity.item_name!,
-        standardRate: entity.standard_rate!,
-        stockQty: entity.stock_qty || 0,
+        slug: entity.slug || entity.item_code!,
+        price: entity.standard_rate!,
+        availableStock: entity.stock_qty || 0,
         description: entity.description,
         imageUrl: entity.image,
       }
@@ -52,8 +53,9 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
       where: { id },
       data: {
         name: entity.item_name,
-        standardRate: entity.standard_rate,
-        stockQty: entity.stock_qty,
+        slug: entity.slug,
+        price: entity.standard_rate,
+        availableStock: entity.stock_qty,
         description: entity.description,
         imageUrl: entity.image,
       }

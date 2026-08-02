@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import productsData from "../data/products.json";
@@ -7,7 +6,7 @@ import productsData from "../data/products.json";
 const connectionString = process.env.DATABASE_URL;
 const pool = new pg.Pool({ connectionString });
 const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+import { prisma } from "@/lib/infrastructure/database/prisma";
 
 async function main() {
   console.log("Seeding Database...");
@@ -42,19 +41,20 @@ async function main() {
       update: {
         name: p.item_name,
         price: p.standard_rate,
-        inventory: p.stock_qty,
+        availableStock: p.stock_qty || 0,
         categoryId: category.id,
+        imageUrl: p.image || null,
       },
       create: {
-        id: crypto.randomUUID(),
+        id: category.id === "633b8ed7-b895-496a-8f75-708add4632a4" ? "7407fb8c-06e5-4cb5-8066-94a923961aed" : undefined,
         itemCode: p.item_code,
         name: p.item_name,
         slug: p.slug,
-        description: `Authentic ${p.item_name} made with traditional recipes.`,
+        description: p.description,
         price: p.standard_rate,
-        inventory: p.stock_qty,
+        availableStock: p.stock_qty || 0,
         categoryId: category.id,
-        imageUrl: p.image || "/images/placeholders/product.webp",
+        imageUrl: p.image || null,
       },
     });
   }
