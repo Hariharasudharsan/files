@@ -32,3 +32,7 @@ class EventBus {
 }
 
 export const DomainEventBus = new EventBus();
+
+// Initialize subscribers
+import { initializeCacheInvalidators } from "./subscribers/cache-invalidator";
+initializeCacheInvalidators();

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export async function listPublishedProducts(): Promise<Product[]> {
   try {
+
     const products = await prisma.product.findMany({
       where: { isDeleted: false },
       include: {
@@ -30,7 +31,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
         id: v.id,
         item_code: v.itemCode,
         name: v.name,
-        price: v.price,
+        price: Number(v.price),
         available_stock: v.availableStock,
         image: v.imageUrl,
       })),

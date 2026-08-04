@@ -37,11 +37,18 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
+    jwt: async ({ token, user }) => {
+      if (user) {
+        token.role = (user as any).role || "CUSTOMER";
+      }
+      return token;
+    },
     session: async ({ session, user, token }) => {
       if (session?.user) {
         // When using JWT strategy, user is undefined, we use token.sub
         // When using database strategy, user is populated
         session.user.id = user?.id || (token?.sub as string);
+        (session.user as any).role = token?.role || "CUSTOMER";
       }
       return session;
     },

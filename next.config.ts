@@ -1,4 +1,6 @@
-import type { NextConfig } from "next";
+
+mport type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * next/image needs remote hosts allow-listed before it will optimize
@@ -54,4 +56,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: "mathuram-foods",
+  project: "storefront",
+  widenClientFileUpload: true,
+  disableLogger: true,
+});

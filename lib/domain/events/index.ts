@@ -1,5 +1,6 @@
 import type { StorefrontOrder } from "@/lib/domain/entities/order";
 import type { CustomerProfile } from "@/lib/domain/entities/customer";
+import type { Product } from "@/lib/domain/entities/product";
 
 export interface DomainEvent {
   eventName: string;
@@ -25,4 +26,12 @@ export interface UserRegisteredEvent extends DomainEvent {
   payload: CustomerProfile;
 }
 
-export type AllDomainEvents = OrderCreatedEvent | PaymentCapturedEvent | UserRegisteredEvent;
+export interface ProductUpdatedEvent extends DomainEvent {
+  eventName: "ProductUpdated";
+  payload: {
+    slug: string;
+    product?: Product;
+  };
+}
+
+export type AllDomainEvents = OrderCreatedEvent | PaymentCapturedEvent | UserRegisteredEvent | ProductUpdatedEvent;

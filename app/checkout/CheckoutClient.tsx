@@ -5,7 +5,8 @@ import type { ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, Package } from "lucide-react";
 import Link from "next/link";
-import { createOrderRequest } from "@/lib/api/orders";
+import Script from "next/script";
+import { initPaymentRequest, verifyPaymentRequest } from "@/lib/api/orders";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/Button";
 
@@ -62,16 +63,54 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
     }
 
     try {
-      await createOrderRequest({
+      const initRes = await initPaymentRequest({
         items: items.map((i) => ({ productVariantId: i.id, qty: i.qty, rate: i.price })),
         contact: form,
       });
 
-      setStatus("success");
-      clearCart();
+      const options = {
+        key: initRes.key,
+        amount: initRes.amount,
+        currency: initRes.currency,
+        name: "Mathuram Foods",
+        description: "Order Payment",
+        order_id: initRes.razorpayOrderId,
+        handler: async function (response: any) {
+          try {
+            await verifyPaymentRequest({
+              orderId: initRes.orderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            setStatus("success");
+            clearCart();
+          } catch (err) {
+            setStatus("error");
+            setErrorMsg("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: form.name,
+          email: form.email,
+          contact: form.phone,
+        },
+        theme: {
+          color: "#4f46e5", // Indigo-600
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      
+      rzp.on("payment.failed", function (response: any) {
+        setStatus("error");
+        setErrorMsg(`Payment Failed: ${response.error.description}`);
+      });
+
+      rzp.open();
     } catch (err) {
       setStatus("error");
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong.");
+      setErrorMsg(err instanceof Error ? err.message : "Something went wrong initializing checkout.");
     }
   };
 
@@ -121,8 +160,10 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   }
 
   return (
-    <div className="bg-surface-50 min-h-screen pb-24">
-      <div className="mx-auto max-w-5xl px-4 pt-10 sm:pt-16">
+    <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+      <div className="bg-surface-50 min-h-screen pb-24">
+        <div className="mx-auto max-w-5xl px-4 pt-10 sm:pt-16">
         <Link
           href="/"
           className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-surface-900/60 hover:text-surface-950 transition-colors"
@@ -334,5 +375,6 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
         </div>
       </div>
     </div>
+    </>
   );
 }
