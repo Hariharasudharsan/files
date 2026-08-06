@@ -24,6 +24,13 @@
   /* Dark sophisticated text/surface */
   --color-surface-50: #faf9f8;
   --color-surface-100: #f3f1ee;
+  --color-surface-200: #e7e5e4;
+  --color-surface-300: #d6d3d1;
+  --color-surface-400: #a8a29e;
+  --color-surface-500: #78716c;
+  --color-surface-600: #57534e;
+  --color-surface-700: #44403c;
+  --color-surface-800: #292524;
   --color-surface-900: #1c1917;
   --color-surface-950: #0c0a09;
   /* Animations */

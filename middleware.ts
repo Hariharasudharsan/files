@@ -6,6 +6,7 @@ export default withAuth(
     const token = req.nextauth.token;
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith("/account/login");
+    const isAdminAuthPage = req.nextUrl.pathname.startsWith("/admin/login");
 
     // We skip Redis rate limiting in the Edge runtime (Next.js middleware limitation).
     // In a real enterprise app, use @upstash/redis for edge compatible rate limiting here.
@@ -16,13 +17,20 @@ export default withAuth(
       }
       return null;
     }
+    
+    if (isAdminAuthPage) {
+      if (isAuth && (token?.role === "ADMIN" || token?.role === "MANAGER")) {
+        return NextResponse.redirect(new URL("/admin", req.url));
+      }
+      return null;
+    }
 
     if (req.nextUrl.pathname.startsWith("/admin")) {
       if (!isAuth) {
-        return NextResponse.redirect(new URL("/account/login", req.url));
+        return NextResponse.redirect(new URL("/admin/login", req.url));
       }
       if (token?.role !== "ADMIN" && token?.role !== "MANAGER") {
-        return NextResponse.redirect(new URL("/account/login?error=AccessDenied", req.url));
+        return NextResponse.redirect(new URL("/admin/login?error=AccessDenied", req.url));
       }
     }
   },

@@ -106,9 +106,11 @@ export default async function AdminProductsPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button className="p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
-                            <Edit className="w-4 h-4" />
-                          </button>
+                          <Link href={`/admin/products/${product.id}/edit`}>
+                            <button className="p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                          </Link>
                           <button className="p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
                             <MoreHorizontal className="w-4 h-4" />
                           </button>

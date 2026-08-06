@@ -28,11 +28,18 @@ export const authOptions: NextAuthOptions = {
             data: {
               email: credentials.email,
               name: credentials.email.split('@')[0],
+              role: credentials.email.toLowerCase() === 'admin@mathuram.com' ? 'ADMIN' : 'CUSTOMER',
             }
+          });
+        } else if (credentials.email.toLowerCase() === 'admin@mathuram.com' && user.role !== 'ADMIN') {
+          // Ensure existing admin@mathuram.com is promoted if they already logged in before
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { role: 'ADMIN' }
           });
         }
 
-        return { id: user.id, name: user.name, email: user.email };
+        return { id: user.id, name: user.name, email: user.email, role: user.role };
       }
     })
   ],
