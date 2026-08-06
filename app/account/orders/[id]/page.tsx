@@ -1,33 +1,35 @@
-import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
+import { ArrowLeft, Package, CheckCircle2, Truck, Box, FileText, RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import Image from "next/image";
-import { ArrowLeft, Package, Truck, CheckCircle2, AlertCircle } from "lucide-react";
 
-export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  
   if (!session?.user) {
-    redirect("/account/login");
+    redirect("/api/auth/signin");
   }
 
   const { id } = await params;
-
   const order = await prisma.order.findUnique({
-    where: { 
+    where: {
       id,
-      userId: session.user.id // Ensure they can only see their own orders
+      userId: session.user.id
     },
     include: {
       items: {
         include: {
-          productVariant: true
+          productVariant: {
+            include: {
+              product: true,
+              images: { include: { media: true } }
+            }
+          }
         }
-      },
-      shipments: true,
-      payments: true
+      }
     }
   });
 
@@ -35,58 +37,111 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  const shipment = (order.shipments && order.shipments.length > 0) ? order.shipments[0] : null;
-  const payment = (order.payments && order.payments.length > 0) ? order.payments[0] : null;
+  // Determine current step index based on status
+  // PENDING -> PAID -> PROCESSING -> SHIPPED -> DELIVERED
+  const statusFlow = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED"];
+  let currentIndex = statusFlow.indexOf(order.status);
+  
+  // Map our DB statuses to a simpler UI timeline
+  const timelineSteps = [
+    { label: "Order Placed", icon: CheckCircle2, description: "We have received your order." },
+    { label: "Processing", icon: Package, description: "Your order is being packed fresh." },
+    { label: "Shipped", icon: Truck, description: "Order has been dispatched." },
+    { label: "Delivered", icon: Box, description: "Package arrived safely." },
+  ];
+
+  let currentStep = 0;
+  if (currentIndex >= 1) currentStep = 0; // PAID -> Order Placed
+  if (currentIndex >= 2) currentStep = 1; // PROCESSING -> Processing
+  if (currentIndex >= 3) currentStep = 2; // SHIPPED -> Shipped
+  if (currentIndex >= 4) currentStep = 3; // DELIVERED -> Delivered
+
+  if (order.status === "CANCELLED" || order.status === "REFUNDED") {
+    currentStep = -1; // special state
+  }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-      <div className="mb-8 flex items-center">
-        <Link href="/account" className="flex items-center text-sm font-medium text-surface-900/60 hover:text-surface-950 transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Link>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <Link href="/account" className="inline-flex items-center gap-2 text-sm text-surface-500 hover:text-primary-600 font-medium mb-6 transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Back to Account
+      </Link>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-display text-3xl font-bold text-surface-950">Order #{order.id.slice(0, 8)}</h1>
-          <p className="text-surface-900/60 mt-1">Placed on {new Date(order.createdAt).toLocaleString()}</p>
+          <p className="text-sm text-surface-500 mt-1">Placed on {order.createdAt.toLocaleDateString("en-IN", { day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
-        <div className="flex gap-2">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-primary-50 text-primary-700 uppercase tracking-wider">
-            {order.status}
-          </span>
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wider ${order.paymentStatus === "PAID" ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'}`}>
-            {order.paymentStatus}
-          </span>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex items-center gap-2 bg-white">
+            <FileText className="w-4 h-4" /> Invoice
+          </Button>
+          {order.status === "DELIVERED" && (
+            <Button variant="outline" className="flex items-center gap-2 text-surface-900 border-surface-200">
+              <RefreshCcw className="w-4 h-4" /> Return / Refund
+            </Button>
+          )}
         </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-surface-200 p-6 sm:p-10 mb-8 shadow-sm">
+        <h2 className="text-lg font-bold text-surface-950 mb-8">Order Status</h2>
+        
+        {currentStep === -1 ? (
+          <div className="p-4 bg-red-50 text-red-700 rounded-lg font-semibold border border-red-100 flex items-center justify-center">
+            Order has been {order.status.toLowerCase()}.
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="absolute left-0 sm:left-auto sm:top-1/2 sm:-translate-y-1/2 h-full sm:h-1 w-1 sm:w-full bg-surface-100 rounded-full ml-5 sm:ml-0 z-0" />
+            <div 
+              className="absolute left-0 sm:left-auto sm:top-1/2 sm:-translate-y-1/2 h-full sm:h-1 w-1 sm:w-full bg-primary-500 rounded-full ml-5 sm:ml-0 z-0 transition-all duration-1000"
+              style={{
+                height: '100%',
+                width: `${(currentStep / (timelineSteps.length - 1)) * 100}%`
+              }} 
+            />
+            
+            <div className="relative z-10 flex flex-col sm:flex-row justify-between gap-8 sm:gap-4">
+              {timelineSteps.map((step, idx) => {
+                const isCompleted = idx <= currentStep;
+                const isCurrent = idx === currentStep;
+                return (
+                  <div key={step.label} className="flex sm:flex-col items-center sm:text-center gap-4 sm:gap-3">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center border-4 transition-colors duration-500 ${isCompleted ? 'bg-primary-600 border-primary-100 text-white shadow-md shadow-primary-600/30' : 'bg-surface-50 border-white text-surface-300'}`}>
+                      <step.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-sm ${isCompleted ? 'text-surface-950' : 'text-surface-400'}`}>{step.label}</p>
+                      <p className={`text-xs mt-0.5 max-w-[120px] ${isCurrent ? 'text-primary-600 font-medium' : 'text-surface-400'}`}>{step.description}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-8">
-          {/* Order Items */}
-          <div className="glass p-6 rounded-2xl border border-surface-200">
-            <h2 className="text-xl font-bold text-surface-950 mb-6 flex items-center gap-2">
-              <Package className="h-5 w-5" /> Items
-            </h2>
+        <div className="md:col-span-2 space-y-6">
+          <div className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-surface-950 mb-6">Items Ordered</h2>
             <ul className="space-y-6">
-              {order.items.map((item: any) => (
-                <li key={item.id} className="flex gap-6">
-                  <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-surface-100 relative">
-                    {item.productVariant.imageUrl ? (
-                      <Image src={item.productVariant.imageUrl} alt={item.productVariant.name} fill className="object-cover object-center" />
+              {order.items.map((item) => (
+                <li key={item.id} className="flex gap-4">
+                  <div className="w-20 h-20 bg-surface-50 rounded-xl overflow-hidden relative border border-surface-200 shrink-0">
+                    {item.productVariant.images[0] ? (
+                      <Image src={item.productVariant.images[0].media.url} alt={item.productVariant.product.name} fill className="object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-8 w-8 text-primary-200" />
-                      </div>
+                      <Package className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-surface-200 w-8 h-8" />
                     )}
                   </div>
-                  <div className="flex flex-1 flex-col justify-center">
-                    <div className="flex justify-between text-base font-medium text-surface-950">
-                      <h3>{item.productVariant.name}</h3>
-                      <p>₹{(item.rate * item.qty).toLocaleString("en-IN")}</p>
-                    </div>
-                    <p className="mt-1 text-sm text-surface-900/60">Qty: {item.qty}</p>
+                  <div className="flex-1 flex flex-col justify-center">
+                    <Link href={`/product/${item.productVariant.product.slug}`} className="font-semibold text-surface-900 hover:text-primary-600 transition-colors line-clamp-1">
+                      {item.productVariant.product.name}
+                    </Link>
+                    <p className="text-sm text-surface-500 mt-1">Qty: {item.qty}</p>
+                    <p className="text-sm font-semibold text-surface-950 mt-1">₹{item.rate.toString()}</p>
                   </div>
                 </li>
               ))}
@@ -94,50 +149,34 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Order Summary */}
-          <div className="glass p-6 rounded-2xl border border-surface-200 bg-surface-50">
-            <h2 className="text-xl font-bold text-surface-950 mb-4">Summary</h2>
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-surface-950 mb-4">Summary</h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-surface-900/80">
+              <div className="flex justify-between text-surface-700">
                 <span>Subtotal</span>
-                <span>₹{order.total.toLocaleString("en-IN")}</span>
+                <span>₹{order.subTotal.toString()}</span>
               </div>
-              <div className="flex justify-between font-bold text-surface-950 text-lg pt-4 border-t border-surface-200">
+              <div className="flex justify-between text-surface-700">
+                <span>Shipping</span>
+                <span>₹{order.shippingTotal.toString()}</span>
+              </div>
+              <div className="pt-3 border-t border-surface-200 flex justify-between font-bold text-surface-950 text-base">
                 <span>Total</span>
-                <span>₹{order.total.toLocaleString("en-IN")}</span>
+                <span>₹{order.total.toString()}</span>
               </div>
             </div>
           </div>
-
-          {/* Shipping Info */}
-          <div className="glass p-6 rounded-2xl border border-surface-200">
-            <h2 className="text-xl font-bold text-surface-950 mb-4 flex items-center gap-2">
-              <Truck className="h-5 w-5" /> Shipping
-            </h2>
-            {shipment ? (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium text-surface-900/60 uppercase tracking-wider">Courier</p>
-                  <p className="font-semibold">{shipment.courier || "Pending Allocation"}</p>
-                </div>
-                {shipment.trackingCode && (
-                  <div>
-                    <p className="text-sm font-medium text-surface-900/60 uppercase tracking-wider">Tracking Code</p>
-                    <p className="font-mono font-bold text-primary-600">{shipment.trackingCode}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-surface-900/60 uppercase tracking-wider">Status</p>
-                  <p className="font-semibold capitalize">{shipment.status}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-start gap-3 text-surface-900/70">
-                <AlertCircle className="h-5 w-5 mt-0.5 text-primary-500" />
-                <p className="text-sm">We are preparing your shipment. Tracking details will appear here once dispatched.</p>
-              </div>
-            )}
+          
+          <div className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-surface-950 mb-4">Shipping Address</h2>
+            <div className="text-sm text-surface-700 leading-relaxed">
+              <p className="font-semibold text-surface-950 mb-1">{session.user.name}</p>
+              <p>123 Customer Street</p>
+              <p>Apartment 4B</p>
+              <p>Chennai, Tamil Nadu 600001</p>
+              <p className="mt-2">Ph: +91 9876543210</p>
+            </div>
           </div>
         </div>
       </div>

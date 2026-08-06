@@ -1,49 +1,34 @@
 import "server-only";
-
-import crypto from "crypto";
-import { processErpSyncJob } from "@/lib/integrations/erp/sync-service";
-import type { ErpSyncJob, ErpSyncJobType, ErpSyncPayload } from "@/lib/integrations/erp/types";
+import { createQueue } from "@/lib/infrastructure/queue/bull";
+import type { ErpSyncJobType, ErpSyncPayload } from "@/lib/integrations/erp/types";
 import { Logger } from "@/lib/infrastructure/logger";
+import { prisma } from "@/lib/infrastructure/database/prisma";
 
-const queuedJobs = new Map<string, ErpSyncJob>();
+export const erpSyncQueue = createQueue("erp-sync");
 
-export function enqueueErpSyncJob(input: {
+export async function enqueueErpSyncJob(input: {
   type: ErpSyncJobType;
   payload: ErpSyncPayload;
-}): ErpSyncJob {
-  const job: ErpSyncJob = {
-    id: crypto.randomUUID(),
-    type: input.type,
-    payload: input.payload,
-    attempts: 0,
-    queued_at: new Date().toISOString(),
-  };
+}): Promise<string> {
+  const job = await erpSyncQueue.add("sync", input, {
+    attempts: 3,
+    backoff: {
+      type: "exponential",
+      delay: 5000,
+    },
+    removeOnComplete: true,
+  });
 
-  queuedJobs.set(job.id, job);
-  Logger.info("ERP sync job queued", { jobId: job.id, type: job.type });
+  // Track in local DB as well
+  await prisma.eRPSync.create({
+    data: {
+      entityType: input.type,
+      entityId: (input.payload as any).order_id || (input.payload as any).product_id || job.id,
+      status: "PENDING",
+      targetSystem: "erpnext",
+    },
+  });
 
-  setTimeout(() => {
-    void runJob(job.id);
-  }, 0);
-
-  return job;
-}
-
-async function runJob(jobId: string): Promise<void> {
-  const job = queuedJobs.get(jobId);
-  if (!job) return;
-
-  try {
-    await processErpSyncJob({ ...job, attempts: job.attempts + 1 });
-    queuedJobs.delete(jobId);
-    Logger.info("ERP sync job completed", { jobId, type: job.type });
-  } catch (err) {
-    queuedJobs.set(jobId, { ...job, attempts: job.attempts + 1 });
-    Logger.error("ERP sync job failed", {
-      jobId,
-      type: job.type,
-      attempts: job.attempts + 1,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
+  Logger.info("ERP sync job queued in BullMQ", { jobId: job.id, type: input.type });
+  return job.id!;
 }

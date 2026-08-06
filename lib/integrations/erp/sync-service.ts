@@ -1,4 +1,5 @@
 import "server-only";
+import { prisma } from "@/lib/infrastructure/database/prisma";
 
 import type { StorefrontOrder } from "@/lib/domain/entities/order";
 import { erpNextClient } from "@/lib/integrations/erp/erpnext/client";
@@ -73,15 +74,35 @@ async function handleWebhook(event: ErpWebhookEvent): Promise<void> {
 }
 
 export async function processErpSyncJob(job: ErpSyncJob): Promise<void> {
-  if (job.type === "order.created") {
-    try {
-      await syncOrder(job.payload as StorefrontOrder);
-      return;
-    } catch (err) {
-      await markOrderErpFailed((job.payload as StorefrontOrder).id);
-      throw err;
-    }
-  }
+  const entityId = (job.payload as any).order_id || (job.payload as any).product_id || job.id;
 
-  await handleWebhook(job.payload as ErpWebhookEvent);
+  try {
+    if (job.type === "order.created") {
+      await syncOrder(job.payload as StorefrontOrder);
+    } else {
+      await handleWebhook(job.payload as ErpWebhookEvent);
+    }
+    
+    // Update DB to success
+    await prisma.eRPSync.updateMany({
+      where: { entityType: job.type, entityId },
+      data: { status: "SUCCESS" }
+    });
+  } catch (err: any) {
+    if (job.type === "order.created") {
+      await markOrderErpFailed((job.payload as StorefrontOrder).id);
+    }
+
+    // Update DB to failed
+    await prisma.eRPSync.updateMany({
+      where: { entityType: job.type, entityId },
+      data: { 
+        status: "FAILED", 
+        lastError: err.message || String(err),
+        attempts: job.attempts 
+      }
+    });
+
+    throw err; // BullMQ needs to know it failed for retry backoff
+  }
 }

@@ -14,7 +14,6 @@ function createOrderId(): string {
 
 export async function createStorefrontOrder(input: CreateOrderInput): Promise<StorefrontOrder> {
   const subTotal = input.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
-  // Default tax rate 0 for simplicity if not provided. In real world, we'd calculate from item.
   const taxTotal = 0; 
   const shippingTotal = 0;
   const discountTotal = 0;
@@ -22,7 +21,6 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
   
   const id = createOrderId();
 
-  // Create customer or connect if they exist
   const user = await prisma.user.upsert({
     where: { email: input.contact.email },
     update: { 
@@ -36,7 +34,6 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     },
   });
 
-  // Resolve item_code to productVariantId
   const itemsForCreation = await Promise.all(
     input.items.map(async (item) => {
       const variant = await prisma.productVariant.findUnique({
@@ -78,8 +75,8 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     id: orderRecord.id,
     items: input.items,
     contact: input.contact,
-    total: orderRecord.total,
-    status: "accepted", // Mapping back to domain status
+    total: orderRecord.total.toNumber(),
+    status: "PENDING", 
     erp_sync_status: "queued",
     created_at: orderRecord.createdAt.toISOString(),
   };
@@ -88,25 +85,25 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
 }
 
 export async function markOrderErpSynced(orderId: string): Promise<void> {
-  await prisma.syncLog.create({
+  await prisma.eRPSync.create({
     data: {
       entityType: "Order",
       entityId: orderId,
       orderId: orderId,
       targetSystem: "erpnext",
-      status: "success"
+      status: "SUCCESS"
     }
   });
 }
 
 export async function markOrderErpFailed(orderId: string): Promise<void> {
-  await prisma.syncLog.create({
+  await prisma.eRPSync.create({
     data: {
       entityType: "Order",
       entityId: orderId,
       orderId: orderId,
       targetSystem: "erpnext",
-      status: "failed"
+      status: "FAILED"
     }
   });
 }

@@ -21,6 +21,8 @@ function readNumber(payload: Record<string, unknown>, keys: string[], fallback =
 export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
   const itemName = readString(event.payload, ["item_name", "title", "name"]);
   const itemCode = readString(event.payload, ["item_code", "name"]);
+  const imageUrl = readString(event.payload, ["image"]) || null;
+  
   return {
     id: itemCode,
     name: itemName,
@@ -30,6 +32,14 @@ export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
     ingredients: null,
     nutritional_info: null,
     shelf_life_days: null,
+    gstRate: 0,
+    isFeatured: false,
+    primaryImage: imageUrl ? {
+      id: `wh-img-${itemCode}`,
+      url: imageUrl,
+      alt: itemName,
+      type: "IMAGE"
+    } : null,
     created_at: event.occurred_at,
     updated_at: event.occurred_at,
     variants: [{
@@ -37,8 +47,21 @@ export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
       item_code: itemCode,
       name: "Standard Pack",
       price: readNumber(event.payload, ["standard_rate", "rate", "price"]),
-      available_stock: readNumber(event.payload, ["actual_qty", "available_qty", "stock_qty"]),
-      image: readString(event.payload, ["image"]) || null,
+      inventoryLevels: [{
+        warehouseId: "default",
+        available: readNumber(event.payload, ["actual_qty", "available_qty", "stock_qty"]),
+        reserved: 0,
+        committed: 0,
+        sold: 0,
+        damaged: 0,
+        returned: 0
+      }],
+      images: imageUrl ? [{
+        id: `wh-img-${itemCode}`,
+        url: imageUrl,
+        alt: itemName,
+        type: "IMAGE"
+      }] : [],
     }]
   };
 }
@@ -46,6 +69,7 @@ export function mapWebhookToProduct(event: ErpWebhookEvent): Product {
 export function mapWebhookToInventory(event: ErpWebhookEvent): InventorySnapshot {
   return {
     item_code: readString(event.payload, ["item_code", "name"]),
+    warehouseId: readString(event.payload, ["warehouse_id", "warehouse", "warehouseId"]) || "default",
     available_qty: readNumber(event.payload, ["available_qty", "actual_qty", "stock_qty"]),
     reserved_qty: readNumber(event.payload, ["reserved_qty"], 0),
     updated_at: event.occurred_at,

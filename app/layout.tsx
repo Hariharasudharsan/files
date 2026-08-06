@@ -59,8 +59,28 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: "Mathuram Foods",
   url: SITE_URL,
-  description:
-    "Factory-direct manufacturer of authentic papadam, vadam, appalam and South Indian snacks.",
+  logo: `${SITE_URL}/logo.png`,
+  description: "Factory-direct manufacturer of authentic papadam, vadam, appalam and South Indian snacks.",
+  contactPoint: {
+    "@type": "ContactPoint",
+    "telephone": "+91-9876543210",
+    "contactType": "Customer Service"
+  },
+  sameAs: [
+    "https://facebook.com/mathuramfoods",
+    "https://instagram.com/mathuramfoods"
+  ]
+};
+
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    "target": `${SITE_URL}/search?q={search_term_string}`,
+    "query-input": "required name=search_term_string"
+  }
 };
 
 export default function RootLayout({
@@ -74,6 +94,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
         />
         <Navbar />
         <CartDrawer />

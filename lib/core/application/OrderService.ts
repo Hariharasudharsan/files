@@ -75,7 +75,7 @@ export class OrderService {
         });
       }
 
-      const event = new OrderCreatedEvent(newOrder.id, newOrder.userId, newOrder.total);
+      const event = new OrderCreatedEvent(newOrder.id, newOrder.userId, newOrder.total.toNumber());
       await eventBus.publishWithinTransaction(tx, event);
 
       return newOrder;

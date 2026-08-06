@@ -18,7 +18,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   const clearCart = useCartStore((s) => s.clearCart);
   const total = useCartStore((s) => s.getTotalPrice());
 
-  const shipping = total > 500 ? 0 : 50;
+  const shipping = total > 999 ? 0 : 50;
 
   const [form, setForm] = useState({ 
     name: initialUser?.name || "", 
@@ -343,12 +343,21 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                 </div>
                 <div className="flex justify-between text-surface-900/80">
                   <span>Shipping Estimate</span>
-                  <span>{shipping === 0 ? "Free" : `₹${shipping}`}</span>
+                  <span>{shipping === 0 ? <span className="text-green-600 font-semibold">Free</span> : `₹${shipping}`}</span>
                 </div>
                 <div className="flex justify-between text-surface-900/80">
                   <span>Taxes</span>
-                  <span>Calculated at next step</span>
+                  <span>Included</span>
                 </div>
+                
+                {/* Coupon Input */}
+                <div className="pt-4 flex gap-2">
+                  <input type="text" placeholder="Gift card or discount code" className="flex-1 bg-white border border-surface-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500" />
+                  <button className="bg-surface-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-800 transition-colors">
+                    Apply
+                  </button>
+                </div>
+
                 <div className="flex items-center justify-between font-display text-2xl font-bold text-surface-950 pt-4 border-t border-surface-200 mt-2">
                   <span>Total</span>
                   <span>₹{(total + shipping).toLocaleString("en-IN")}</span>

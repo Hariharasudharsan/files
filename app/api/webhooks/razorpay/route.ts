@@ -62,7 +62,7 @@ export async function POST(req: Request) {
             },
           });
 
-          await tx.payment.create({
+          await tx.paymentTransaction.create({
             data: {
               orderId,
               amount: verification.amount || 0,
@@ -75,6 +75,29 @@ export async function POST(req: Request) {
           // Emit Domain Event via Outbox inside the same transaction
           const orderPaidEvent = new OrderPaidEvent(orderId, verification.amount || 0, verification.transactionId!);
           await eventBus.publishWithinTransaction(tx, orderPaidEvent);
+        });
+      }
+    } else if (eventType === 'refund.processed') {
+      const refundId = payload.payload.refund.entity.id;
+      const amount = payload.payload.refund.entity.amount / 100;
+      
+      const existingRefund = await prisma.refund.findFirst({
+        where: { transactionId: refundId }
+      });
+      
+      if (existingRefund) {
+        await prisma.refund.update({
+          where: { id: existingRefund.id },
+          data: { status: 'COMPLETED' }
+        });
+        
+        await prisma.auditLog.create({
+          data: {
+            action: "REFUND_WEBHOOK_PROCESSED",
+            entity: "Order",
+            entityId: existingRefund.orderId,
+            details: { refundId, amount }
+          }
         });
       }
     }

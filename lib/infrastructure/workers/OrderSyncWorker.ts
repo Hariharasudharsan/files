@@ -19,15 +19,24 @@ export const orderSyncWorker = createWorker(
       throw new Error(`Order ${orderId} not found in DB`);
     }
 
-    // Attempt sync to ERPNext
-    const result = await erpNextAdapter.syncOrder(order);
+    // Map to expected format
+    const orderForErp = {
+      ...order,
+      total: order.total.toNumber(),
+      subTotal: order.subTotal.toNumber(),
+      taxTotal: order.taxTotal.toNumber(),
+      shippingTotal: order.shippingTotal.toNumber(),
+      discountTotal: order.discountTotal.toNumber(),
+    };
 
-    // Record in SyncLog
-    await prisma.syncLog.create({
+    // Attempt sync to ERPNext
+    const result = await erpNextAdapter.syncOrder(orderForErp as any);
+
+    // Record in ERPSync
+    await prisma.eRPSync.create({
       data: {
         entityType: 'Order',
         entityId: orderId,
-        orderId: orderId,
         targetSystem: 'erpnext',
         targetId: result.erpId || null,
         status: result.success ? 'success' : 'failed',

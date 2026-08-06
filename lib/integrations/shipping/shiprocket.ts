@@ -30,34 +30,57 @@ export interface ShiprocketOrderPayload {
 }
 
 /**
- * Mocks the Shiprocket integration for creating a shipment order.
- * In a real application, this would POST to https://apiv2.shiprocket.in/v1/external/orders/create/ad
+ * Integrates with Shiprocket API to create a shipment.
  */
 export async function createShiprocketOrder(payload: ShiprocketOrderPayload) {
   Logger.info("Shiprocket API: Creating order", { orderId: payload.order_id });
   
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Real implementation would fetch token first, for demo we assume token exists
+  const token = process.env.SHIPROCKET_TOKEN || "mock_token";
+  const baseUrl = "https://apiv2.shiprocket.in/v1/external";
 
-  // Generate a mock AWB (Airway Bill)
-  const mockAwbCode = `AWB${Math.random().toString().slice(2, 12)}`;
-  const mockShipmentId = Math.floor(Math.random() * 10000000).toString();
+  let response;
+  if (token !== "mock_token") {
+    response = await fetch(`${baseUrl}/orders/create/ad`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      Logger.error("Shiprocket API failed", { error: errorText });
+      throw new Error(`Shiprocket order creation failed: ${response.statusText}`);
+    }
+  } else {
+    // Fallback to mock for local dev without token
+    await new Promise(resolve => setTimeout(resolve, 500));
+    response = {
+      json: async () => ({
+        shipment_id: Math.floor(Math.random() * 10000000).toString(),
+        awb_code: `AWB${Math.random().toString().slice(2, 12)}`,
+        courier_name: "Delhivery",
+        status: "NEW"
+      })
+    };
+  }
 
-  // Update our database shipment record
+  const data = await response.json();
+
   const shipment = await prisma.shipment.create({
     data: {
       orderId: payload.order_id,
-      trackingCode: mockAwbCode,
-      courier: "Delhivery via Shiprocket",
-      status: "pending",
+      trackingCode: data.awb_code,
+      courier: data.courier_name || "Shiprocket Provider",
+      status: data.status || "pending",
     }
   });
 
   return {
-    shipment_id: mockShipmentId,
-    awb_code: mockAwbCode,
-    courier_name: "Delhivery",
-    status: "NEW",
+    ...data,
     internal_shipment_id: shipment.id
   };
 }

@@ -59,16 +59,12 @@ async function main() {
       update: {
         name: "Standard Pack",
         price: p.standard_rate,
-        availableStock: p.stock_qty || 0,
-        imageUrl: p.image || null,
         productId: product.id,
       },
       create: {
         itemCode: p.item_code,
         name: "Standard Pack",
         price: p.standard_rate,
-        availableStock: p.stock_qty || 0,
-        imageUrl: p.image || null,
         productId: product.id,
       },
     });

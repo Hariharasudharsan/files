@@ -1,3 +1,4 @@
+import { OrderStatusEnum } from "@/lib/domain/entities/order";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/infrastructure/database/prisma";
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
           data: { paymentStatus: PaymentStatus.PAID }
         });
 
-        await tx.payment.create({
+        await tx.paymentTransaction.create({
           data: {
             orderId: internalOrderId,
             amount: orderRecord.total,
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
           pincode: "" 
         },
         total: Number(orderRecord.total),
-        status: "accepted" as const,
+        status: "PENDING" as const,
         erp_sync_status: "queued" as const,
         created_at: orderRecord.createdAt.toISOString(),
       };

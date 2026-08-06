@@ -27,6 +27,32 @@ services:
       - redisdata:/data
     command: redis-server --appendonly yes
 
+  web:
+    build: .
+    container_name: mathuram_web
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/mathuram_db
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+      - redis
+    command: npm run start
+
+  worker:
+    build: .
+    container_name: mathuram_worker
+    environment:
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/mathuram_db
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+    depends_on:
+      - postgres
+      - redis
+    command: npx tsx worker.ts
+
 volumes:
   pgdata:
   redisdata:

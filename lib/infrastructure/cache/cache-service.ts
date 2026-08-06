@@ -7,7 +7,7 @@ const redisOptions = {
   port: parseInt(process.env.REDIS_PORT || "6379"),
 };
 
-const redisClient = new Redis(redisOptions);
+export const redisClient = new Redis(redisOptions);
 
 redisClient.on("error", (err) => {
   Logger.error("Redis Cache Connection Error", { error: err.message });

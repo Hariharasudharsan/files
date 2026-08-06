@@ -1,25 +1,39 @@
-import type { MetadataRoute } from "next";
-import { getStorefrontProducts } from "@/lib/services/catalog-service";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
+import { MetadataRoute } from 'next'
+import { prisma } from '@/lib/infrastructure/database/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getStorefrontProducts();
+  const baseUrl = 'https://www.mathuramfoods.com'
 
-  const productRoutes = products.map((product) => ({
-    url: `${SITE_URL}/product/${product.slug}`,
-    lastModified: product.updated_at || new Date().toISOString(),
-    changeFrequency: "weekly" as const,
+  // Get all products
+  const products = await prisma.product.findMany({
+    select: { slug: true, updatedAt: true }
+  })
+
+  // Get all categories
+  const categories = await prisma.category.findMany({
+    select: { slug: true, updatedAt: true }
+  })
+
+  const productUrls = products.map((product) => ({
+    url: `${baseUrl}/product/${product.slug}`,
+    lastModified: product.updatedAt,
+    changeFrequency: 'weekly' as const,
     priority: 0.8,
-  }));
+  }))
 
-  return [
-    {
-      url: SITE_URL,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    ...productRoutes,
-  ];
+  const categoryUrls = categories.map((category) => ({
+    url: `${baseUrl}/category/${category.slug}`,
+    lastModified: category.updatedAt,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
+
+  const staticPages = [
+    { url: baseUrl, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 1.0 },
+    { url: `${baseUrl}/search`, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 0.9 },
+    { url: `${baseUrl}/faq`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
+    { url: `${baseUrl}/contact`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
+  ]
+
+  return [...staticPages, ...categoryUrls, ...productUrls]
 }

@@ -49,7 +49,7 @@ export default async function AccountPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {orders.map(order => (
+                {orders.map((order: any) => (
                   <div key={order.id} className="border border-surface-200 rounded-xl p-5 flex justify-between items-center bg-surface-50 hover:bg-white transition-colors hover:border-primary-200 shadow-sm hover:shadow-md">
                     <div>
                       <p className="font-bold text-surface-950">Order #{order.id.slice(0, 8)}</p>
@@ -62,8 +62,8 @@ export default async function AccountPage() {
                     </div>
                     <div className="text-right flex flex-col items-end gap-3">
                       <div>
-                        <p className="font-bold text-lg text-surface-950">₹{order.total.toLocaleString("en-IN")}</p>
-                        <p className="text-sm text-surface-500">{(order as any).items?.length || 0} items</p>
+                        <p className="font-bold text-lg text-surface-950">₹{order.total.toNumber().toLocaleString("en-IN")}</p>
+                        <p className="text-sm text-surface-500">{order.items?.length || 0} items</p>
                       </div>
                       <Link href={`/account/orders/${order.id}`}>
                         <Button variant="outline" size="sm">View Details</Button>

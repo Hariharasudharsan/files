@@ -13,10 +13,13 @@ export const webhookWorker = createWorker(
       const actualQty = payload.actual_qty ?? payload.stock_qty;
 
       if (itemCode && typeof actualQty === 'number') {
-        await prisma.productVariant.updateMany({
-          where: { itemCode },
-          data: { availableStock: actualQty },
-        });
+        const variant = await prisma.productVariant.findUnique({ where: { itemCode } });
+        if (variant) {
+          await prisma.inventoryLevel.updateMany({
+            where: { productVariantId: variant.id },
+            data: { available: actualQty },
+          });
+        }
       }
     }
 

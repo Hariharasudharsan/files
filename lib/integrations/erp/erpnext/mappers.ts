@@ -33,6 +33,8 @@ export function resolveErpImageUrl(baseUrl: string | undefined, path: string | n
 
 export function mapErpItemToProduct(raw: ERPNextItem, baseUrl: string | undefined): Product {
   const slug = raw.item_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  const resolvedImage = resolveErpImageUrl(baseUrl, raw.image);
+  
   return {
     id: raw.name,
     name: raw.item_name,
@@ -42,6 +44,14 @@ export function mapErpItemToProduct(raw: ERPNextItem, baseUrl: string | undefine
     ingredients: null,
     nutritional_info: null,
     shelf_life_days: null,
+    gstRate: 0,
+    isFeatured: false,
+    primaryImage: resolvedImage ? {
+      id: `erp-img-${raw.name}`,
+      url: resolvedImage,
+      alt: raw.item_name,
+      type: "IMAGE"
+    } : null,
     created_at: raw.modified || new Date().toISOString(),
     updated_at: raw.modified || new Date().toISOString(),
     variants: [{
@@ -49,8 +59,21 @@ export function mapErpItemToProduct(raw: ERPNextItem, baseUrl: string | undefine
       item_code: raw.name,
       name: "Standard Pack",
       price: raw.standard_rate ?? 0,
-      available_stock: raw.actual_qty ?? 0,
-      image: resolveErpImageUrl(baseUrl, raw.image),
+      inventoryLevels: [{
+        warehouseId: "default",
+        available: raw.actual_qty ?? 0,
+        reserved: 0,
+        committed: 0,
+        sold: 0,
+        damaged: 0,
+        returned: 0
+      }],
+      images: resolvedImage ? [{
+        id: `erp-img-${raw.name}`,
+        url: resolvedImage,
+        alt: raw.item_name,
+        type: "IMAGE"
+      }] : [],
     }]
   };
 }

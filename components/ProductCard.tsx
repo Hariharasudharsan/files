@@ -14,6 +14,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [justAdded, setJustAdded] = useState(false);
 
   const defaultVariant = product.variants[0];
+  const availableStock = defaultVariant?.inventoryLevels?.reduce((sum, il) => sum + il.available, 0) || 0;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,7 +31,7 @@ export default function ProductCard({ product }: { product: Product }) {
     name: product.name,
     description:
       product.description || `${product.name} — authentic, factory-direct from Mathuram Foods.`,
-    image: defaultVariant?.image || undefined,
+    image: product.primaryImage?.url || undefined,
     sku: defaultVariant?.item_code,
     category: "Mathuram Foods", // Assuming static or fetched category
     brand: { "@type": "Brand", name: "Mathuram Foods" },
@@ -38,7 +39,7 @@ export default function ProductCard({ product }: { product: Product }) {
       "@type": "Offer",
       priceCurrency: "INR",
       price: defaultVariant?.price?.toFixed(2) || "0.00",
-      availability: defaultVariant?.available_stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: availableStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
     },
   };
 
@@ -47,9 +48,9 @@ export default function ProductCard({ product }: { product: Product }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <div className="relative aspect-[4/5] overflow-hidden bg-surface-100">
-        {defaultVariant?.image ? (
+        {product.primaryImage ? (
           <Image
-            src={defaultVariant.image}
+            src={product.primaryImage.url}
             alt={product.name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
@@ -92,7 +93,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <Button
             size="sm"
             onClick={handleAdd}
-            disabled={!defaultVariant || defaultVariant.available_stock <= 0}
+            disabled={!defaultVariant || availableStock <= 0}
             aria-label={`Add ${product.name} to cart`}
             className={`rounded-full h-12 w-12 p-0 shadow-sm transition-all ${
               justAdded ? "bg-green-600 hover:bg-green-700" : ""

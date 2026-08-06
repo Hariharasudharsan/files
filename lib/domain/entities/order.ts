@@ -1,4 +1,4 @@
-import type { Product, ProductVariant } from "@/lib/domain/entities/product";
+import type { ProductVariant } from "@/lib/domain/entities/product";
 
 export interface CheckoutContact {
   name: string;
@@ -22,12 +22,18 @@ export interface CartItem extends ProductVariant {
   qty: number;
 }
 
+export type OrderStatusEnum = 
+  | "DRAFT" | "PENDING" | "AWAITING_PAYMENT" | "AUTHORIZED" 
+  | "PAID" | "CONFIRMED" | "PACKED" | "READY_TO_SHIP" 
+  | "SHIPPED" | "DELIVERED" | "CANCELLED" | "RETURNED" 
+  | "REFUNDED" | "EXPIRED";
+
 export interface StorefrontOrder {
   id: string;
   items: OrderItemInput[];
   contact: CheckoutContact;
   total: number;
-  status: "accepted" | "cancelled" | "fulfilled";
+  status: OrderStatusEnum;
   erp_sync_status: "queued" | "synced" | "failed";
   created_at: string;
 }

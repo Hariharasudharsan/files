@@ -45,3 +45,16 @@ export function verifyPaymentSignature(paymentId: string, orderId: string, signa
 
   return generatedSignature === signature;
 }
+
+/**
+ * Creates a refund in Razorpay.
+ */
+export async function createRefund(paymentId: string, amount: number, receipt?: string) {
+  const amountInPaise = Math.round(amount * 100);
+  
+  return await razorpay.payments.refund(paymentId, {
+    amount: amountInPaise,
+    receipt,
+  });
+}
+

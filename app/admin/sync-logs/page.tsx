@@ -4,9 +4,11 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 
 const formatDistanceToNow = (d: Date) => { const diff = Date.now() - new Date(d).getTime(); return `${Math.floor(diff/60000)} minutes ago`; };
 
+import { replaySync } from "./actions";
+
 export default async function SyncLogsPage() {
-  const logs = await prisma.syncLog.findMany({
-    orderBy: { createdAt: "desc" },
+  const logs = await prisma.eRPSync.findMany({
+    orderBy: { updatedAt: "desc" },
     take: 100,
   });
 
@@ -39,6 +41,7 @@ export default async function SyncLogsPage() {
                 <th className="px-6 py-4 font-semibold">Target ID</th>
                 <th className="px-6 py-4 font-semibold">Attempts</th>
                 <th className="px-6 py-4 font-semibold">Last Updated</th>
+                <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-200 bg-white/50">
@@ -66,6 +69,16 @@ export default async function SyncLogsPage() {
                     <td className="px-6 py-4 text-surface-900/80">{log.attempts}</td>
                     <td className="px-6 py-4 text-surface-900/80 whitespace-nowrap">
                       {new Date(log.updatedAt).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {log.status === "failed" && (
+                        <form action={replaySync}>
+                          <input type="hidden" name="logId" value={log.id} />
+                          <button type="submit" className="px-3 py-1.5 bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs font-semibold rounded-lg transition-colors border border-surface-300">
+                            Replay Sync
+                          </button>
+                        </form>
+                      )}
                     </td>
                   </tr>
                 ))

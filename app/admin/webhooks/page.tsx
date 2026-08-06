@@ -48,7 +48,7 @@ export default async function WebhooksPage() {
                   </td>
                 </tr>
               ) : (
-                webhooks.map((hook) => (
+                webhooks.map((hook: any) => (
                   <tr key={hook.id} className="transition-colors hover:bg-surface-50/50">
                     <td className="px-6 py-4 font-medium text-surface-950 capitalize">{hook.provider}</td>
                     <td className="px-6 py-4 font-mono text-xs text-surface-900/80 bg-surface-100 rounded inline-block mt-3 mb-3 ml-6">{hook.eventType}</td>

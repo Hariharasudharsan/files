@@ -6,9 +6,36 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
   async findById(id: string): Promise<DomainProduct | null> {
     const p = await prisma.product.findUnique({
       where: { id },
-      include: { variants: true }
+      include: {
+        primaryImage: true,
+        variants: {
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
+        }
+      }
     });
     if (!p) return null;
+    return this.mapToDomain(p);
+  }
+
+  async findAll(): Promise<DomainProduct[]> {
+    const products = await prisma.product.findMany({
+      include: {
+        primaryImage: true,
+        variants: {
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
+        }
+      }
+    });
+    return products.map(p => this.mapToDomain(p));
+  }
+
+  private mapToDomain(p: any): DomainProduct {
     return {
       id: p.id,
       slug: p.slug,
@@ -18,43 +45,42 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
       ingredients: p.ingredients,
       nutritional_info: p.nutritionalInfo,
       shelf_life_days: p.shelfLifeDays,
+      gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
+      isFeatured: p.isFeatured,
+      primaryImage: p.primaryImage ? {
+        id: p.primaryImage.id,
+        url: p.primaryImage.url,
+        alt: p.primaryImage.alt,
+        type: p.primaryImage.type,
+      } : null,
       created_at: p.createdAt.toISOString(),
       updated_at: p.updatedAt.toISOString(),
-      variants: p.variants.map(v => ({
+      variants: p.variants.map((v: any) => ({
         id: v.id,
         item_code: v.itemCode,
         name: v.name,
-        price: v.price,
-        available_stock: v.availableStock,
-        image: v.imageUrl,
-      })),
+        price: v.price ? v.price.toNumber() : 0,
+        length: v.length,
+        width: v.width,
+        height: v.height,
+        weightGrams: v.weightGrams,
+        inventoryLevels: v.inventoryLevels?.map((il: any) => ({
+          warehouseId: il.warehouseId,
+          available: il.available,
+          reserved: il.reserved,
+          committed: il.committed,
+          sold: il.sold,
+          damaged: il.damaged,
+          returned: il.returned
+        })) || [],
+        images: v.images?.map((vi: any) => ({
+          id: vi.media.id,
+          url: vi.media.url,
+          alt: vi.media.alt,
+          type: vi.media.type,
+        })) || []
+      }))
     };
-  }
-
-  async findAll(): Promise<DomainProduct[]> {
-    const products = await prisma.product.findMany({
-      include: { variants: true }
-    });
-    return products.map(p => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      description: p.description || "",
-      category_id: p.categoryId,
-      ingredients: p.ingredients,
-      nutritional_info: p.nutritionalInfo,
-      shelf_life_days: p.shelfLifeDays,
-      created_at: p.createdAt.toISOString(),
-      updated_at: p.updatedAt.toISOString(),
-      variants: p.variants.map(v => ({
-        id: v.id,
-        item_code: v.itemCode,
-        name: v.name,
-        price: v.price,
-        available_stock: v.availableStock,
-        image: v.imageUrl,
-      })),
-    }));
   }
 
   async create(entity: Partial<DomainProduct>): Promise<DomainProduct> {
@@ -67,19 +93,31 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
         ingredients: entity.ingredients,
         nutritionalInfo: entity.nutritional_info,
         shelfLifeDays: entity.shelf_life_days,
+        gstRate: entity.gstRate || 0,
+        isFeatured: entity.isFeatured || false,
         variants: {
           create: entity.variants?.map(v => ({
             itemCode: v.item_code,
             name: v.name,
             price: v.price,
-            availableStock: v.available_stock || 0,
-            imageUrl: v.image,
+            length: v.length,
+            width: v.width,
+            height: v.height,
+            weightGrams: v.weightGrams,
           })) || []
         }
       },
-      include: { variants: true }
+      include: {
+        primaryImage: true,
+        variants: {
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
+        }
+      }
     });
-    return this.findById(p.id) as Promise<DomainProduct>;
+    return this.mapToDomain(p);
   }
 
   async update(id: string, entity: Partial<DomainProduct>): Promise<DomainProduct> {
@@ -93,14 +131,20 @@ export class ProductRepository implements IRepository<DomainProduct, string> {
         ingredients: entity.ingredients,
         nutritionalInfo: entity.nutritional_info,
         shelfLifeDays: entity.shelf_life_days,
+        gstRate: entity.gstRate,
+        isFeatured: entity.isFeatured,
       },
-      include: { variants: true }
+      include: {
+        primaryImage: true,
+        variants: {
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
+        }
+      }
     });
-    
-    // For variants update, usually you'd handle that separately or use nested upsert.
-    // Simplifying here for now.
-    
-    return this.findById(p.id) as Promise<DomainProduct>;
+    return this.mapToDomain(p);
   }
 
   async delete(id: string): Promise<boolean> {

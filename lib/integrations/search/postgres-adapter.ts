@@ -43,7 +43,7 @@ export class PostgresSearchAdapter implements ISearchAdapter {
         ...(where.variants || {}),
         some: {
           ...(where.variants?.some || {}),
-          availableStock: { gt: 0 },
+          inventoryLevels: { some: { available: { gt: 0 } } },
         },
       };
     }
@@ -54,7 +54,14 @@ export class PostgresSearchAdapter implements ISearchAdapter {
         prisma.product.count({ where }),
         prisma.product.findMany({
           where,
-          include: { variants: true },
+          include: { 
+            variants: {
+              include: {
+                inventoryLevels: true,
+                images: { include: { media: true } }
+              }
+            } 
+          },
           skip,
           take: limit,
           orderBy: {
@@ -64,7 +71,7 @@ export class PostgresSearchAdapter implements ISearchAdapter {
       ]);
 
       // Map back to Domain Product
-      const hits: Product[] = records.map((p) => ({
+      const hits: Product[] = records.map((p: any) => ({
         id: p.id,
         slug: p.slug,
         name: p.name,
@@ -75,13 +82,13 @@ export class PostgresSearchAdapter implements ISearchAdapter {
         shelf_life_days: p.shelfLifeDays,
         created_at: p.createdAt.toISOString(),
         updated_at: p.updatedAt.toISOString(),
-        variants: p.variants.map(v => ({
+        variants: p.variants.map((v: any) => ({
           id: v.id,
           item_code: v.itemCode,
           name: v.name,
-          price: v.price,
-          available_stock: v.availableStock,
-          image: v.imageUrl,
+          price: v.price.toNumber(),
+          available_stock: v.inventoryLevels?.[0]?.available || 0,
+          image: v.images?.[0]?.media?.url || null,
         })),
       }));
 

@@ -6,12 +6,16 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export async function listPublishedProducts(): Promise<Product[]> {
   try {
-
     const products = await prisma.product.findMany({
       where: { isDeleted: false },
       include: {
+        primaryImage: true,
         variants: {
           where: { isDeleted: false },
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
         }
       }
     });
@@ -25,15 +29,40 @@ export async function listPublishedProducts(): Promise<Product[]> {
       ingredients: p.ingredients,
       nutritional_info: p.nutritionalInfo,
       shelf_life_days: p.shelfLifeDays,
+      gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
+      isFeatured: p.isFeatured,
+      primaryImage: p.primaryImage ? {
+        id: p.primaryImage.id,
+        url: p.primaryImage.url,
+        alt: p.primaryImage.alt,
+        type: p.primaryImage.type,
+      } : null,
       created_at: p.createdAt.toISOString(),
       updated_at: p.updatedAt.toISOString(),
-      variants: p.variants.map(v => ({
+      variants: p.variants.map((v: any) => ({
         id: v.id,
         item_code: v.itemCode,
         name: v.name,
-        price: Number(v.price),
-        available_stock: v.availableStock,
-        image: v.imageUrl,
+        price: v.price ? v.price.toNumber() : 0,
+        length: v.length,
+        width: v.width,
+        height: v.height,
+        weightGrams: v.weightGrams,
+        inventoryLevels: v.inventoryLevels?.map((il: any) => ({
+          warehouseId: il.warehouseId,
+          available: il.available,
+          reserved: il.reserved,
+          committed: il.committed,
+          sold: il.sold,
+          damaged: il.damaged,
+          returned: il.returned
+        })) || [],
+        images: v.images?.map((vi: any) => ({
+          id: vi.media.id,
+          url: vi.media.url,
+          alt: vi.media.alt,
+          type: vi.media.type,
+        })) || []
       })),
     }));
   } catch (error) {
@@ -56,6 +85,8 @@ export async function upsertSyncedProduct(product: Product): Promise<void> {
           ingredients: product.ingredients,
           nutritionalInfo: product.nutritional_info,
           shelfLifeDays: product.shelf_life_days,
+          gstRate: product.gstRate || 0,
+          isFeatured: product.isFeatured || false,
           isDeleted: false,
         },
         update: {
@@ -65,6 +96,8 @@ export async function upsertSyncedProduct(product: Product): Promise<void> {
           ingredients: product.ingredients,
           nutritionalInfo: product.nutritional_info,
           shelfLifeDays: product.shelf_life_days,
+          gstRate: product.gstRate,
+          isFeatured: product.isFeatured,
           isDeleted: false,
         },
       });
@@ -78,16 +111,20 @@ export async function upsertSyncedProduct(product: Product): Promise<void> {
             itemCode: variant.item_code,
             name: variant.name,
             price: variant.price,
-            availableStock: variant.available_stock,
-            imageUrl: variant.image,
+            length: variant.length,
+            width: variant.width,
+            height: variant.height,
+            weightGrams: variant.weightGrams,
             isDeleted: false,
           },
           update: {
             productId: dbProduct.id,
             name: variant.name,
             price: variant.price,
-            availableStock: variant.available_stock,
-            imageUrl: variant.image,
+            length: variant.length,
+            width: variant.width,
+            height: variant.height,
+            weightGrams: variant.weightGrams,
             isDeleted: false,
           },
         });
@@ -112,9 +149,25 @@ export async function removeSyncedProduct(slug: string): Promise<void> {
 
 export async function updateInventorySnapshot(snapshot: InventorySnapshot): Promise<void> {
   try {
-    await prisma.productVariant.update({
-      where: { itemCode: snapshot.item_code },
-      data: { availableStock: snapshot.available_qty },
+    const variant = await prisma.productVariant.findUnique({
+      where: { itemCode: snapshot.item_code }
+    });
+    if (!variant) return;
+
+    await prisma.inventoryLevel.upsert({
+      where: { 
+        warehouseId_productVariantId: {
+          warehouseId: snapshot.warehouseId,
+          productVariantId: variant.id
+        }
+      },
+      update: { available: snapshot.available_qty, reserved: snapshot.reserved_qty || 0 },
+      create: {
+        warehouseId: snapshot.warehouseId,
+        productVariantId: variant.id,
+        available: snapshot.available_qty,
+        reserved: snapshot.reserved_qty || 0
+      }
     });
   } catch (error) {
     Logger.error("Failed to update inventory snapshot", { itemCode: snapshot.item_code, error });
