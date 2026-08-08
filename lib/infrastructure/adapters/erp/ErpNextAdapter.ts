@@ -1,5 +1,6 @@
 import { ErpPort, SyncResult } from '../../../core/domain/ports/ErpPort';
 import { Order, User } from "@/generated/prisma/client";
+import { mapPrismaOrderToErpSalesOrder } from "../../../integrations/erp/erpnext/mappers";
 
 export class ErpNextAdapter implements ErpPort {
   private baseUrl: string;
@@ -19,15 +20,15 @@ export class ErpNextAdapter implements ErpPort {
     };
   }
 
-  async syncOrder(order: Order): Promise<SyncResult> {
+  async syncOrder(order: any): Promise<SyncResult> {
     try {
+      const erpCustomerId = order.user?.erpId || "Website Walk-in";
+      const payload = mapPrismaOrderToErpSalesOrder(order, erpCustomerId);
+
       const response = await fetch(`${this.baseUrl}/api/resource/Sales Order`, {
         method: 'POST',
         headers: this.headers,
-        body: JSON.stringify({
-          customer: order.userId, 
-          // Note: Needs mapping of local user to ERP customer name
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -80,6 +81,43 @@ export class ErpNextAdapter implements ErpPort {
       return 0;
     } catch {
       return 0;
+    }
+  }
+
+  async createPaymentEntry(orderId: string, amount: number, transactionId: string): Promise<SyncResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/resource/Payment Entry`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({
+          payment_type: "Receive",
+          party_type: "Customer",
+          // Note: party requires customer name which might not be orderId. 
+          // Ideally this should fetch the Sales Order to get the customer, or be passed in.
+          // For this implementation, we will pass dummy or fetch later if needed.
+          reference_no: transactionId,
+          reference_date: new Date().toISOString().split('T')[0],
+          paid_amount: amount,
+          received_amount: amount,
+          references: [
+            {
+              reference_doctype: "Sales Order",
+              reference_name: orderId,
+              allocated_amount: amount
+            }
+          ]
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        return { success: false, error: `ERPNext Payment Entry failed ${response.status}: ${errorData}` };
+      }
+
+      const data = await response.json();
+      return { success: true, erpId: data.data.name };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   }
 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createStorefrontOrder } from "@/lib/repositories/order-repository";
-import { initializePayment } from "@/lib/integrations/payments/razorpay";
+import { OrderService } from "@/lib/core/application/OrderService";
 import { Logger } from "@/lib/infrastructure/logger";
 import { validateCreateOrderPayload } from "@/lib/validation/orders";
 
@@ -16,23 +15,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Create the order in PostgreSQL (Status: PENDING, PaymentStatus: UNPAID)
-    const order = await createStorefrontOrder(validation.data);
+    // 1. Create the order and initialize payment via OrderService
+    const checkoutResult = await OrderService.checkout({
+      contact: validation.data.contact,
+      items: validation.data.items,
+    });
 
-    // 2. Initialize Razorpay Payment
-    const paymentInit = await initializePayment(order);
+    if (!checkoutResult.paymentIntent.success) {
+      throw new Error(checkoutResult.paymentIntent.error || "Payment initialization failed");
+    }
 
     Logger.info("Payment session initialized", { 
-      orderId: order.id, 
-      razorpayOrderId: paymentInit.orderId 
+      orderId: checkoutResult.orderId, 
+      razorpayOrderId: checkoutResult.paymentIntent.transactionId 
     });
 
     return NextResponse.json({ 
       success: true, 
-      orderId: order.id,
-      razorpayOrderId: paymentInit.orderId,
-      amount: paymentInit.amount,
-      currency: paymentInit.currency,
+      orderId: checkoutResult.orderId,
+      razorpayOrderId: checkoutResult.paymentIntent.transactionId,
+      amount: checkoutResult.paymentIntent.amount,
+      currency: checkoutResult.paymentIntent.currency,
       key: process.env.RAZORPAY_KEY_ID
     }, { status: 200 });
   } catch (err) {

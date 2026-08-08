@@ -20,6 +20,7 @@ export interface ProductVariant {
   item_code: string;
   name: string;
   price: number;
+  wholesalePrice?: number | null;
   length?: number | null;
   width?: number | null;
   height?: number | null;

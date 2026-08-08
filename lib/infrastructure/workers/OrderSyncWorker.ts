@@ -12,11 +12,25 @@ export const orderSyncWorker = createWorker(
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { user: true, items: true },
+      include: { user: true, items: true, coupon: true },
     });
 
     if (!order) {
       throw new Error(`Order ${orderId} not found in DB`);
+    }
+
+    // Ensure customer is synced to ERPNext
+    if (order.user && !order.user.erpId) {
+      console.log(`Syncing customer ${order.user.email} to ERPNext before order sync...`);
+      const customerSyncResult = await erpNextAdapter.syncCustomer(order.user);
+      if (customerSyncResult.success && customerSyncResult.erpId) {
+        order.user = await prisma.user.update({
+          where: { id: order.user.id },
+          data: { erpId: customerSyncResult.erpId },
+        });
+      } else {
+        console.warn(`Failed to sync customer ${order.user.email} to ERPNext, proceeding with Guest or Walk-in`);
+      }
     }
 
     // Map to expected format

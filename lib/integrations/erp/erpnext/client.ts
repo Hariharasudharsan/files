@@ -48,7 +48,7 @@ export class ERPNextClient {
     }
 
     const fields = encodeURIComponent(
-      JSON.stringify(["name", "item_name", "standard_rate", "image", "description", "item_group"]),
+      JSON.stringify(["name", "item_name", "standard_rate", "image", "description", "item_group", "item_tax_template", "taxes", "weight_per_unit", "custom_length", "custom_width", "custom_height", "end_of_life", "custom_wholesale_rate", "custom_carton_rate", "custom_carton_weight"]),
     );
     const filters = encodeURIComponent(JSON.stringify([["show_in_website", "=", 1]]));
     const url = this.endpoint(

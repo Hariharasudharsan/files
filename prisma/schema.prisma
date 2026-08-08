@@ -219,6 +219,7 @@ model ProductVariant {
   name           String // e.g., "250g Pack", "500g Pack"
   price          Decimal  @db.Decimal(10, 2)
   compareAtPrice Decimal? @db.Decimal(10, 2)
+  wholesalePrice Decimal? @db.Decimal(10, 2)
 
   // Physical properties
   weightGrams Float?
@@ -277,6 +278,7 @@ model User {
   phone         String?
   erpId         String?   @unique // ERP Customer ID
   role          Role      @default(CUSTOMER)
+  isB2B         Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -393,6 +395,9 @@ model Order {
 
   couponId String?
   coupon   Coupon? @relation(fields: [couponId], references: [id])
+  
+  shippingAddress Json?
+  billingAddress  Json?
 
   status            OrderStatus       @default(PENDING)
   paymentStatus     PaymentStatus     @default(UNPAID)

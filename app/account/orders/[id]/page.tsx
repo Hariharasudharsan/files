@@ -171,11 +171,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <div className="bg-white rounded-2xl border border-surface-200 p-6 shadow-sm">
             <h2 className="text-lg font-bold text-surface-950 mb-4">Shipping Address</h2>
             <div className="text-sm text-surface-700 leading-relaxed">
-              <p className="font-semibold text-surface-950 mb-1">{session.user.name}</p>
-              <p>123 Customer Street</p>
-              <p>Apartment 4B</p>
-              <p>Chennai, Tamil Nadu 600001</p>
-              <p className="mt-2">Ph: +91 9876543210</p>
+              {order.shippingAddress ? (
+                <>
+                  <p className="font-semibold text-surface-950 mb-1">{(order.shippingAddress as any).name || session.user.name}</p>
+                  <p>{(order.shippingAddress as any).address}</p>
+                  <p>{(order.shippingAddress as any).city}, {(order.shippingAddress as any).state} {(order.shippingAddress as any).pincode}</p>
+                  <p className="mt-2">Ph: {(order.shippingAddress as any).phone}</p>
+                </>
+              ) : (
+                <p className="italic text-surface-400">No shipping address recorded.</p>
+              )}
             </div>
           </div>
         </div>

@@ -7,7 +7,13 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 export async function listPublishedProducts(): Promise<Product[]> {
   try {
     const products = await prisma.product.findMany({
-      where: { isDeleted: false },
+      where: { 
+        isDeleted: false,
+        OR: [
+          { shelfLifeDays: { gt: 0 } },
+          { shelfLifeDays: null }
+        ]
+      },
       include: {
         primaryImage: true,
         variants: {
@@ -44,6 +50,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
         item_code: v.itemCode,
         name: v.name,
         price: v.price ? v.price.toNumber() : 0,
+        wholesalePrice: v.wholesalePrice ? v.wholesalePrice.toNumber() : null,
         length: v.length,
         width: v.width,
         height: v.height,
@@ -74,6 +81,35 @@ export async function listPublishedProducts(): Promise<Product[]> {
 export async function upsertSyncedProduct(product: Product): Promise<void> {
   try {
     await prisma.$transaction(async (tx) => {
+      // Auto-create category if provided and doesn't exist
+      if (product.category_id) {
+        const existingCategory = await tx.category.findUnique({
+          where: { id: product.category_id }
+        });
+        
+        // Sometimes the category might be looked up by slug if id is a string name
+        const existingBySlug = !existingCategory ? await tx.category.findFirst({
+          where: { slug: product.category_id.toLowerCase().replace(/[^a-z0-9]+/g, '-') }
+        }) : null;
+
+        let finalCategoryId = existingCategory?.id || existingBySlug?.id;
+
+        if (!finalCategoryId) {
+          const newSlug = product.category_id.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          const newCategory = await tx.category.create({
+            data: {
+              name: product.category_id,
+              slug: newSlug,
+              description: `Auto-created from ERPNext item group: ${product.category_id}`,
+            }
+          });
+          finalCategoryId = newCategory.id;
+        }
+
+        // Overwrite the product's category_id with the actual DB ID
+        product.category_id = finalCategoryId;
+      }
+
       const dbProduct = await tx.product.upsert({
         where: { slug: product.slug },
         create: {
@@ -111,6 +147,7 @@ export async function upsertSyncedProduct(product: Product): Promise<void> {
             itemCode: variant.item_code,
             name: variant.name,
             price: variant.price,
+            wholesalePrice: variant.wholesalePrice,
             length: variant.length,
             width: variant.width,
             height: variant.height,
@@ -121,6 +158,7 @@ export async function upsertSyncedProduct(product: Product): Promise<void> {
             productId: dbProduct.id,
             name: variant.name,
             price: variant.price,
+            wholesalePrice: variant.wholesalePrice,
             length: variant.length,
             width: variant.width,
             height: variant.height,

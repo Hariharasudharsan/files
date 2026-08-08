@@ -14,7 +14,16 @@ export async function POST(req: Request) {
     }
 
     const payload = await req.json();
-    const eventType = payload.event || 'stock_update';
+    const docType = payload.doctype;
+    let eventType = payload.event;
+    if (!eventType && docType) {
+      if (docType === 'Delivery Note') eventType = 'delivery_note';
+      else if (docType === 'Sales Invoice') eventType = 'sales_invoice';
+      else if (docType === 'Sales Order') eventType = 'sales_order';
+      else eventType = 'stock_update';
+    } else if (!eventType) {
+      eventType = 'stock_update';
+    }
 
     // Store in WebhookEvent for audit & fast acknowledgment
     const webhookRecord = await prisma.webhookEvent.create({
