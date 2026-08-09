@@ -5,6 +5,30 @@ import { ErpApiClient } from "@/lib/integrations/erp/client";
 
 export async function POST(req: Request) {
   try {
+    // Basic rate limit to prevent spam (max 50 reqs / min per IP)
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    
+    // Quick in-memory store hack (resets when Edge isolate goes down)
+    const globalStore = global as any;
+    globalStore.webhookRateLimit = globalStore.webhookRateLimit || new Map();
+    const store = globalStore.webhookRateLimit;
+    
+    const now = Date.now();
+    const attempt = store.get(ip) || { count: 0, timestamp: now };
+    
+    if (now - attempt.timestamp > 60000) {
+      attempt.count = 1;
+      attempt.timestamp = now;
+    } else {
+      attempt.count += 1;
+    }
+    
+    store.set(ip, attempt);
+    
+    if (attempt.count > 50) {
+      return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+    }
+
     const rawBody = await req.text();
     const signature = req.headers.get('x-frappe-webhook-signature') || '';
 

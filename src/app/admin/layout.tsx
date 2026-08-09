@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
 import { redirect } from "next/navigation";

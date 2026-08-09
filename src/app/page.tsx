@@ -2,8 +2,11 @@ import { Factory, Leaf, ShieldCheck, Sun, Star } from "lucide-react";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import { getStorefrontProducts } from "@/lib/services/catalog-service";
+import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+
+export const dynamic = "force-dynamic";
 
 const USPS = [
   { icon: Factory, label: "Factory Direct", desc: "No middlemen — priced at source" },
@@ -16,9 +19,20 @@ export default async function Home() {
   const products = await getStorefrontProducts();
   const featured = products.slice(0, 4);
 
+  let banners: any[] = [];
+  try {
+    banners = await prisma.banner.findMany({
+      where: { isActive: true },
+      include: { media: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (e) {
+    console.warn("Database unreachable during build. Skipping banners fetch for home page.");
+  }
+
   return (
     <>
-      <Hero />
+      <Hero banners={banners} />
 
       {/* Trust strip */}
       <section className="bg-surface-50 border-b border-surface-200">

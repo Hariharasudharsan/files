@@ -73,7 +73,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
       })),
     }));
   } catch (error) {
-    Logger.error("Error fetching published products from DB", { error });
+    Logger.warn("Error fetching published products from DB", { error });
     return [];
   }
 }

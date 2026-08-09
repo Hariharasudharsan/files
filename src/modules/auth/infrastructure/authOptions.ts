@@ -4,6 +4,11 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+// Simple in-memory rate limiter for login
+const loginAttempts = new Map<string, { count: number, timestamp: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma as any) as any,
   providers: [
@@ -16,8 +21,26 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email", placeholder: "demo@example.com" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email) return null;
+        
+        // Rate limiting
+        const ip = req?.headers?.['x-forwarded-for'] || 'unknown';
+        const now = Date.now();
+        const attempt = loginAttempts.get(ip) || { count: 0, timestamp: now };
+        
+        if (now - attempt.timestamp > WINDOW_MS) {
+          attempt.count = 1;
+          attempt.timestamp = now;
+        } else {
+          attempt.count += 1;
+        }
+        
+        loginAttempts.set(ip, attempt);
+        
+        if (attempt.count > MAX_ATTEMPTS) {
+          throw new Error("Too many login attempts. Please try again later.");
+        }
         
         let user = await prisma.user.findUnique({
           where: { email: credentials.email }

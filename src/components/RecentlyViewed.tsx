@@ -44,6 +44,7 @@ export default function RecentlyViewed({ currentProductId }: { currentProductId?
         if (currentProductId) {
           items = items.filter(i => i.id !== currentProductId);
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setProducts(items.slice(0, 4));
       }
     } catch (err) {

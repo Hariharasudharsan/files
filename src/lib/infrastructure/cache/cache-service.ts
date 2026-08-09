@@ -9,8 +9,12 @@ const redisOptions = {
 
 export const redisClient = new Redis(redisOptions);
 
+let hasLoggedRedisError = false;
 redisClient.on("error", (err) => {
-  Logger.error("Redis Cache Connection Error", { error: err.message });
+  if (!hasLoggedRedisError) {
+    console.warn(`[WARN] Redis Cache Connection Error: ${err.message}. Cache will be bypassed.`);
+    hasLoggedRedisError = true;
+  }
 });
 
 /**
@@ -40,42 +44,35 @@ class EnterpriseCacheService {
         redisClient.incr(CachePolicy.Metrics.Hits).catch(() => {});
         return JSON.parse(cachedData) as T;
       }
-    } catch (error) {
-      Logger.error("Redis GET Error", { key, error });
-    }
 
-    // Cache Miss Metric
-    redisClient.incr(CachePolicy.Metrics.Misses).catch(() => {});
+      // Cache Miss Metric
+      redisClient.incr(CachePolicy.Metrics.Misses).catch(() => {});
 
-    // 2. Distributed Stampede Protection using Redis SET NX
-    const lockKey = `lock:${key}`;
-    const acquiredLock = await redisClient.set(lockKey, "1", "EX", 10, "NX");
+      // 2. Distributed Stampede Protection using Redis SET NX
+      const lockKey = `lock:${key}`;
+      const acquiredLock = await redisClient.set(lockKey, "1", "EX", 10, "NX");
 
-    if (!acquiredLock) {
-      // 3. We didn't get the lock. Another node is fetching it. 
-      // We must wait for the data to be populated or the lock to expire.
-      // We can poll Redis for a short duration.
-      for (let i = 0; i < 20; i++) { // Poll for up to 10 seconds (20 * 500ms)
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const data = await redisClient.get(key);
-        if (data) return JSON.parse(data) as T;
+      if (!acquiredLock) {
+        for (let i = 0; i < 20; i++) { // Poll for up to 10 seconds (20 * 500ms)
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const data = await redisClient.get(key);
+          if (data) return JSON.parse(data) as T;
+        }
+        Logger.warn("Cache stampede wait timed out, proceeding to fetch directly", { key });
+        return await fetcher();
       }
-      Logger.warn("Cache stampede wait timed out, proceeding to fetch directly", { key });
-      // If it times out, just fetch directly as a fallback
+
+      // 4. We got the lock! We are the chosen instance to fetch the data.
+      try {
+        const freshData = await fetcher();
+        await redisClient.set(key, JSON.stringify(freshData), "EX", ttlSeconds);
+        return freshData;
+      } finally {
+        await redisClient.del(lockKey).catch(() => {});
+      }
+    } catch (error) {
+      Logger.warn("Redis Exception, bypassing cache", { key });
       return await fetcher();
-    }
-
-    // 4. We got the lock! We are the chosen instance to fetch the data.
-    try {
-      const freshData = await fetcher();
-      
-      // Save to Redis
-      await redisClient.set(key, JSON.stringify(freshData), "EX", ttlSeconds);
-
-      return freshData;
-    } finally {
-      // 5. Release the lock so subsequent requests can fail-over gracefully if this node crashes
-      await redisClient.del(lockKey).catch(() => {});
     }
   }
 

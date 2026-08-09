@@ -2,6 +2,8 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 import ProductCard from "@/components/ProductCard";
 import { SlidersHorizontal } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function SearchPage({
   searchParams,
 }: {

@@ -2,9 +2,21 @@ import { notFound } from "next/navigation";
 import { getProductsByCategory } from "@/lib/services/catalog-service";
 import ProductCard from "@/components/ProductCard";
 import { Filter, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Metadata } from "next";
 
 // Categories available mapping
 const CATEGORIES = ["Appalam", "Papadam", "Vadam", "Combo Packs", "Masala", "Rice Products", "Gift Boxes", "Snacks", "Chips"];
+
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const categoryName = CATEGORIES.find(c => c.toLowerCase().replace(" ", "-") === slug.toLowerCase());
+  
+  return {
+    title: categoryName ? `${categoryName} | Authentic Indian Delicacies` : "Category Not Found",
+  };
+}
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

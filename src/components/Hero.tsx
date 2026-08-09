@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -14,14 +15,29 @@ function DecorativeElement() {
   );
 }
 
-export default function Hero() {
+export default function Hero({ banners }: { banners: { title: string, link: string | null, media: { url: string } | null }[] }) {
+  const [currentBanner, setCurrentBanner] = useState(banners[0]);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBanner(prev => {
+        const currentIndex = banners.findIndex(b => b.title === prev.title);
+        return banners[(currentIndex + 1) % banners.length];
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [banners]);
+
   return (
-    <section className="relative bg-surface-950 text-primary-50 px-4 py-24 sm:py-32 lg:py-48 overflow-hidden">
+    <section className="relative bg-surface-950 text-primary-50 px-4 py-24 sm:py-32 lg:py-48 overflow-hidden transition-all duration-1000 ease-in-out" 
+             style={currentBanner?.media?.url ? { backgroundImage: `url(${currentBanner.media.url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}>
       {/* Background Image / Overlay */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-surface-950/80 mix-blend-multiply z-10" />
-        {/* Placeholder for actual hero image, currently a solid gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary-950 to-surface-950" />
+        <div className="absolute inset-0 bg-surface-950/70 mix-blend-multiply z-10" />
+        {!currentBanner?.media?.url && (
+          <div className="absolute inset-0 bg-gradient-to-b from-primary-950 to-surface-950" />
+        )}
       </div>
 
       <DecorativeElement />
@@ -36,8 +52,12 @@ export default function Hero() {
             100% Natural • No Preservatives
           </span>
           <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight drop-shadow-xl">
-            The Authentic Taste of <br />
-            <span className="text-primary-400">South Indian Tradition.</span>
+            {currentBanner?.title || (
+              <>
+                The Authentic Taste of <br />
+                <span className="text-primary-400">South Indian Tradition.</span>
+              </>
+            )}
           </h1>
           <p className="mx-auto max-w-2xl text-lg sm:text-xl text-primary-100/90 mb-10 font-medium drop-shadow-md">
             Premium factory-direct Appalams, Vadams, and Pickles. Sun-dried, hygienically packed, and delivered straight to your kitchen.

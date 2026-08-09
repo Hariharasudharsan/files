@@ -1,6 +1,8 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
@@ -20,10 +22,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Fetch dynamic products
-  const products = await prisma.product.findMany({
-    where: { isDeleted: false },
-    select: { slug: true, updatedAt: true },
-  });
+  let products: any[] = [];
+  try {
+    products = await prisma.product.findMany({
+      where: { isDeleted: false },
+      select: { slug: true, updatedAt: true },
+    });
+  } catch (e) {
+    console.warn("Database unreachable during build. Skipping products fetch for sitemap.");
+  }
 
   const productRoutes = products.map((product) => ({
     url: `${SITE_URL}/product/${product.slug}`,
@@ -33,10 +40,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Fetch dynamic categories
-  const categories = await prisma.category.findMany({
-    where: { isDeleted: false },
-    select: { slug: true, updatedAt: true },
-  });
+  let categories: any[] = [];
+  try {
+    categories = await prisma.category.findMany({
+      where: { isDeleted: false },
+      select: { slug: true, updatedAt: true },
+    });
+  } catch (e) {
+    console.warn("Database unreachable during build. Skipping categories fetch for sitemap.");
+  }
 
   const categoryRoutes = categories.map((category) => ({
     url: `${SITE_URL}/category/${category.slug}`,

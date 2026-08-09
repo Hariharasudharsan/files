@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
 const CMS_MODULES = [
-  { name: "Homepage Builder", icon: Monitor, href: "/admin/cms/homepage", desc: "Drag and drop layout builder for the main storefront." },
+  { name: "Custom Pages", icon: FileText, href: "/admin/cms/pages", desc: "Create and publish bespoke landing pages and legal policies." },
   { name: "Hero Banners", icon: AppWindow, href: "/admin/cms/banners", desc: "Manage rotating banners and promotional headers." },
   { name: "Navigation Menu", icon: Navigation, href: "/admin/cms/navigation", desc: "Edit main menu, mega-menus, and links." },
   { name: "Footer Links", icon: AlignLeft, href: "/admin/cms/footer", desc: "Manage footer columns and legal links." },
