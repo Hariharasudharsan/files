@@ -1,4 +1,4 @@
-import { DomainEventBus } from "../event-bus";
+import { eventBus } from "../EventBus";
 import { CacheService } from "../../cache/cache-service";
 import { CacheNamespaces } from "../../cache/cache-policies";
 import { getStorefrontProducts } from "@/lib/services/catalog-service";
@@ -10,10 +10,10 @@ import { Logger } from "../../logger";
  * invalidates records when business events (like ERP syncs) occur, without tightly
  * coupling the caching logic to the repository.
  */
-import type { ProductUpdatedEvent } from "@/lib/domain/events";
+import type { ProductUpdatedEvent } from "@/lib/core/domain/events/DomainEvent";
 
 export function initializeCacheInvalidators() {
-  DomainEventBus.subscribe("ProductUpdated", async (e) => {
+  eventBus.subscribe("ProductUpdated", async (e) => {
     const event = e as ProductUpdatedEvent;
     Logger.info("[CacheInvalidator] Invalidating catalog cache for ProductUpdated event", { slug: event.payload.slug });
     

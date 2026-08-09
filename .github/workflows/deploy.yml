@@ -48,3 +48,6 @@ jobs:
         
       - name: Build Web Image
         run: docker build -t mathuram/web:latest .
+        
+      - name: Build Worker Image
+        run: docker build -f Dockerfile.worker -t mathuram/worker:latest .

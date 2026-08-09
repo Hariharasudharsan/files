@@ -23,14 +23,16 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   const [form, setForm] = useState({ 
     name: initialUser?.name || "", 
     email: initialUser?.email || "", 
-    phone: "", address: "", city: "", state: "", pincode: "" 
+    phone: "", address: "", city: "", state: "", pincode: "",
+    whatsappOptIn: true
   });
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
+    setForm((f) => ({ ...f, [e.target.name]: value }));
     // Clear individual error when user types
     if (validationErrors[e.target.name]) {
       setValidationErrors((prev) => ({ ...prev, [e.target.name]: "" }));
@@ -235,6 +237,19 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                     placeholder="priya@example.com"
                   />
                   {validationErrors.email && <p className="mt-1 text-xs text-red-500">{validationErrors.email}</p>}
+                </div>
+                
+                <div className="pt-2">
+                  <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
+                    <input 
+                      type="checkbox" 
+                      name="whatsappOptIn"
+                      checked={form.whatsappOptIn}
+                      onChange={handleChange}
+                      className="w-4 h-4 rounded border-surface-300 text-green-600 focus:ring-green-600 accent-green-600" 
+                    />
+                    <span className="group-hover:text-surface-950 transition-colors font-medium">Get order updates and offers on WhatsApp</span>
+                  </label>
                 </div>
               </div>
 

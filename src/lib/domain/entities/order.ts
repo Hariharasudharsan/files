@@ -17,8 +17,11 @@ export interface OrderItemInput {
 }
 
 export interface CartItem extends ProductVariant {
+  product_id: string;
   product_name: string;
   product_slug: string;
+  product_image?: string;
+  product_category?: string;
   qty: number;
 }
 

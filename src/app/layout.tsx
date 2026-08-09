@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import dynamic from "next/dynamic";
 import Footer from "@/components/Footer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import MobileBottomNav from "@/components/ui/MobileBottomNav";
 
 const CartDrawer = dynamic(() => import("@/components/CartDrawer"));
 import "./globals.css";
@@ -107,6 +108,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppWidget />
+        <MobileBottomNav />
       </body>
     </html>
   );

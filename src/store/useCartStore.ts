@@ -44,8 +44,11 @@ export const useCartStore = create<CartState>()(
               )
             : [...state.items, { 
                 ...variant, 
+                product_id: product.id,
                 product_name: product.name, 
                 product_slug: product.slug, 
+                product_image: product.images?.[0]?.url || "",
+                product_category: product.category_id || "",
                 qty 
               }];
           return { items, isOpen: true };

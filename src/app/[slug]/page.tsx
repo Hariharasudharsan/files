@@ -1,8 +1,7 @@
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { notFound } from "next/navigation";
-import { remark } from 'remark';
-import html from 'remark-html';
 import { Metadata } from 'next';
+import { ComponentRegistry } from "@/components/cms/ComponentRegistry";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   let page: any = null;
   try {
     page = await prisma.cmsPage.findFirst({
-      where: { slug, isPublished: true },
+      where: { slug, status: "PUBLISHED" },
     });
   } catch (e) {
     console.warn("Database unreachable during build. Skipping metadata fetch for CMS page.");
@@ -37,33 +36,37 @@ export default async function DynamicCmsPage({ params }: { params: Promise<{ slu
   }
 
   let page: any = null;
+  let version: any = null;
+  
   try {
     page = await prisma.cmsPage.findFirst({
-      where: { slug, isPublished: true },
+      where: { slug, status: "PUBLISHED" },
     });
+
+    if (page && page.activeVersionId) {
+      version = await prisma.cmsPageVersion.findUnique({
+        where: { id: page.activeVersionId },
+      });
+    }
   } catch (e) {
     console.warn("Database unreachable during build. Skipping content fetch for CMS page.");
   }
 
-  if (!page) {
+  if (!page || !version) {
     notFound();
   }
 
-  // Parse markdown content to HTML
-  const processedContent = await remark()
-    .use(html)
-    .process(page.content);
-  const contentHtml = processedContent.toString();
+  // Content should be a JSON array of blocks
+  let blocks = [];
+  try {
+    blocks = typeof version.content === "string" ? JSON.parse(version.content) : version.content;
+  } catch (e) {
+    console.error("Failed to parse CMS blocks:", e);
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <h1 className="font-display text-4xl font-bold text-surface-950 mb-8">{page.title}</h1>
-        <div 
-          className="prose prose-lg prose-surface max-w-none prose-headings:font-display prose-a:text-primary-600 hover:prose-a:text-primary-700"
-          dangerouslySetInnerHTML={{ __html: contentHtml }} 
-        />
-      </div>
+      <ComponentRegistry blocks={blocks} />
     </div>
   );
 }

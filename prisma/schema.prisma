@@ -635,14 +635,31 @@ model ReplayQueue {
 // ----------------------------------------------------
 
 model CmsPage {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  content     String   @db.Text
-  isPublished Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  status          String   @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  publishedAt     DateTime?
+  activeVersionId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  versions CmsPageVersion[]
 }
+
+model CmsPageVersion {
+  id        String   @id @default(uuid())
+  pageId    String
+  page      CmsPage  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  version   Int
+  content   Json
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([pageId, version])
+}
+
+
 
 model CmsBlock {
   id        String   @id @default(uuid())
@@ -784,6 +801,16 @@ model NotificationPreference {
   smsPromos   Boolean @default(false)
 }
 
+model EventLog {
+  id          String   @id @default(uuid())
+  eventName   String   // e.g., page_view, add_to_cart, checkout
+  userId      String?
+  sessionId   String?
+  url         String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+}
+
 model LoyaltyAccount {
   id            String               @id @default(uuid())
   userId        String               @unique
@@ -870,6 +897,7 @@ model FeatureFlag {
   name        String
   description String?
   isEnabled   Boolean  @default(false)
+  rules       Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -51,9 +51,9 @@ export default async function AdminPagesPage() {
                     <td className="px-6 py-4 font-bold text-surface-950">{page.title}</td>
                     <td className="px-6 py-4 text-primary-600 font-mono">/{page.slug}</td>
                     <td className="px-6 py-4">
-                      <form action={async () => { "use server"; await togglePagePublish(page.id, !page.isPublished); }}>
-                        <button type="submit" className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${page.isPublished ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-surface-100 text-surface-600 border border-surface-200'}`}>
-                          {page.isPublished ? <><CheckCircle2 className="w-3 h-3"/> Published</> : <><XCircle className="w-3 h-3"/> Draft</>}
+                      <form action={async () => { "use server"; await togglePagePublish(page.id, page.status !== "PUBLISHED"); }}>
+                        <button type="submit" className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${page.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-surface-100 text-surface-600 border border-surface-200'}`}>
+                          {page.status === 'PUBLISHED' ? <><CheckCircle2 className="w-3 h-3"/> Published</> : <><XCircle className="w-3 h-3"/> Draft</>}
                         </button>
                       </form>
                     </td>

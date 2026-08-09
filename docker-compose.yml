@@ -42,7 +42,9 @@ services:
     command: npm run start
 
   worker:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile.worker
     container_name: mathuram_worker
     environment:
       - DATABASE_URL=postgres://postgres:password@postgres:5432/mathuram_db
@@ -51,7 +53,6 @@ services:
     depends_on:
       - postgres
       - redis
-    command: npx tsx worker.ts
 
 volumes:
   pgdata:

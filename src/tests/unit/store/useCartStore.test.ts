@@ -15,7 +15,7 @@ describe('useCartStore', () => {
     variants: [],
     created_at: '',
     updated_at: '',
-  };
+  } as any;
 
   const mockVariant = {
     id: 'v1',
@@ -24,7 +24,7 @@ describe('useCartStore', () => {
     price: 100,
     inventoryLevels: [],
     images: [],
-  };
+  } as any;
 
   it('should initialize with an empty cart', () => {
     const state = useCartStore.getState();

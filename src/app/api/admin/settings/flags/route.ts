@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/infrastructure/database/prisma";
+
+export async function GET() {
+  try {
+    const flags = await prisma.featureFlag.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json(flags);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch flags" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const data = await req.json();
+    const flag = await prisma.featureFlag.create({
+      data: {
+        key: data.key,
+        name: data.name,
+        description: data.description,
+        isEnabled: data.isEnabled,
+      }
+    });
+    return NextResponse.json(flag, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to create flag" }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const data = await req.json();
+    const flag = await prisma.featureFlag.update({
+      where: { id: data.id },
+      data: {
+        isEnabled: data.isEnabled,
+      }
+    });
+    return NextResponse.json(flag);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to update flag" }, { status: 500 });
+  }
+}

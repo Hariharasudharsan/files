@@ -11,6 +11,8 @@ import DeliveryEstimate from "@/components/DeliveryEstimate";
 import StickyAddToCart from "@/components/StickyAddToCart";
 import Recommendations from "@/components/Recommendations";
 import RecentlyViewed, { RecordRecentlyViewed } from "@/components/RecentlyViewed";
+import ProductReviews from "@/components/ProductReviews";
+import { ShieldCheck, Truck, Lock } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -128,12 +130,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <AddToCartButton product={product} />
             </div>
 
+            {/* Trust Strip */}
+            <div className="my-6 p-4 rounded-xl border border-surface-200 bg-surface-50 flex items-center justify-between text-xs font-medium text-surface-700">
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <ShieldCheck className="w-5 h-5 text-primary-600" />
+                <span>Authentic<br/>Quality</span>
+              </div>
+              <div className="w-px h-8 bg-surface-200"></div>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <Truck className="w-5 h-5 text-primary-600" />
+                <span>Fast<br/>Delivery</span>
+              </div>
+              <div className="w-px h-8 bg-surface-200"></div>
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <Lock className="w-5 h-5 text-primary-600" />
+                <span>Secure<br/>Checkout</span>
+              </div>
+            </div>
+
             <DeliveryEstimate />
             
             <ProductAccordions />
 
           </div>
         </div>
+        
+        <ProductReviews productId={product.id} />
       </div>
       
       <StickyAddToCart product={product} />

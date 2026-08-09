@@ -8,9 +8,14 @@ import { redirect } from "next/navigation";
 
 export default async function EditCmsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const page = await prisma.cmsPage.findUnique({ where: { id } });
+  const page = await prisma.cmsPage.findUnique({ 
+    where: { id },
+    include: { versions: { orderBy: { version: 'desc' }, take: 1 } }
+  });
 
   if (!page) notFound();
+
+  const contentStr = page.versions.length > 0 ? JSON.stringify(page.versions[0].content, null, 2) : "";
 
   const submitAndRedirect = async (formData: FormData) => {
     "use server";
@@ -49,12 +54,12 @@ export default async function EditCmsPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-surface-900 mb-2">Content (Markdown)</label>
-          <textarea required name="content" defaultValue={page.content} rows={15} className="w-full border-surface-300 rounded-lg px-4 py-3 font-mono text-sm"></textarea>
+          <label className="block text-sm font-semibold text-surface-900 mb-2">Content (JSON)</label>
+          <textarea required name="content" defaultValue={contentStr} rows={15} className="w-full border-surface-300 rounded-lg px-4 py-3 font-mono text-sm"></textarea>
         </div>
 
         <div className="flex items-center gap-3 bg-surface-50 p-4 rounded-xl border border-surface-200">
-          <input type="checkbox" name="isPublished" id="isPublished" defaultChecked={page.isPublished} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
+          <input type="checkbox" name="isPublished" id="isPublished" defaultChecked={page.status === "PUBLISHED"} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
           <label htmlFor="isPublished" className="text-sm font-semibold text-surface-900">Publish immediately</label>
         </div>
 

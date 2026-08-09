@@ -1,4 +1,4 @@
-import { createWorker } from "./src/lib/infrastructure/queue/bull";
+import { createWorker } from "./src/lib/infrastructure/queue/bullmq";
 import { processErpSyncJob } from "./src/lib/integrations/erp/sync-service";
 import { Logger } from "./src/lib/infrastructure/logger";
 import { prisma } from "./src/lib/infrastructure/database/prisma";

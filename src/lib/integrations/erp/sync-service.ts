@@ -18,8 +18,8 @@ import { upsertCustomerProfile } from "@/lib/repositories/customer-repository";
 import { markOrderErpFailed, markOrderErpSynced } from "@/lib/repositories/order-repository";
 import { Logger } from "@/lib/infrastructure/logger";
 import type { ErpWebhookEvent } from "@/lib/validation/webhooks";
-import { DomainEventBus } from "@/lib/infrastructure/events/event-bus";
-
+import { eventBus } from "@/lib/infrastructure/events/EventBus";
+import { ProductUpdatedEvent } from "@/lib/core/domain/events/DomainEvent";
 async function syncOrder(order: StorefrontOrder): Promise<void> {
   const erpOrder = await erpNextClient.createSalesOrder(order);
   await markOrderErpSynced(order.id);
@@ -43,22 +43,16 @@ async function handleWebhook(event: ErpWebhookEvent): Promise<void> {
     } else {
       await upsertSyncedProduct(product);
     }
-    await DomainEventBus.publish({
-      eventName: "ProductUpdated",
-      timestamp: new Date().toISOString(),
-      payload: { slug: product.slug, product }
-    });
+    const domainEvent = new ProductUpdatedEvent(product.slug, product);
+    await eventBus.publish(domainEvent);
     return;
   }
 
   if (event.entity === "inventory") {
     const inventory = mapWebhookToInventory(event);
     await updateInventorySnapshot(inventory);
-    await DomainEventBus.publish({
-      eventName: "ProductUpdated",
-      timestamp: new Date().toISOString(),
-      payload: { slug: inventory.item_code } // Using itemCode as slug for simplicity here
-    });
+    const domainEvent = new ProductUpdatedEvent(inventory.item_code); // Using itemCode as slug for simplicity here
+    await eventBus.publish(domainEvent);
     return;
   }
 

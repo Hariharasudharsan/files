@@ -1,5 +1,5 @@
 import "server-only";
-import { createQueue } from "@/lib/infrastructure/queue/bull";
+import { createQueue } from "@/lib/infrastructure/queue/bullmq";
 import type { ErpSyncJobType, ErpSyncPayload } from "@/lib/integrations/erp/types";
 import { Logger } from "@/lib/infrastructure/logger";
 import { prisma } from "@/lib/infrastructure/database/prisma";

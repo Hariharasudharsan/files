@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getProductsByCategory } from "@/lib/services/catalog-service";
 import ProductCard from "@/components/ProductCard";
-import { Filter, SlidersHorizontal, ChevronDown } from "lucide-react";
+import ProductFilters from "@/components/ProductFilters";
+import { Filter } from "lucide-react";
 import { Metadata } from "next";
 
 // Categories available mapping
@@ -50,63 +51,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </div>
 
         {/* Sidebar Filters (Desktop) */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-28 space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display font-bold text-lg text-surface-950 flex items-center gap-2">
-                <SlidersHorizontal className="w-5 h-5" /> Filters
-              </h2>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="font-semibold text-surface-950 flex items-center justify-between cursor-pointer">
-                Availability <ChevronDown className="w-4 h-4" />
-              </h3>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
-                  <input type="checkbox" className="w-4 h-4 rounded border-surface-300 text-primary-600 focus:ring-primary-600 accent-primary-600" />
-                  <span className="group-hover:text-primary-700 transition-colors">In Stock</span>
-                </label>
-                <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
-                  <input type="checkbox" className="w-4 h-4 rounded border-surface-300 text-primary-600 focus:ring-primary-600 accent-primary-600" />
-                  <span className="group-hover:text-primary-700 transition-colors">Out of Stock</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-surface-100">
-              <h3 className="font-semibold text-surface-950 flex items-center justify-between cursor-pointer">
-                Price <ChevronDown className="w-4 h-4" />
-              </h3>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
-                  <input type="radio" name="price" className="w-4 h-4 border-surface-300 text-primary-600 focus:ring-primary-600 accent-primary-600" />
-                  <span className="group-hover:text-primary-700 transition-colors">Under ₹500</span>
-                </label>
-                <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
-                  <input type="radio" name="price" className="w-4 h-4 border-surface-300 text-primary-600 focus:ring-primary-600 accent-primary-600" />
-                  <span className="group-hover:text-primary-700 transition-colors">₹500 - ₹1000</span>
-                </label>
-                <label className="flex items-center gap-3 text-sm text-surface-700 cursor-pointer group">
-                  <input type="radio" name="price" className="w-4 h-4 border-surface-300 text-primary-600 focus:ring-primary-600 accent-primary-600" />
-                  <span className="group-hover:text-primary-700 transition-colors">Over ₹1000</span>
-                </label>
-              </div>
-            </div>
-            
-            <div className="space-y-4 pt-4 border-t border-surface-100">
-              <h3 className="font-semibold text-surface-950 flex items-center justify-between cursor-pointer">
-                Tags <ChevronDown className="w-4 h-4" />
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-surface-100 text-surface-700 text-xs rounded-full hover:bg-primary-100 hover:text-primary-800 cursor-pointer transition-colors">Spicy</span>
-                <span className="px-3 py-1 bg-surface-100 text-surface-700 text-xs rounded-full hover:bg-primary-100 hover:text-primary-800 cursor-pointer transition-colors">Plain</span>
-                <span className="px-3 py-1 bg-surface-100 text-surface-700 text-xs rounded-full hover:bg-primary-100 hover:text-primary-800 cursor-pointer transition-colors">Garlic</span>
-                <span className="px-3 py-1 bg-surface-100 text-surface-700 text-xs rounded-full hover:bg-primary-100 hover:text-primary-800 cursor-pointer transition-colors">Vegan</span>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <ProductFilters />
 
         {/* Product Grid */}
         <div className="flex-1">

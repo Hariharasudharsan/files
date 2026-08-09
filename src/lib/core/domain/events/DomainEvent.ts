@@ -54,3 +54,25 @@ export class OrderCreatedEvent implements DomainEvent {
     };
   }
 }
+
+export class ProductUpdatedEvent implements DomainEvent {
+  public id: string;
+  public aggregateId: string;
+  public aggregateType = 'Product';
+  public eventType = 'ProductUpdated';
+  public occurredAt: Date;
+  public payload: {
+    slug: string;
+    product?: any;
+  };
+
+  constructor(slug: string, product?: any) {
+    this.id = crypto.randomUUID();
+    this.aggregateId = slug;
+    this.occurredAt = new Date();
+    this.payload = {
+      slug,
+      product,
+    };
+  }
+}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShoppingCart, Search, User, Menu } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import MarqueeBanner from "./MarqueeBanner";
 
@@ -14,6 +15,9 @@ export default function Navbar() {
   const totalItems = useCartStore((s) => s.getTotalItems());
   const hasHydrated = useCartStore((s) => s.hasHydrated);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/checkout")) return null;
 
   return (
     <>

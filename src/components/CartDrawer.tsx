@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/Button";
 
@@ -14,6 +15,22 @@ export default function CartDrawer() {
   const updateQty = useCartStore((s) => s.updateQty);
   const removeItem = useCartStore((s) => s.removeItem);
   const total = useCartStore((s) => s.getTotalPrice());
+  const addItem = useCartStore((s) => s.addItem);
+
+  const [upsells, setUpsells] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      fetch("/api/v1/recommendations/cart-upsell")
+        .then(res => res.json())
+        .then(data => {
+          // Filter out items already in cart
+          const filtered = data.filter((p: any) => !items.some(i => i.product_id === p.id));
+          setUpsells(filtered);
+        })
+        .catch(console.error);
+    }
+  }, [isOpen, items.length]);
 
   const shipping = total > 500 ? 0 : 50;
 
@@ -65,8 +82,8 @@ export default function CartDrawer() {
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <ul className="space-y-6">
                   {items.map((item) => (
-                    <li key={item.item_code} className="flex gap-4">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-surface-100 border border-surface-200">
+                    <li key={item.id} className="flex gap-4 p-4 hover:bg-surface-50/50 transition-colors">
+                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-surface-200 bg-surface-50 relative group">
                         {item.images?.[0] ? (
                           <Image
                             src={item.images[0].url}
@@ -178,6 +195,35 @@ export default function CartDrawer() {
                     <span>₹{(total + (total >= 999 ? 0 : 50)).toLocaleString("en-IN")}</span>
                   </div>
                 </div>
+
+                {/* Upsell Carousel */}
+                {upsells.length > 0 && total < 999 && (
+                  <div className="mb-6 bg-white border border-surface-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3 text-sm font-bold text-surface-900">
+                      <Sparkles className="w-4 h-4 text-primary-500" />
+                      Add to reach Free Shipping
+                    </div>
+                    <div className="space-y-3">
+                      {upsells.slice(0, 2).map(upsell => (
+                        <div key={upsell.id} className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-surface-100 rounded overflow-hidden relative shrink-0">
+                            {upsell.primaryImage && <Image src={upsell.primaryImage.url} alt={upsell.name} fill className="object-cover" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs font-semibold text-surface-900 line-clamp-1">{upsell.name}</p>
+                            <p className="text-xs text-surface-500">₹{upsell.variants[0]?.price}</p>
+                          </div>
+                          <button 
+                            onClick={() => addItem(upsell, upsell.variants[0], 1)}
+                            className="bg-primary-50 text-primary-700 hover:bg-primary-100 px-3 py-1.5 rounded text-xs font-bold transition-colors"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <Link href="/checkout" onClick={closeCart}>
                   <Button size="lg" className="w-full text-base bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-900/20">

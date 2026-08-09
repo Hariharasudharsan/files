@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/checkout")) return null;
   return (
     <footer className="bg-surface-950 text-surface-300 border-t border-surface-900 pt-16 pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
