@@ -70,11 +70,11 @@ export default function ProductCard({ product }: { product: Product }) {
     "@type": "Product",
     name: product.name,
     description:
-      product.description || `${product.name} — authentic, factory-direct from Mathuram Foods.`,
+      product.description || `${product.name} — authentic, factory-direct from Sridha's Store.`,
     image: product.primaryImage?.url || undefined,
     sku: defaultVariant?.item_code,
-    category: "Mathuram Foods", // Assuming static or fetched category
-    brand: { "@type": "Brand", name: "Mathuram Foods" },
+    category: "Sridha's Store", // Assuming static or fetched category
+    brand: { "@type": "Brand", name: "Sridha's Store" },
     offers: {
       "@type": "Offer",
       priceCurrency: "INR",
@@ -157,6 +157,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.description && (
           <p className="mt-2 line-clamp-2 text-sm text-surface-900/60 font-light leading-relaxed">{product.description}</p>
         )}
+        <p className="mt-1 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Mathuram foods</p>
 
         <div className="mt-auto flex items-end justify-between pt-6">
           <div className="flex flex-col">

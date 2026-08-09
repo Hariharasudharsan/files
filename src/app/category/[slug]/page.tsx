@@ -1,42 +1,40 @@
 import { notFound } from "next/navigation";
-import { getProductsByCategory } from "@/lib/services/catalog-service";
+import { getProductsByCategory, getAllCategories } from "@/lib/services/catalog-service";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters from "@/components/ProductFilters";
 import { Filter } from "lucide-react";
 import { Metadata } from "next";
 
-// Categories available mapping
-const CATEGORIES = ["Appalam", "Papadam", "Vadam", "Combo Packs", "Masala", "Rice Products", "Gift Boxes", "Snacks", "Chips"];
-
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const categoryName = CATEGORIES.find(c => c.toLowerCase().replace(" ", "-") === slug.toLowerCase());
+  const categories = await getAllCategories();
+  const category = categories.find(c => c.slug === slug.toLowerCase());
   
   return {
-    title: categoryName ? `${categoryName} | Authentic Indian Delicacies` : "Category Not Found",
+    title: category ? `${category.name} | Authentic Indian Delicacies` : "Category Not Found",
   };
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // Convert slug back to readable category, e.g., combo-packs -> Combo Packs
-  const categoryName = CATEGORIES.find(c => c.toLowerCase().replace(" ", "-") === slug.toLowerCase());
+  const categories = await getAllCategories();
+  const category = categories.find(c => c.slug === slug.toLowerCase());
 
-  if (!categoryName) {
+  if (!category) {
     notFound();
   }
 
-  const products = await getProductsByCategory(categoryName);
+  const products = await getProductsByCategory(category.slug);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <div className="mb-12 text-center">
-        <h1 className="font-display text-4xl font-bold text-surface-950">{categoryName}</h1>
+        <h1 className="font-display text-4xl font-bold text-surface-950">{category.name}</h1>
         <p className="mt-4 text-surface-900/70">
-          Explore our authentic range of {categoryName.toLowerCase()}, made with traditional South Indian recipes.
+          Explore our authentic range of {category.name.toLowerCase()}, made with traditional South Indian recipes.
         </p>
       </div>
 

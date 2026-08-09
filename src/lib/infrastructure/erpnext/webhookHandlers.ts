@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { Logger } from "@/lib/infrastructure/logger";
+import { createShiprocketOrder } from "@/lib/integrations/shipping/shiprocket";
 
 export async function handleStockUpdate(payload: any) {
   Logger.info(`Handling stock update for item ${payload.item_code}`);
@@ -34,7 +35,10 @@ export async function handleDeliveryNote(payload: any) {
     return;
   }
 
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  const order = await prisma.order.findUnique({ 
+    where: { id: orderId },
+    include: { items: true, user: true }
+  });
   if (!order) {
     Logger.warn(`Order not found for ID: ${orderId}`);
     return;
@@ -60,6 +64,43 @@ export async function handleDeliveryNote(payload: any) {
         dispatchedAt: new Date()
       }
     });
+  } else {
+    // No tracking provided from ERP, generate one via Shiprocket
+    try {
+      const address = order.shippingAddress as any || {};
+      const items = order.items || [];
+      
+      await createShiprocketOrder({
+        order_id: order.id,
+        order_date: order.createdAt.toISOString(),
+        pickup_location: "Primary",
+        billing_customer_name: address.name || "Customer",
+        billing_last_name: "",
+        billing_address: address.address || "N/A",
+        billing_city: address.city || "N/A",
+        billing_pincode: address.pincode || "000000",
+        billing_state: address.state || "N/A",
+        billing_country: "India",
+        billing_email: address.email || "support@mathuram.com",
+        billing_phone: address.phone || "0000000000",
+        shipping_is_billing: true,
+        order_items: items.map((i: any) => ({
+          name: i.productVariantId,
+          sku: i.productVariantId,
+          units: i.qty,
+          selling_price: String(i.rate)
+        })),
+        payment_method: "Prepaid",
+        sub_total: order.subTotal.toNumber(),
+        length: 10, // Default dimensions in cm
+        breadth: 10,
+        height: 10,
+        weight: 1 // Default weight in kg
+      });
+      Logger.info(`Successfully created Shiprocket order for ${order.id}`);
+    } catch (err) {
+      Logger.error(`Failed to create Shiprocket order for ${order.id}`, { error: err instanceof Error ? err.message : String(err) });
+    }
   }
   
   Logger.info(`Updated order ${orderId} status to SHIPPED`);

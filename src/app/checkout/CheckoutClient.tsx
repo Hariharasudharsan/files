@@ -74,7 +74,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
         key: initRes.key,
         amount: initRes.amount,
         currency: initRes.currency,
-        name: "Mathuram Foods",
+        name: "Sridha's Store",
         description: "Order Payment",
         order_id: initRes.razorpayOrderId,
         handler: async function (response: any) {

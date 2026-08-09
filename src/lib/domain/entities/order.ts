@@ -8,6 +8,7 @@ export interface CheckoutContact {
   city: string;
   state: string;
   pincode: string;
+  whatsappOptIn?: boolean;
 }
 
 export interface OrderItemInput {

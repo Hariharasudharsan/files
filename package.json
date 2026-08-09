@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "tsup worker.ts --format cjs --env.NODE_ENV production",
+    "build:worker": "tsup src/lib/infrastructure/workers/index.ts --format cjs --env.NODE_ENV production",
     "start": "next start",
     "lint": "eslint",
     "prepare": "husky",

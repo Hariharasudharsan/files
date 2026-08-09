@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 /**
  * A strongly-typed wrapper around fetch for communicating with ERPNext/Frappe framework.
  */
@@ -80,6 +82,27 @@ export class FrappeClient {
     const res = await fetch(url.toString(), { headers: this.headers, method: "GET" });
     if (!res.ok) throw new Error(`Failed to QUERY ${doctype}: ${await res.text()}`);
     return (await res.json()).data || [];
+  }
+
+  /**
+   * Validates inbound webhooks from Frappe Cloud using HMAC SHA256.
+   */
+  verifyWebhookSignature(payload: string, signature: string): boolean {
+    const webhookSecret = process.env.ERPNEXT_WEBHOOK_SECRET || "";
+    if (!webhookSecret) {
+      console.error("[FrappeClient] Critical: Webhook secret not configured. Failing closed.");
+      return false;
+    }
+
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
   }
 }
 

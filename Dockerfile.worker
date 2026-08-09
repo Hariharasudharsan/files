@@ -25,4 +25,4 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 USER workerjs
-CMD ["node", "dist/worker.js"]
+CMD ["node", "dist/index.js"]

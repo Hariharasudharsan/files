@@ -13,6 +13,7 @@ import Recommendations from "@/components/Recommendations";
 import RecentlyViewed, { RecordRecentlyViewed } from "@/components/RecentlyViewed";
 import ProductReviews from "@/components/ProductReviews";
 import { ShieldCheck, Truck, Lock } from "lucide-react";
+import { MotionDiv, MotionSection } from "@/components/ui/Motion";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return {
     title: product.name,
-    description: product.description?.slice(0, 160) || `Buy ${product.name} online at Mathuram Foods.`,
+    description: product.description?.slice(0, 160) || `Buy ${product.name} online at Sridha's Store.`,
     openGraph: {
       title: product.name,
       description: product.description?.slice(0, 160),
@@ -50,11 +51,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     "@type": "Product",
     "name": product.name,
     "image": product.primaryImage?.url,
-    "description": product.description || `Buy ${product.name} online at Mathuram Foods.`,
+    "description": product.description || `Buy ${product.name} online at Sridha's Store.`,
     "sku": product.variants[0]?.item_code,
     "offers": {
       "@type": "Offer",
-      "url": `https://www.mathuramfoods.com/product/${product.slug}`,
+      "url": `https://www.sridhasstore.com/product/${product.slug}`,
       "priceCurrency": "INR",
       "price": product.variants[0]?.price,
       "itemCondition": "https://schema.org/NewCondition",
@@ -89,7 +90,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {/* Right: Product Info */}
           <div className="flex flex-col">
-            <div className="mb-6">
+            <MotionDiv className="mb-6">
               <h1 className="font-display text-3xl sm:text-4xl font-bold text-surface-950 tracking-tight">
                 {product.name}
               </h1>
@@ -102,9 +103,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   Tax included
                 </div>
               </div>
-            </div>
+            </MotionDiv>
 
             {/* Stock Indicator */}
+            <MotionDiv delay={0.1}>
             {availableStock > 0 && availableStock < 20 ? (
               <div className="mb-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 text-orange-700 text-xs font-bold border border-orange-100 w-fit animate-pulse-slow">
                 <span className="w-2 h-2 rounded-full bg-orange-500" />
@@ -121,17 +123,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 Out of Stock
               </div>
             )}
+            </MotionDiv>
 
-            <div className="prose text-surface-700 leading-relaxed">
+            <MotionDiv delay={0.2} className="prose text-surface-700 leading-relaxed">
               <p>{product.description}</p>
-            </div>
+              <p className="mt-4 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Mathuram foods</p>
+            </MotionDiv>
 
-            <div className="mt-8">
+            <MotionDiv delay={0.3} className="mt-8">
               <AddToCartButton product={product} />
-            </div>
+            </MotionDiv>
 
             {/* Trust Strip */}
-            <div className="my-6 p-4 rounded-xl border border-surface-200 bg-surface-50 flex items-center justify-between text-xs font-medium text-surface-700">
+            <MotionDiv delay={0.4} className="my-6 p-4 rounded-xl border border-surface-200 bg-surface-50 flex items-center justify-between text-xs font-medium text-surface-700">
               <div className="flex flex-col items-center gap-1.5 text-center">
                 <ShieldCheck className="w-5 h-5 text-primary-600" />
                 <span>Authentic<br/>Quality</span>
@@ -146,11 +150,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <Lock className="w-5 h-5 text-primary-600" />
                 <span>Secure<br/>Checkout</span>
               </div>
-            </div>
+            </MotionDiv>
 
-            <DeliveryEstimate />
+            <MotionDiv delay={0.5}>
+              <DeliveryEstimate />
+            </MotionDiv>
             
-            <ProductAccordions />
+            <MotionDiv delay={0.6}>
+              <ProductAccordions />
+            </MotionDiv>
 
           </div>
         </div>

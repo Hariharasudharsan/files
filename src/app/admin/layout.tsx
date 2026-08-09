@@ -130,7 +130,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-surface-200 flex items-center justify-between px-6 shadow-sm z-10">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-surface-900 hidden sm:block">Mathuram Foods Admin</h1>
+            <h1 className="text-lg font-bold text-surface-900 hidden sm:block">Sridha's Store Admin</h1>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 text-surface-400 hover:text-surface-600 rounded-full hover:bg-surface-100 transition-colors">

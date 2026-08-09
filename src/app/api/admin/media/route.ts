@@ -16,22 +16,12 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const uniqueSuffix = crypto.randomBytes(8).toString('hex');
-    const ext = path.extname(file.name);
-    const filename = `${path.basename(file.name, ext)}-${uniqueSuffix}${ext}`;
     
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    try {
-      await fs.access(uploadsDir);
-    } catch {
-      await fs.mkdir(uploadsDir, { recursive: true });
-    }
-
-    const filepath = path.join(uploadsDir, filename);
-    await fs.writeFile(filepath, buffer);
-
-    const publicUrl = `/uploads/${filename}`;
+    // Use the S3 adapter instead of local filesystem
+    const { storageAdapter } = await import("@/lib/integrations/storage/s3-adapter");
+    const uploadResult = await storageAdapter.uploadFile(buffer, file.name, file.type);
+    
+    const publicUrl = uploadResult.url;
 
     const media = await prisma.media.create({
       data: {

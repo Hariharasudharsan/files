@@ -16,6 +16,7 @@ export interface CreateOrderDTO {
     city: string;
     state: string;
     pincode: string;
+    whatsappOptIn?: boolean;
   };
   items: Array<{ productVariantId: string; qty: number; rate: number; taxRate?: number }>;
   couponCode?: string;
@@ -118,7 +119,7 @@ export class OrderService {
         });
       }
 
-      const event = new OrderCreatedEvent(newOrder.id, newOrder.userId, newOrder.total.toNumber());
+      const event = new OrderCreatedEvent(newOrder.id, newOrder.userId, newOrder.total.toNumber(), dto.contact.whatsappOptIn, dto.contact.phone);
       await eventBus.publishWithinTransaction(tx, event);
 
       return newOrder;

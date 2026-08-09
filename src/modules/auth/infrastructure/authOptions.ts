@@ -20,9 +20,18 @@ export const authOptions: NextAuthOptions = {
       name: "Demo Login",
       credentials: {
         email: { label: "Email", type: "email", placeholder: "demo@example.com" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        if (!credentials?.email) return null;
+        if (!credentials?.email || !credentials?.password) return null;
+        
+        // Secure demo login with a password
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase() || 'admin@mathuram.com';
+        const expectedPassword = process.env.ADMIN_PASSWORD;
+
+        if (!expectedPassword || credentials.password !== expectedPassword) {
+          throw new Error("Invalid credentials.");
+        }
         
         // Rate limiting
         const ip = req?.headers?.['x-forwarded-for'] || 'unknown';
@@ -51,11 +60,11 @@ export const authOptions: NextAuthOptions = {
             data: {
               email: credentials.email,
               name: credentials.email.split('@')[0],
-              role: credentials.email.toLowerCase() === 'admin@mathuram.com' ? 'ADMIN' : 'CUSTOMER',
+              role: credentials.email.toLowerCase() === adminEmail ? 'ADMIN' : 'CUSTOMER',
             }
           });
-        } else if (credentials.email.toLowerCase() === 'admin@mathuram.com' && user.role !== 'ADMIN') {
-          // Ensure existing admin@mathuram.com is promoted if they already logged in before
+        } else if (credentials.email.toLowerCase() === adminEmail && user.role !== 'ADMIN') {
+          // Ensure existing admin is promoted if they already logged in before
           user = await prisma.user.update({
             where: { id: user.id },
             data: { role: 'ADMIN' }

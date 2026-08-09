@@ -18,6 +18,9 @@ export async function deletePage(id: string) {
   revalidatePath("/admin/cms/pages");
 }
 
+import { remark } from 'remark';
+import html from 'remark-html';
+
 export async function savePage(formData: FormData) {
   const id = formData.get("id") as string | null;
   const title = formData.get("title") as string;
@@ -26,29 +29,51 @@ export async function savePage(formData: FormData) {
   const isPublished = formData.get("isPublished") === "on";
   const status = isPublished ? "PUBLISHED" : "DRAFT";
 
+  const processedContent = await remark().use(html).process(content || "");
+  const htmlContent = processedContent.toString();
+
+  const blocks = [
+    {
+      id: Date.now().toString(),
+      type: "RichText",
+      props: { htmlContent, rawMarkdown: content }
+    }
+  ];
+
   if (id) {
     const page = await prisma.cmsPage.update({
       where: { id },
       data: { title, slug, status },
     });
-    // Create new version for content
-    await prisma.cmsPageVersion.create({
+    
+    const version = await prisma.cmsPageVersion.create({
       data: {
         pageId: id,
-        version: Date.now(), // simple integer version
-        content: JSON.parse(content || "{}"),
+        version: Date.now(),
+        content: blocks,
       }
+    });
+
+    await prisma.cmsPage.update({
+      where: { id },
+      data: { activeVersionId: version.id }
     });
   } else {
     const page = await prisma.cmsPage.create({
       data: { title, slug, status },
     });
-    await prisma.cmsPageVersion.create({
+    
+    const version = await prisma.cmsPageVersion.create({
       data: {
         pageId: page.id,
         version: 1,
-        content: JSON.parse(content || "{}"),
+        content: blocks,
       }
+    });
+
+    await prisma.cmsPage.update({
+      where: { id: page.id },
+      data: { activeVersionId: version.id }
     });
   }
 

@@ -1,6 +1,6 @@
 import { createWorker } from '../queue/bullmq';
 import { prisma } from "@/lib/infrastructure/database/prisma";
-import { handleStockUpdate, handleDeliveryNote, handleSalesInvoice } from '../../integrations/erp/webhookHandlers';
+import { handleStockUpdate, handleDeliveryNote, handleSalesInvoice } from '../erpnext/webhookHandlers';
 
 export const webhookWorker = createWorker(
   'PROCESS_WEBHOOK',

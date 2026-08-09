@@ -39,7 +39,7 @@ export async function findOrdersByUserId(userId: string) {
 }
 
 export async function findOrderByIdForUser(id: string, userId: string) {
-  return await prisma.order.findUnique({
+  return await prisma.order.findFirst({
     where: { id, userId },
     include: {
       items: {
@@ -98,12 +98,6 @@ export async function markOrderAsPaidAndCreateTransaction(
 }
 
 export async function createStorefrontOrder(input: CreateOrderInput): Promise<StorefrontOrder> {
-  const subTotal = input.items.reduce((sum, item) => sum + item.qty * item.rate, 0);
-  const taxTotal = 0; 
-  const shippingTotal = 0;
-  const discountTotal = 0;
-  const total = subTotal + taxTotal + shippingTotal - discountTotal;
-  
   const id = createOrderId();
 
   const user = await prisma.user.upsert({
@@ -119,6 +113,8 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     },
   });
 
+  let subTotal = 0;
+
   const itemsForCreation = await Promise.all(
     input.items.map(async (item) => {
       const variant = await prisma.productVariant.findUnique({
@@ -127,16 +123,25 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
       if (!variant) {
         throw new Error(`Variant with productVariantId ${item.productVariantId} not found`);
       }
+      
+      const rate = variant.price.toNumber();
+      subTotal += item.qty * rate;
+
       return {
         productVariantId: variant.id,
         qty: item.qty,
-        rate: item.rate,
+        rate: rate,
         taxRate: 0,
         taxAmount: 0,
-        total: item.qty * item.rate,
+        total: item.qty * rate,
       };
     })
   );
+
+  const taxTotal = 0; 
+  const shippingTotal = 0;
+  const discountTotal = 0;
+  const total = subTotal + taxTotal + shippingTotal - discountTotal;
 
   const orderRecord = await prisma.order.create({
     data: {
@@ -158,7 +163,7 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
 
   const order: StorefrontOrder = {
     id: orderRecord.id,
-    items: input.items,
+    items: itemsForCreation.map(i => ({ ...i, productVariantId: i.productVariantId })),
     contact: input.contact,
     total: orderRecord.total.toNumber(),
     status: "PENDING", 

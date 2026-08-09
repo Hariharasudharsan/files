@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-surface-950">Dashboard Overview</h1>
-          <p className="text-surface-500 mt-1">Welcome to the Mathuram Foods Admin OS</p>
+          <p className="text-surface-500 mt-1">Welcome to the Sridha's Store Admin OS</p>
         </div>
         <div className="flex gap-3">
           <Link href="/admin/products/new">

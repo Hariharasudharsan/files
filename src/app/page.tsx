@@ -5,6 +5,7 @@ import { getStorefrontProducts } from "@/lib/services/catalog-service";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { MotionSection, MotionDiv } from "@/components/ui/Motion";
 
 export const dynamic = "force-dynamic";
 
@@ -35,22 +36,22 @@ export default async function Home() {
       <Hero banners={banners} />
 
       {/* Trust strip */}
-      <section className="bg-surface-50 border-b border-surface-200">
+      <MotionSection className="bg-surface-50 border-b border-surface-200">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:grid-cols-4 lg:py-16">
-          {USPS.map(({ icon: Icon, label, desc }) => (
-            <div key={label} className="flex flex-col items-center text-center">
+          {USPS.map(({ icon: Icon, label, desc }, idx) => (
+            <MotionDiv key={label} delay={idx * 0.1} className="flex flex-col items-center text-center">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-700">
                 <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
               <p className="text-base font-semibold text-surface-950">{label}</p>
               <p className="mt-1 text-sm text-surface-900/60">{desc}</p>
-            </div>
+            </MotionDiv>
           ))}
         </div>
-      </section>
+      </MotionSection>
 
       {/* Featured Products */}
-      <section id="products" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
+      <MotionSection className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-24">
         <div className="mb-12 flex flex-col items-center justify-between sm:flex-row">
           <div>
             <h2 className="font-display text-4xl font-bold text-surface-950">
@@ -67,8 +68,10 @@ export default async function Home() {
 
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {featured.map((product, idx) => (
+              <MotionDiv key={product.id} delay={idx * 0.1}>
+                <ProductCard product={product} />
+              </MotionDiv>
             ))}
           </div>
         ) : (
@@ -76,16 +79,16 @@ export default async function Home() {
             Our catalog is being freshly stocked — please check back shortly.
           </p>
         )}
-      </section>
+      </MotionSection>
 
 
       {/* Reviews */}
-      <section className="bg-surface-50 py-24">
+      <MotionSection className="bg-surface-50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center">
           <h2 className="font-display text-3xl font-bold text-surface-950 mb-12">Loved by Families</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="glass rounded-2xl p-8 text-left">
+            {[1, 2, 3].map((i, idx) => (
+              <MotionDiv key={i} delay={idx * 0.15} className="glass rounded-2xl p-8 text-left">
                 <div className="flex gap-1 mb-4 text-accent-500">
                   <Star className="fill-current w-5 h-5" />
                   <Star className="fill-current w-5 h-5" />
@@ -97,11 +100,11 @@ export default async function Home() {
                   &quot;Absolutely amazing! Reminds me of my grandmother&apos;s cooking. The Appalams are so crispy and perfectly spiced.&quot;
                 </p>
                 <p className="font-bold text-surface-950">- Happy Customer {i}</p>
-              </div>
+              </MotionDiv>
             ))}
           </div>
         </div>
-      </section>
+      </MotionSection>
     </>
   );
 }

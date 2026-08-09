@@ -41,16 +41,20 @@ export class OrderCreatedEvent implements DomainEvent {
     orderId: string;
     userId: string;
     total: number;
+    whatsappOptIn?: boolean;
+    userPhone?: string;
   };
 
-  constructor(orderId: string, userId: string, total: number) {
+  constructor(orderId: string, userId: string, total: number, whatsappOptIn?: boolean, userPhone?: string) {
     this.id = crypto.randomUUID();
     this.aggregateId = orderId;
     this.occurredAt = new Date();
     this.payload = {
       orderId,
       userId,
-      total
+      total,
+      whatsappOptIn,
+      userPhone
     };
   }
 }

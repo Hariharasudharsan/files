@@ -1,8 +1,6 @@
 import { createWorker } from '../queue/bullmq';
-import { ErpNextAdapter } from '../adapters/erp/ErpNextAdapter';
+import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
 import { prisma } from "@/lib/infrastructure/database/prisma";
-
-const erpNextAdapter = new ErpNextAdapter();
 
 export const paymentWorker = createWorker(
   'SYNC_PAYMENT',
@@ -12,7 +10,7 @@ export const paymentWorker = createWorker(
 
     // Fetch the ERPSync record to get the ERPNext Sales Order ID
     const erpSync = await prisma.eRPSync.findFirst({
-      where: { entityType: 'Order', entityId: orderId, status: 'success' },
+      where: { entityType: 'Order', entityId: orderId, status: 'SUCCESS' },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -23,7 +21,33 @@ export const paymentWorker = createWorker(
     const erpSalesOrderId = erpSync.targetId;
 
     // Attempt sync to ERPNext Payment Entry
-    const result = await erpNextAdapter.createPaymentEntry(erpSalesOrderId, amount, transactionId);
+    const payload = {
+      payment_type: "Receive",
+      party_type: "Customer",
+      reference_no: transactionId,
+      reference_date: new Date().toISOString().split('T')[0],
+      paid_amount: amount,
+      received_amount: amount,
+      references: [
+        {
+          reference_doctype: "Sales Order",
+          reference_name: erpSalesOrderId,
+          allocated_amount: amount
+        }
+      ]
+    };
+    
+    let targetId = null;
+    let status = "FAILED";
+    let lastError = null;
+
+    try {
+      const created = await frappe.createDoc("Payment Entry", payload);
+      targetId = created.name;
+      status = "SUCCESS";
+    } catch (error: any) {
+      lastError = error.message;
+    }
 
     // Record in ERPSync
     await prisma.eRPSync.create({
@@ -31,19 +55,19 @@ export const paymentWorker = createWorker(
         entityType: 'Payment',
         entityId: transactionId,
         targetSystem: 'erpnext',
-        targetId: result.erpId || null,
-        status: result.success ? 'success' : 'failed',
+        targetId: targetId,
+        status: status,
         attempts: job.attemptsMade + 1,
-        lastError: result.error || null,
+        lastError: lastError,
         orderId: orderId
       },
     });
 
-    if (!result.success) {
-      throw new Error(`ERPNext Payment Sync Failed: ${result.error}`);
+    if (status !== "SUCCESS") {
+      throw new Error(`ERPNext Payment Sync Failed: ${lastError}`);
     }
     
-    console.log(`Successfully synced Payment Entry ${result.erpId} for Sales Order ${erpSalesOrderId}`);
+    console.log(`Successfully synced Payment Entry ${targetId} for Sales Order ${erpSalesOrderId}`);
   },
   2
 );

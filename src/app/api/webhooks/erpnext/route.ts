@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { webhookQueue } from '../../../../lib/infrastructure/queue/bullmq';
 import { prisma } from "@/lib/infrastructure/database/prisma";
-import { ErpApiClient } from "@/lib/integrations/erp/client";
+import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
 
 export async function POST(req: Request) {
   try {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const rawBody = await req.text();
     const signature = req.headers.get('x-frappe-webhook-signature') || '';
 
-    if (!ErpApiClient.verifyWebhookSignature(rawBody, signature)) {
+    if (!frappe.verifyWebhookSignature(rawBody, signature)) {
       console.error('[ERP Webhook] Unauthorized request. Invalid signature.');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

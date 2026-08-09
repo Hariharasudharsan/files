@@ -19,7 +19,7 @@ export default function Footer() {
                 M
               </span>
               <span className="leading-tight">
-                <span className="block font-display text-lg font-bold text-white tracking-tight">Mathuram Foods</span>
+                <span className="block font-display text-lg font-bold text-white tracking-tight">Sridha's Store</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-500">
                   Heritage Kitchen
                 </span>
@@ -71,20 +71,20 @@ export default function Footer() {
                 <MapPin className="w-5 h-5 text-primary-500 shrink-0" />
                 <span>123 Heritage Lane, Madurai,<br/>Tamil Nadu 625001</span>
               </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>+91 98765 43210</span>
+              <li className="flex items-start gap-3 text-surface-200">
+                <Phone className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
+                <span>+91 7708838059<br/><span className="text-sm text-surface-400">Mon-Sat, 9AM-6PM</span></span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>support@mathuramfoods.com</span>
+                <span>support@sridhasstore.com</span>
               </li>
             </ul>
             </div>
           </div>
 
         <div className="border-t border-surface-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-surface-500">
-          <p>© {new Date().getFullYear()} Mathuram Foods. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Sridha's Store. All rights reserved.</p>
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

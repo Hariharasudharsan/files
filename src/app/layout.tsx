@@ -24,11 +24,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Mathuram Foods | Authentic Factory-Direct Papadam, Vadam & Appalam",
-    template: "%s | Mathuram Foods",
+    default: "Sridha's Store | Authentic Factory-Direct Papadam, Vadam & Appalam",
+    template: "%s | Sridha's Store",
   },
   description:
-    "Mathuram Foods sells premium, authentic, factory-direct papadam, vadam, appalam and South Indian snacks — traditionally sun-dried, hygienically packed, shipped pan-India.",
+    "Sridha's Store sells premium, authentic, factory-direct papadam, vadam, appalam and South Indian snacks — traditionally sun-dried, hygienically packed, shipped pan-India.",
   keywords: [
     "papad online",
     "appalam online",
@@ -46,13 +46,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_IN",
     url: SITE_URL,
-    siteName: "Mathuram Foods",
-    title: "Mathuram Foods | Authentic Factory-Direct Papadam, Vadam & Appalam",
+    siteName: "Sridha's Store",
+    title: "Sridha's Store | Authentic Factory-Direct Papadam, Vadam & Appalam",
     description: "Premium, authentic, factory-direct Indian papadams, vadams and traditional snacks.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mathuram Foods | Authentic Factory-Direct Papadam, Vadam & Appalam",
+    title: "Sridha's Store | Authentic Factory-Direct Papadam, Vadam & Appalam",
     description: "Premium, authentic, factory-direct Indian papadams, vadams and traditional snacks.",
   },
   alternates: { canonical: "/" },
@@ -61,13 +61,13 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Mathuram Foods",
+  name: "Sridha's Store",
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
   description: "Factory-direct manufacturer of authentic papadam, vadam, appalam and South Indian snacks.",
   contactPoint: {
     "@type": "ContactPoint",
-    "telephone": "+91-9876543210",
+    "telephone": "+91-7708838059",
     "contactType": "Customer Service"
   },
   sameAs: [
@@ -93,7 +93,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${outfit.variable} flex min-h-screen flex-col bg-surface-50 font-sans text-surface-900 antialiased`}>
         <script
           type="application/ld+json"

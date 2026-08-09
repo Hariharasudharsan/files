@@ -54,9 +54,9 @@ export default async function AdminProductsPage({
             <thead className="bg-surface-50 text-surface-500">
               <tr>
                 <th className="px-6 py-4 font-semibold">Product</th>
-                <th className="px-6 py-4 font-semibold">Category</th>
-                <th className="px-6 py-4 font-semibold">Variants</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold hidden md:table-cell">Category</th>
+                <th className="px-6 py-4 font-semibold hidden md:table-cell">Variants</th>
+                <th className="px-6 py-4 font-semibold hidden sm:table-cell">Status</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
@@ -92,7 +92,7 @@ export default async function AdminProductsPage({
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 hidden md:table-cell">
                         {product.categoryName ? (
                           <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-surface-100 text-surface-700">
                             {product.categoryName}
@@ -101,10 +101,10 @@ export default async function AdminProductsPage({
                           <span className="text-surface-400 italic">Uncategorized</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-surface-600">
+                      <td className="px-6 py-4 text-surface-600 hidden md:table-cell">
                         {product.variants.length} variant(s)
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 hidden sm:table-cell">
                         {product.isDeleted ? (
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-700 border border-red-100">Deleted</span>
                         ) : (

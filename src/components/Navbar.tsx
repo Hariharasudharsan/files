@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingCart, Search, User, Menu } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useState } from "react";
@@ -33,12 +34,12 @@ export default function Navbar() {
             <button className="md:hidden text-surface-900 hover:text-primary-600 transition-colors">
               <Menu className="h-6 w-6" />
             </button>
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 font-display text-xl font-bold text-white shadow-md shadow-primary-600/20 group-hover:bg-primary-700 transition-colors">
-                M
-              </span>
+            <Link href="/" className="flex items-center gap-3 group">
+              <div className="relative h-12 w-12 rounded-full overflow-hidden border border-surface-200 shadow-sm transition-transform group-hover:scale-105">
+                <Image src="/logo.png" alt="Sridha's Store Logo" fill sizes="48px" priority className="object-cover" />
+              </div>
               <span className="leading-tight hidden sm:block">
-                <span className="block font-display text-lg font-bold text-surface-950 tracking-tight group-hover:text-primary-700 transition-colors">Mathuram Foods</span>
+                <span className="block font-display text-xl font-bold text-surface-950 tracking-tight group-hover:text-primary-700 transition-colors">Sridha's Store</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-600">
                   Heritage Kitchen
                 </span>

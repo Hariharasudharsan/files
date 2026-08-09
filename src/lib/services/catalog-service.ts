@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Product } from "@/lib/domain/entities/product";
 import { searchAdapter } from "@/lib/integrations/search/postgres-adapter";
-import { listPublishedProducts } from "@/lib/repositories/catalog-repository";
+import { listPublishedProducts, listAllCategories, listPublishedProductsByCategory } from "@/lib/repositories/catalog-repository";
 import { Logger } from "@/lib/infrastructure/logger";
 import { CacheService } from "@/lib/infrastructure/cache/cache-service";
 import { CachePolicy } from "@/lib/infrastructure/cache/cache-policies";
@@ -42,11 +42,17 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   });
 }
 
+export async function getAllCategories() {
+  const policy = CachePolicy.Catalog.Category;
+  return await CacheService.remember("all_categories", policy.ttl, async () => {
+    return await listAllCategories();
+  });
+}
+
 export async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
   // Categories
   const policy = CachePolicy.Catalog.Category;
   return await CacheService.remember(policy.key(categorySlug), policy.ttl, async () => {
-    const products = await listPublishedProducts();
-    return products.filter(p => (p as any).category_id === categorySlug || (p as any).category?.slug === categorySlug);
+    return await listPublishedProductsByCategory(categorySlug);
   });
 }

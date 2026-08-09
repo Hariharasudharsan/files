@@ -55,6 +55,7 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
   const city = sanitizeInput(contact.city as string);
   const state = sanitizeInput(contact.state as string);
   const pincode = sanitizeInput(contact.pincode as string);
+  const whatsappOptIn = contact.whatsappOptIn === true;
   
   const items = parseItems(payload.items, errors);
 
@@ -90,6 +91,6 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
 
   return ok({
     items,
-    contact: { name, email, phone, address, city, state, pincode },
+    contact: { name, email, phone, address, city, state, pincode, whatsappOptIn },
   });
 }

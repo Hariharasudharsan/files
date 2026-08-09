@@ -24,7 +24,7 @@ export class ERPSyncService {
     }
   }
 
-  private async processJob(job: any) {
+  async processJob(job: any) {
     console.log(`[ERPSync] Processing ${job.entityType} ${job.entityId}`);
 
     // Increment attempts
