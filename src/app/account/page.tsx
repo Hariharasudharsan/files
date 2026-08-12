@@ -23,7 +23,7 @@ export default async function AccountPage() {
           <h1 className="font-display text-3xl font-bold text-surface-950">Welcome, {session.user.name}</h1>
           <p className="text-surface-900/60 mt-2">{session.user.email}</p>
         </div>
-          {session.user.role === "ADMIN" && (
+          {session.user.role?.name === "ADMIN" && (
             <Link href="/admin">
               <Button variant="outline" className="flex gap-2">
                 Admin Dashboard

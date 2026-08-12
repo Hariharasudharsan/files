@@ -27,7 +27,17 @@ export async function savePage(formData: FormData) {
   const slug = formData.get("slug") as string;
   const content = formData.get("content") as string;
   const isPublished = formData.get("isPublished") === "on";
-  const status = isPublished ? "PUBLISHED" : "DRAFT";
+  const publishedAtStr = formData.get("publishedAt") as string | null;
+
+  let status = "DRAFT";
+  let publishedAt = null;
+
+  if (isPublished) {
+    status = "PUBLISHED";
+  } else if (publishedAtStr) {
+    status = "SCHEDULED";
+    publishedAt = new Date(publishedAtStr);
+  }
 
   const processedContent = await remark().use(html).process(content || "");
   const htmlContent = processedContent.toString();
@@ -43,7 +53,7 @@ export async function savePage(formData: FormData) {
   if (id) {
     const page = await prisma.cmsPage.update({
       where: { id },
-      data: { title, slug, status },
+      data: { title, slug, status, publishedAt },
     });
     
     const version = await prisma.cmsPageVersion.create({
@@ -60,7 +70,7 @@ export async function savePage(formData: FormData) {
     });
   } else {
     const page = await prisma.cmsPage.create({
-      data: { title, slug, status },
+      data: { title, slug, status, publishedAt },
     });
     
     const version = await prisma.cmsPageVersion.create({
@@ -80,4 +90,18 @@ export async function savePage(formData: FormData) {
   revalidatePath("/", "layout");
   revalidatePath(`/${slug}`);
   revalidatePath("/admin/cms/pages");
+}
+
+export async function rollbackToVersion(pageId: string, versionId: string) {
+  await prisma.cmsPage.update({
+    where: { id: pageId },
+    data: { activeVersionId: versionId },
+  });
+  
+  const page = await prisma.cmsPage.findUnique({ where: { id: pageId } });
+  if (page) {
+    revalidatePath("/", "layout");
+    revalidatePath(`/${page.slug}`);
+    revalidatePath("/admin/cms/pages");
+  }
 }

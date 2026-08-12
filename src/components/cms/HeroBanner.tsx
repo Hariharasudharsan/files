@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface HeroBannerProps {
   title: string;
@@ -25,10 +26,12 @@ export function HeroBanner({
       }`}
     >
       {backgroundImageUrl && (
-        <img
+        <Image
           src={backgroundImageUrl}
           alt={title}
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          fill
+          priority
+          className="absolute inset-0 object-cover opacity-50"
         />
       )}
       <div className={`relative z-10 px-8 max-w-4xl ${alignment === "center" ? "text-center" : "text-left"}`}>

@@ -11,12 +11,6 @@ datasource db {
 // Enums
 // ----------------------------------------------------
 
-enum Role {
-  CUSTOMER
-  ADMIN
-  MANAGER
-}
-
 enum OrderStatus {
   DRAFT
   PENDING
@@ -269,6 +263,29 @@ model Review {
 // User & Auth
 // ----------------------------------------------------
 
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  isSystem    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  permissions Permission[]
+  users       User[]
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   // e.g. "read", "write", "manage"
+  resource    String   // e.g. "orders", "products", "all"
+  description String?
+
+  roles       Role[]
+
+  @@unique([action, resource])
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -277,7 +294,8 @@ model User {
   image         String?
   phone         String?
   erpId         String?   @unique // ERP Customer ID
-  role          Role      @default(CUSTOMER)
+  roleId        String?
+  role          Role?     @relation(fields: [roleId], references: [id])
   isB2B         Boolean   @default(false)
 
   createdAt DateTime @default(now())
@@ -306,16 +324,17 @@ model Address {
   user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   type   AddressType
 
-  firstName    String
-  lastName     String
-  company      String?
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  state        String
-  postalCode   String
-  country      String  @default("India")
-  phone        String?
+  firstName         String
+  lastName          String
+  company           String?
+  flatOrHouseNumber String
+  localityOrArea    String
+  landmark          String?
+  city              String
+  state             String
+  pincode           String
+  country           String  @default("India")
+  phone             String?
 
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -389,6 +408,9 @@ model Order {
   // Financials
   subTotal      Decimal @db.Decimal(10, 2)
   taxTotal      Decimal @db.Decimal(10, 2)
+  cgstTotal     Decimal @default(0) @db.Decimal(10, 2)
+  sgstTotal     Decimal @default(0) @db.Decimal(10, 2)
+  igstTotal     Decimal @default(0) @db.Decimal(10, 2)
   shippingTotal Decimal @db.Decimal(10, 2)
   discountTotal Decimal @db.Decimal(10, 2)
   total         Decimal @db.Decimal(10, 2)
@@ -412,6 +434,7 @@ model Order {
   syncLogs       ERPSync[]
   returnRequests ReturnRequest[]
   refunds        Refund[]
+  invoice        Invoice?
 }
 
 model OrderItem {
@@ -424,7 +447,25 @@ model OrderItem {
   rate             Decimal        @db.Decimal(10, 2) // Price at time of purchase
   taxRate          Decimal        @db.Decimal(10, 2) // GST rate applied
   taxAmount        Decimal        @db.Decimal(10, 2)
+  cgstAmount       Decimal        @default(0) @db.Decimal(10, 2)
+  sgstAmount       Decimal        @default(0) @db.Decimal(10, 2)
+  igstAmount       Decimal        @default(0) @db.Decimal(10, 2)
   total            Decimal        @db.Decimal(10, 2)
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  invoiceNumber String   @unique // e.g., INV-2026-000001
+  issuedAt      DateTime @default(now())
+  
+  sellerGstin   String?
+  buyerDetails  Json     // Snapshot of buyer name, email, phone, billing & shipping addresses
+  lineItems     Json     // Snapshot of items with tax split and rates
+  taxTotals     Json     // Snapshot of overall tax (total, cgst, sgst, igst)
+  
+  createdAt     DateTime @default(now())
 }
 
 // ----------------------------------------------------
@@ -488,17 +529,7 @@ model PaymentTransaction {
   audits PaymentAudit[]
 }
 
-model PaymentWebhook {
-  id        String   @id @default(uuid())
-  provider  String
-  eventId   String   @unique
-  eventType String
-  payload   Json
-  status    String   @default("PENDING") // PENDING, PROCESSED, FAILED
-  error     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+
 
 model PaymentAudit {
   id                   String             @id @default(uuid())
@@ -620,15 +651,7 @@ model SyncHistory {
   createdAt DateTime @default(now())
 }
 
-model ReplayQueue {
-  id        String   @id @default(uuid())
-  eventType String
-  payload   Json
-  status    String   @default("PENDING")
-  error     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+
 
 // ----------------------------------------------------
 // Admin CMS & Audit

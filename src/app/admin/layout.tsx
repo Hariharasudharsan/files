@@ -66,7 +66,7 @@ const SIDEBAR_SECTIONS = [
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "MANAGER")) {
+  if (!session?.user || (session.user.role?.name !== "ADMIN" && session.user.role?.name !== "MANAGER")) {
     redirect("/account/login?error=AccessDenied");
   }
 
@@ -113,7 +113,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{session.user.name}</p>
-              <p className="text-xs text-surface-400 truncate capitalize">{session.user.role.toLowerCase()}</p>
+              <p className="text-xs text-surface-400 truncate capitalize">{session.user.role?.name?.toLowerCase() || "customer"}</p>
             </div>
           </div>
           <Link href="/api/auth/signout" className="w-full">
@@ -130,7 +130,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-surface-200 flex items-center justify-between px-6 shadow-sm z-10">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-surface-900 hidden sm:block">Sridha's Store Admin</h1>
+            <h1 className="text-lg font-bold text-surface-900 hidden sm:block">Sridha&apos;s Store Admin</h1>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 text-surface-400 hover:text-surface-600 rounded-full hover:bg-surface-100 transition-colors">

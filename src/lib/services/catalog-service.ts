@@ -6,6 +6,7 @@ import { listPublishedProducts, listAllCategories, listPublishedProductsByCatego
 import { Logger } from "@/lib/infrastructure/logger";
 import { CacheService } from "@/lib/infrastructure/cache/cache-service";
 import { CachePolicy } from "@/lib/infrastructure/cache/cache-policies";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 
 export async function getProducts(query?: string): Promise<Product[]> {
   try {
@@ -18,19 +19,11 @@ export async function getProducts(query?: string): Promise<Product[]> {
       });
     }
     
-    return await getStorefrontProducts();
+    return await CatalogService.getStorefrontProducts();
   } catch (err) {
     Logger.error("Failed to fetch products", { error: err });
     return [];
   }
-}
-
-export async function getStorefrontProducts(): Promise<Product[]> {
-  // Published Catalog
-  const policy = CachePolicy.Catalog.Published;
-  return await CacheService.remember(policy.key(), policy.ttl, async () => {
-    return await listPublishedProducts();
-  });
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {

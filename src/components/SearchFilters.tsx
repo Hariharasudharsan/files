@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
@@ -19,18 +19,8 @@ export default function SearchFilters({ categories }: SearchFiltersProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [sort, setSort] = useState("relevance");
-
-  useEffect(() => {
-    const cat = searchParams.get("category");
-    if (cat) setSelectedCategory(cat);
-    else setSelectedCategory("");
-    
-    const sortParam = searchParams.get("sort");
-    if (sortParam) setSort(sortParam);
-    else setSort("relevance");
-  }, [searchParams]);
+  const selectedCategory = searchParams.get("category") || "";
+  const sort = searchParams.get("sort") || "relevance";
 
   const updateFilters = (cat: string, newSort: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -46,13 +36,11 @@ export default function SearchFilters({ categories }: SearchFiltersProps) {
 
   const handleCategoryChange = (slug: string) => {
     const nextCat = selectedCategory === slug ? "" : slug;
-    setSelectedCategory(nextCat);
     updateFilters(nextCat, sort);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSort = e.target.value;
-    setSort(newSort);
     updateFilters(selectedCategory, newSort);
   };
 

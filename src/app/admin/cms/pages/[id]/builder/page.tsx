@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Save, Play, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
@@ -14,27 +14,34 @@ export default function PageBuilder() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchPage();
-  }, [id]);
-
-  const fetchPage = async () => {
+  const fetchPageData = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/cms/pages/${id}/versions`);
       if (res.ok) {
-        const data = await res.json();
+        return await res.json();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return null;
+  }, [id]);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchPageData().then((data) => {
+      if (!mounted) return;
+      if (data) {
         setPage(data.page);
-        
         let content = data.activeVersion?.content || [];
         if (typeof content === "string") content = JSON.parse(content);
         setBlocks(content);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
       setLoading(false);
-    }
-  };
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [fetchPageData]);
 
   const addBlock = (type: string) => {
     const newBlock = {

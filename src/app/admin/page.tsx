@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
   const [orderCount, productCount, customerCount] = await Promise.all([
     prisma.order.count(),
     prisma.product.count(),
-    prisma.user.count({ where: { role: "CUSTOMER" } }),
+    prisma.user.count({ where: { roleId: null } }),
   ]);
 
   // We could calculate revenue, but for the MVP dashboard we'll just pull the most recent 5 orders
@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-surface-950">Dashboard Overview</h1>
-          <p className="text-surface-500 mt-1">Welcome to the Sridha's Store Admin OS</p>
+          <p className="text-surface-500 mt-1">Welcome to the Sridha&apos;s Store Admin OS</p>
         </div>
         <div className="flex gap-3">
           <Link href="/admin/products/new">

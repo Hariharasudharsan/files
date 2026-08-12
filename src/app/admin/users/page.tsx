@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 export default async function AdminUsersPage() {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
+    include: { role: true },
   });
 
   return (
@@ -47,12 +48,12 @@ export default async function AdminUsersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border ${
-                      user.role === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" :
-                      user.role === "MANAGER" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                      user.role?.name === "ADMIN" ? "bg-purple-50 text-purple-700 border-purple-200" :
+                      user.role?.name === "MANAGER" ? "bg-blue-50 text-blue-700 border-blue-200" :
                       "bg-surface-100 text-surface-600 border-surface-200"
                     }`}>
-                      {user.role === "ADMIN" && <Shield className="w-3 h-3" />}
-                      {user.role}
+                      {user.role?.name === "ADMIN" && <Shield className="w-3 h-3" />}
+                      {user.role?.name || "CUSTOMER"}
                     </span>
                   </td>
                   <td className="px-6 py-4">

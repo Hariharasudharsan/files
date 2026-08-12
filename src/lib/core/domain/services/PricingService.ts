@@ -26,6 +26,9 @@ export interface CouponData {
 export interface PricingResult {
   subTotal: number;
   taxTotal: number;
+  cgstTotal: number;
+  sgstTotal: number;
+  igstTotal: number;
   shippingTotal: number;
   discountTotal: number;
   totalAmount: number;
@@ -36,6 +39,9 @@ export interface PricingResult {
     rate: number;
     taxRate: number;
     taxAmount: number;
+    cgstAmount: number;
+    sgstAmount: number;
+    igstAmount: number;
     total: number;
   }>;
 }
@@ -45,7 +51,9 @@ export class PricingService {
     items: PricingItemInput[],
     variantsMap: Map<string, VariantData>,
     coupon: CouponData | null,
-    isB2B: boolean
+    isB2B: boolean,
+    shippingState?: string,
+    sellerState?: string
   ): PricingResult {
     let subTotalBeforeDiscount = 0;
     let discountTotal = 0;
@@ -76,8 +84,16 @@ export class PricingService {
     // 3. Calculate line items with proportional discounts and taxes
     let subTotalAfterDiscountBeforeTax = 0;
     let taxTotal = 0;
+    let cgstTotal = 0;
+    let sgstTotal = 0;
+    let igstTotal = 0;
     let totalActualWeightKg = 0;
     let totalVolumetricWeightKg = 0;
+    
+    // Normalize states for comparison
+    const sState = shippingState?.trim().toLowerCase() || '';
+    const selState = sellerState?.trim().toLowerCase() || '';
+    const isIntraState = sState === selState && sState !== '';
 
     const calculatedItems = items.map((i) => {
       const variant = variantsMap.get(i.productVariantId)!;
@@ -91,8 +107,24 @@ export class PricingService {
       const taxAmount = (discountedItemTotalBeforeTax * taxRate) / 100;
       const itemTotal = discountedItemTotalBeforeTax + taxAmount;
       
+      let cgstAmount = 0;
+      let sgstAmount = 0;
+      let igstAmount = 0;
+
+      if (taxAmount > 0) {
+        if (isIntraState) {
+          cgstAmount = taxAmount / 2;
+          sgstAmount = taxAmount / 2;
+        } else {
+          igstAmount = taxAmount;
+        }
+      }
+
       subTotalAfterDiscountBeforeTax += discountedItemTotalBeforeTax;
       taxTotal += taxAmount;
+      cgstTotal += cgstAmount;
+      sgstTotal += sgstAmount;
+      igstTotal += igstAmount;
 
       const actualWeightKg = ((variant.weightGrams || 0) / 1000) * i.qty;
       totalActualWeightKg += actualWeightKg;
@@ -108,6 +140,9 @@ export class PricingService {
         rate,
         taxRate,
         taxAmount,
+        cgstAmount,
+        sgstAmount,
+        igstAmount,
         total: itemTotal,
       };
     });
@@ -124,6 +159,9 @@ export class PricingService {
     return {
       subTotal: subTotalAfterDiscountBeforeTax,
       taxTotal,
+      cgstTotal,
+      sgstTotal,
+      igstTotal,
       shippingTotal,
       discountTotal,
       totalAmount,

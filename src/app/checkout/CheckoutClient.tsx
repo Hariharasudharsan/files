@@ -23,7 +23,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   const [form, setForm] = useState({ 
     name: initialUser?.name || "", 
     email: initialUser?.email || "", 
-    phone: "", address: "", city: "", state: "", pincode: "",
+    phone: "", flatOrHouseNumber: "", localityOrArea: "", landmark: "", city: "", state: "", pincode: "",
     whatsappOptIn: true
   });
   const [status, setStatus] = useState<Status>("idle");
@@ -52,7 +52,9 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
     if (!/^[A-Za-z\s]{3,50}$/.test(form.name)) errors.name = "Name must be 3-50 characters (letters only).";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = "Valid email is required.";
     if (!/^[0-9]{10}$/.test(form.phone)) errors.phone = "Valid 10-digit phone number is required.";
-    if (form.address.trim().length < 10) errors.address = "Address must be at least 10 characters.";
+    if (form.flatOrHouseNumber.trim().length < 1) errors.flatOrHouseNumber = "Flat/House number is required.";
+    if (form.localityOrArea.trim().length < 3) errors.localityOrArea = "Locality/Area must be at least 3 characters.";
+    if (form.landmark && form.landmark.trim().length > 100) errors.landmark = "Landmark is too long.";
     if (form.city.trim().length < 2) errors.city = "City is required.";
     if (form.state.trim().length < 2) errors.state = "State is required.";
     if (!/^[0-9]{6}$/.test(form.pincode)) errors.pincode = "Valid 6-digit Pincode is required.";
@@ -255,22 +257,58 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
 
               <div className="glass p-6 rounded-2xl border border-surface-200 space-y-5">
                 <h2 className="font-display text-xl font-semibold text-surface-950 mb-4 border-b border-surface-200 pb-4">Shipping Address</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div>
+                    <label htmlFor="flatOrHouseNumber" className="mb-2 block text-sm font-semibold text-surface-900">
+                      Flat / House No. / Building
+                    </label>
+                    <input
+                      id="flatOrHouseNumber"
+                      name="flatOrHouseNumber"
+                      type="text"
+                      required
+                      value={form.flatOrHouseNumber}
+                      onChange={handleChange}
+                      aria-invalid={!!validationErrors.flatOrHouseNumber}
+                      className={`w-full rounded-xl border bg-white px-4 py-3 text-surface-950 focus:outline-none focus:ring-2 transition-shadow ${validationErrors.flatOrHouseNumber ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
+                      placeholder="E.g., Flat 201, ABC Apartments"
+                    />
+                    {validationErrors.flatOrHouseNumber && <p className="mt-1 text-xs text-red-500">{validationErrors.flatOrHouseNumber}</p>}
+                  </div>
+                  <div>
+                    <label htmlFor="localityOrArea" className="mb-2 block text-sm font-semibold text-surface-900">
+                      Locality / Area / Street
+                    </label>
+                    <input
+                      id="localityOrArea"
+                      name="localityOrArea"
+                      type="text"
+                      required
+                      value={form.localityOrArea}
+                      onChange={handleChange}
+                      aria-invalid={!!validationErrors.localityOrArea}
+                      className={`w-full rounded-xl border bg-white px-4 py-3 text-surface-950 focus:outline-none focus:ring-2 transition-shadow ${validationErrors.localityOrArea ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
+                      placeholder="E.g., Anna Nagar"
+                    />
+                    {validationErrors.localityOrArea && <p className="mt-1 text-xs text-red-500">{validationErrors.localityOrArea}</p>}
+                  </div>
+                </div>
+
                 <div>
-                  <label htmlFor="address" className="mb-2 block text-sm font-semibold text-surface-900">
-                    Complete Address
+                  <label htmlFor="landmark" className="mb-2 block text-sm font-semibold text-surface-900">
+                    Landmark (Optional)
                   </label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    required
-                    rows={3}
-                    value={form.address}
+                  <input
+                    id="landmark"
+                    name="landmark"
+                    type="text"
+                    value={form.landmark}
                     onChange={handleChange}
-                    aria-invalid={!!validationErrors.address}
-                    className={`w-full resize-none rounded-xl border bg-white px-4 py-3 text-surface-950 focus:outline-none focus:ring-2 transition-shadow ${validationErrors.address ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
-                    placeholder="House/Flat No., Street Name, Area"
+                    aria-invalid={!!validationErrors.landmark}
+                    className={`w-full rounded-xl border bg-white px-4 py-3 text-surface-950 focus:outline-none focus:ring-2 transition-shadow ${validationErrors.landmark ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
+                    placeholder="E.g., Near Post Office"
                   />
-                  {validationErrors.address && <p className="mt-1 text-xs text-red-500">{validationErrors.address}</p>}
+                  {validationErrors.landmark && <p className="mt-1 text-xs text-red-500">{validationErrors.landmark}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

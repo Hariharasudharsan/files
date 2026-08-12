@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 
 export default function FeatureFlagsPage() {
@@ -8,14 +8,23 @@ export default function FeatureFlagsPage() {
   const [showModal, setShowModal] = useState(false);
   const [newFlag, setNewFlag] = useState({ key: "", name: "", description: "", isEnabled: false });
 
-  useEffect(() => {
-    fetchFlags();
+  const fetchFlagsData = useCallback(async () => {
+    const res = await fetch("/api/admin/settings/flags");
+    if (res.ok) {
+      return await res.json();
+    }
+    return null;
   }, []);
 
-  const fetchFlags = async () => {
-    const res = await fetch("/api/admin/settings/flags");
-    if (res.ok) setFlags(await res.json());
-  };
+  useEffect(() => {
+    let mounted = true;
+    fetchFlagsData().then((data) => {
+      if (mounted && data) setFlags(data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [fetchFlagsData]);
 
   const toggleFlag = async (id: string, currentVal: boolean) => {
     await fetch("/api/admin/settings/flags", {
@@ -23,7 +32,8 @@ export default function FeatureFlagsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, isEnabled: !currentVal }),
     });
-    fetchFlags();
+    const data = await fetchFlagsData();
+    if (data) setFlags(data);
   };
 
   const createFlag = async (e: React.FormEvent) => {
@@ -35,7 +45,8 @@ export default function FeatureFlagsPage() {
     });
     setShowModal(false);
     setNewFlag({ key: "", name: "", description: "", isEnabled: false });
-    fetchFlags();
+    const data = await fetchFlagsData();
+    if (data) setFlags(data);
   };
 
   return (

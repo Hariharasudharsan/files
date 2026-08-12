@@ -23,13 +23,6 @@ export function registerOrderCreatedListeners() {
       });
     }
 
-    // 3. Send WhatsApp if opted in
-    if (event.payload.whatsappOptIn && event.payload.userPhone) {
-      await EnqueueJob("SEND_WHATSAPP", `whatsapp-order-${event.payload.orderId}`, {
-        to: event.payload.userPhone,
-        template: "order_confirmation",
-        data: event.payload,
-      });
-    }
+    // 3. WhatsApp is now sent on OrderPaid in whatsapp-listener.ts
   });
 }

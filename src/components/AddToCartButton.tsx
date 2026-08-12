@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Check, CreditCard } from "lucide-react";
+import { ShoppingCart, Check, CreditCard, Heart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { signIn } from "next-auth/react";
 import type { Product } from "@/lib/domain/entities/product";
 
 export default function AddToCartButton({ product }: { product: Product }) {
@@ -11,6 +13,11 @@ export default function AddToCartButton({ product }: { product: Product }) {
   const [justAdded, setJustAdded] = useState(false);
   const defaultVariant = product.variants?.[0];
   const availableStock = defaultVariant?.inventoryLevels?.reduce((sum, il) => sum + il.available, 0) || 0;
+
+  const addWishlistItem = useWishlistStore((s) => s.addItem);
+  const removeWishlistItem = useWishlistStore((s) => s.removeItem);
+  const wishlistIds = useWishlistStore((s) => s.itemIds);
+  const isWishlisted = defaultVariant ? wishlistIds.includes(defaultVariant.id) : false;
 
   const handleAdd = () => {
     if (defaultVariant) {
@@ -20,26 +27,74 @@ export default function AddToCartButton({ product }: { product: Product }) {
     }
   };
 
+  const handleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!defaultVariant) return;
+
+    const previousState = isWishlisted;
+    if (previousState) {
+      removeWishlistItem(defaultVariant.id);
+    } else {
+      addWishlistItem(defaultVariant.id);
+    }
+
+    try {
+      const res = await fetch("/api/v1/wishlist", {
+        method: previousState ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productVariantId: defaultVariant.id }),
+      });
+
+      if (res.status === 401) {
+        if (previousState) addWishlistItem(defaultVariant.id);
+        else removeWishlistItem(defaultVariant.id);
+        signIn();
+        return;
+      }
+      
+      if (!res.ok) throw new Error("Failed to update wishlist");
+    } catch (err) {
+      console.error("Failed to update wishlist:", err);
+      if (previousState) addWishlistItem(defaultVariant.id);
+      else removeWishlistItem(defaultVariant.id);
+    }
+  };
+
   return (
     <div className="w-full space-y-4">
-      <Button
-        size="lg"
-        className={`w-full text-base font-semibold transition-all ${
-          justAdded ? "bg-green-600 hover:bg-green-700" : ""
-        }`}
-        onClick={handleAdd}
-        disabled={!defaultVariant || availableStock <= 0}
-      >
-        {justAdded ? (
-          <span className="flex items-center justify-center gap-2">
-            <Check className="h-5 w-5" /> Added to Cart
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            <ShoppingCart className="h-5 w-5" /> Add to Cart
-          </span>
-        )}
-      </Button>
+      <div className="flex gap-2 w-full">
+        <Button
+          size="lg"
+          className={`flex-1 text-base font-semibold transition-all ${
+            justAdded ? "bg-green-600 hover:bg-green-700" : ""
+          }`}
+          onClick={handleAdd}
+          disabled={!defaultVariant || availableStock <= 0}
+        >
+          {justAdded ? (
+            <span className="flex items-center justify-center gap-2">
+              <Check className="h-5 w-5" /> Added to Cart
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <ShoppingCart className="h-5 w-5" /> Add to Cart
+            </span>
+          )}
+        </Button>
+
+        <button
+          onClick={handleWishlist}
+          disabled={!defaultVariant}
+          className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-md border transition-colors ${
+            isWishlisted
+              ? "border-red-200 bg-red-50 text-red-500"
+              : "border-surface-300 bg-white text-surface-600 hover:bg-surface-50 hover:text-red-500"
+          }`}
+          aria-label="Toggle Wishlist"
+        >
+          <Heart className={`w-5 h-5 ${isWishlisted ? "fill-current" : ""}`} />
+        </button>
+      </div>
 
       {/* Dynamic Checkout Buttons (Stubs) */}
       <div className="flex gap-2 w-full">

@@ -16,7 +16,19 @@ export async function GET(req: NextRequest) {
     const wishlist = await prisma.wishlist.findUnique({
       where: { userId: user.id },
       include: {
-        items: true,
+        items: {
+          include: {
+            productVariant: {
+              include: {
+                product: {
+                  include: {
+                    primaryImage: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 

@@ -1,76 +1,71 @@
-import { Shield, CheckCircle2 } from "lucide-react";
+import { prisma } from "@/lib/infrastructure/database/prisma";
+import { Shield, Plus, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
-const ROLES = [
-  {
-    name: "ADMIN",
-    description: "Full system access. Can modify settings, users, roles, and all e-commerce data.",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    permissions: [
-      "Manage Admin Users & Roles",
-      "Access System Settings",
-      "Manage All E-commerce Entities",
-      "Replay ERP Sync & Queues",
-      "Access Audit Logs",
-      "Manage CMS Content",
-    ]
-  },
-  {
-    name: "MANAGER",
-    description: "E-commerce operations access. Can manage orders, products, and customers.",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    permissions: [
-      "Manage Products & Inventory",
-      "Manage Orders & Shipments",
-      "View Customer Data",
-      "Manage CMS Content",
-      "View Sync Logs & Webhooks",
-    ]
-  },
-  {
-    name: "CUSTOMER",
-    description: "Standard storefront user. Cannot access the admin panel.",
-    color: "bg-surface-100 text-surface-700 border-surface-200",
-    permissions: [
-      "Place Orders",
-      "Manage Own Profile",
-      "View Own Order History",
-    ]
-  }
-];
+export default async function AdminRolesPage() {
+  const roles = await prisma.role.findMany({
+    include: {
+      permissions: true,
+      _count: {
+        select: { users: true }
+      }
+    },
+    orderBy: { createdAt: 'asc' }
+  });
 
-export default function AdminRolesPage() {
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-bold text-surface-950">Roles & Permissions</h1>
-        <p className="text-surface-500 mt-1">Review system roles and their granted capabilities.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-bold text-surface-950">Roles & Permissions</h1>
+          <p className="text-surface-500 mt-1">Review and manage system roles and their granted capabilities.</p>
+        </div>
+        <Button className="flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Create Role
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {ROLES.map((role) => (
-          <div key={role.name} className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden flex flex-col">
+        {roles.map((role) => (
+          <div key={role.id} className="bg-white rounded-2xl border border-surface-200 shadow-sm overflow-hidden flex flex-col">
             <div className={`p-6 border-b border-surface-100 flex items-start justify-between ${role.name === 'ADMIN' ? 'bg-purple-50/30' : role.name === 'MANAGER' ? 'bg-blue-50/30' : 'bg-surface-50'}`}>
               <div>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${role.color}`}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                  role.name === 'ADMIN' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                  role.name === 'MANAGER' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                  'bg-surface-100 text-surface-700 border-surface-200'
+                }`}>
                   {role.name === "ADMIN" && <Shield className="w-3.5 h-3.5" />}
                   {role.name}
                 </span>
                 <p className="mt-4 text-sm text-surface-600 leading-relaxed min-h-[40px]">
-                  {role.description}
+                  {role.description || "No description provided."}
+                </p>
+                <p className="mt-2 text-xs font-medium text-surface-500">
+                  {role._count.users} user(s) assigned
                 </p>
               </div>
             </div>
             <div className="p-6 flex-1 bg-white">
               <h4 className="text-xs font-bold text-surface-400 uppercase tracking-wider mb-4">Capabilities</h4>
               <ul className="space-y-3">
-                {role.permissions.map((perm, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-surface-700">
-                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-                    {perm}
-                  </li>
-                ))}
+                {role.permissions.length > 0 ? (
+                  role.permissions.map((perm) => (
+                    <li key={perm.id} className="flex items-start gap-3 text-sm text-surface-700">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                      {perm.action} {perm.resource}
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-sm text-surface-500 italic">No specific permissions</li>
+                )}
               </ul>
             </div>
+            {!role.isSystem && (
+              <div className="p-4 border-t border-surface-100 bg-surface-50 text-right">
+                <Button variant="outline" size="sm">Edit Role</Button>
+              </div>
+            )}
           </div>
         ))}
       </div>

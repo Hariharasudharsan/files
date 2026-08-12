@@ -6,6 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, Package, Plus, Star, Heart, Eye } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
+import { signIn } from "next-auth/react";
 import type { Product } from "@/lib/domain/entities/product";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +21,10 @@ export default function ProductCard({ product }: { product: Product }) {
   const defaultVariant = product.variants[0];
   const availableStock = defaultVariant?.inventoryLevels?.reduce((sum, il) => sum + il.available, 0) || 0;
 
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const wishlistIds = useWishlistStore((s) => s.itemIds);
+  const addWishlistItem = useWishlistStore((s) => s.addItem);
+  const removeWishlistItem = useWishlistStore((s) => s.removeItem);
+  const isWishlisted = defaultVariant ? wishlistIds.includes(defaultVariant.id) : false;
   const isNew = product.created_at ? new Date().getTime() - new Date(product.created_at).getTime() < 30 * 24 * 60 * 60 * 1000 : false;
   const isSale = defaultVariant?.compareAtPrice && Number(defaultVariant.compareAtPrice) > Number(defaultVariant.price);
   
@@ -28,26 +33,42 @@ export default function ProductCard({ product }: { product: Product }) {
     if (!defaultVariant) return;
 
     const previousState = isWishlisted;
-    setIsWishlisted(!isWishlisted);
+
+    if (previousState) {
+      removeWishlistItem(defaultVariant.id);
+    } else {
+      addWishlistItem(defaultVariant.id);
+    }
 
     try {
-      if (previousState) {
-        await fetch("/api/v1/wishlist", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productVariantId: defaultVariant.id }),
-        });
-      } else {
-        await fetch("/api/v1/wishlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productVariantId: defaultVariant.id }),
-        });
+      const res = await fetch("/api/v1/wishlist", {
+        method: previousState ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productVariantId: defaultVariant.id }),
+      });
+
+      if (res.status === 401) {
+        // Revert optimistic update and prompt sign in
+        if (previousState) {
+          addWishlistItem(defaultVariant.id);
+        } else {
+          removeWishlistItem(defaultVariant.id);
+        }
+        signIn();
+        return;
+      }
+      
+      if (!res.ok) {
+        throw new Error("Failed to update wishlist");
       }
     } catch (err) {
       console.error("Failed to update wishlist:", err);
       // Revert optimistic update on failure
-      setIsWishlisted(previousState);
+      if (previousState) {
+        addWishlistItem(defaultVariant.id);
+      } else {
+        removeWishlistItem(defaultVariant.id);
+      }
     }
   };
 

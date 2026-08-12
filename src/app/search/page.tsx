@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/infrastructure/database/prisma";
+import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import SearchFilters from "@/components/SearchFilters";
 import { getAllCategories } from "@/lib/services/catalog-service";
@@ -102,7 +103,7 @@ export default async function SearchPage({
             ) : (
               <div className="text-center py-20 bg-white rounded-xl border border-surface-200">
                 <p className="text-surface-900/60 text-lg">We couldn&apos;t find any products matching your search.</p>
-                <a href="/search" className="inline-block mt-4 text-primary-600 font-semibold underline">Clear all filters</a>
+                <Link href="/search" className="inline-block mt-4 text-primary-600 font-semibold underline">Clear all filters</Link>
               </div>
             )}
           </div>

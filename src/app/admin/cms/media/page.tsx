@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Upload, Trash2, Copy, FileImageIcon } from "lucide-react";
 
 export default function MediaLibraryPage() {
@@ -8,20 +8,27 @@ export default function MediaLibraryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
-  useEffect(() => {
-    fetchMedia();
-  }, []);
-
-  const fetchMedia = async () => {
+  const fetchMediaData = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/media");
       if (res.ok) {
-        setMedia(await res.json());
+        return await res.json();
       }
     } catch (e) {
       console.error(e);
     }
-  };
+    return null;
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    fetchMediaData().then((data) => {
+      if (mounted && data) setMedia(data);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [fetchMediaData]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,7 +51,8 @@ export default function MediaLibraryPage() {
         throw new Error("Upload failed");
       }
       
-      await fetchMedia();
+      const data = await fetchMediaData();
+      if (data) setMedia(data);
     } catch (error) {
       console.error(error);
       setUploadError("Failed to upload image. Please try again.");

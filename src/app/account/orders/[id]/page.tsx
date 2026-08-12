@@ -157,8 +157,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               {order.shippingAddress ? (
                 <>
                   <p className="font-semibold text-surface-950 mb-1">{(order.shippingAddress as any).name || session.user.name}</p>
-                  <p>{(order.shippingAddress as any).address}</p>
-                  <p>{(order.shippingAddress as any).city}, {(order.shippingAddress as any).state} {(order.shippingAddress as any).pincode}</p>
+                  <p>{(order.shippingAddress as any).flatOrHouseNumber}</p>
+                  <p>{(order.shippingAddress as any).localityOrArea}</p>
+                  {(order.shippingAddress as any).landmark && (
+                    <p>Landmark: {(order.shippingAddress as any).landmark}</p>
+                  )}
+                  <p>{(order.shippingAddress as any).city}, {(order.shippingAddress as any).state} - {(order.shippingAddress as any).pincode}</p>
                   <p className="mt-2">Ph: {(order.shippingAddress as any).phone}</p>
                 </>
               ) : (

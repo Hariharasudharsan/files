@@ -4,7 +4,7 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sridhasstore.com";
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
 
   // Base routes
   const routes = [

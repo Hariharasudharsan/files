@@ -19,7 +19,7 @@ export default withAuth(
     }
     
     if (isAdminAuthPage) {
-      if (isAuth && (token?.role === "ADMIN" || token?.role === "MANAGER")) {
+      if (isAuth && (token?.role?.name === "ADMIN" || token?.role?.name === "MANAGER")) {
         return NextResponse.redirect(new URL("/admin", req.url));
       }
       return NextResponse.next();
@@ -32,7 +32,7 @@ export default withAuth(
         }
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
-      if (token?.role !== "ADMIN" && token?.role !== "MANAGER") {
+      if (token?.role?.name !== "ADMIN" && token?.role?.name !== "MANAGER") {
         if (req.nextUrl.pathname.startsWith("/api/")) {
           return new NextResponse(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { 'content-type': 'application/json' } });
         }

@@ -45,9 +45,15 @@ export default function NewCmsPage() {
           <p className="text-xs text-surface-500 mt-2">You can use standard Markdown to format your page (e.g. ## Headings, **bold**, *italics*, [links](#)).</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-surface-50 p-4 rounded-xl border border-surface-200">
-          <input type="checkbox" name="isPublished" id="isPublished" className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
-          <label htmlFor="isPublished" className="text-sm font-semibold text-surface-900">Publish immediately</label>
+        <div className="flex flex-col gap-4 bg-surface-50 p-4 rounded-xl border border-surface-200">
+          <div className="flex items-center gap-3">
+            <input type="checkbox" name="isPublished" id="isPublished" className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
+            <label htmlFor="isPublished" className="text-sm font-semibold text-surface-900">Publish immediately</label>
+          </div>
+          <div className="flex items-center gap-3">
+            <label htmlFor="publishedAt" className="text-sm font-semibold text-surface-900 w-32">Or schedule for:</label>
+            <input type="datetime-local" name="publishedAt" id="publishedAt" className="flex-1 border-surface-300 rounded-lg px-4 py-2 text-sm" />
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">

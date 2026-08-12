@@ -1,7 +1,7 @@
 import { Factory, Leaf, ShieldCheck, Sun, Star } from "lucide-react";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
-import { getStorefrontProducts } from "@/lib/services/catalog-service";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +17,7 @@ const USPS = [
 ] as const;
 
 export default async function Home() {
-  const products = await getStorefrontProducts();
+  const products = await CatalogService.getStorefrontProducts();
   const featured = products.slice(0, 4);
 
   let banners: any[] = [];

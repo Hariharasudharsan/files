@@ -4,7 +4,9 @@ export interface CheckoutContact {
   name: string;
   email: string;
   phone: string;
-  address: string;
+  flatOrHouseNumber: string;
+  localityOrArea: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export default async function AdminAnalyticsPage() {
   const orderCount = await prisma.order.count();
-  const customerCount = await prisma.user.count({ where: { role: "CUSTOMER" } });
+  const customerCount = await prisma.user.count({ where: { roleId: null } });
   
   // Aggregate Gross Revenue
   const revenueAggregation = await prisma.order.aggregate({

@@ -7,6 +7,7 @@ import WhatsAppWidget from "@/components/WhatsAppWidget";
 import MobileBottomNav from "@/components/ui/MobileBottomNav";
 
 const CartDrawer = dynamic(() => import("@/components/CartDrawer"));
+import WishlistHydration from "@/components/WishlistHydration";
 import "./globals.css";
 
 const inter = Inter({
@@ -105,6 +106,7 @@ export default function RootLayout({
         />
         <Navbar />
         <CartDrawer />
+        <WishlistHydration />
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppWidget />

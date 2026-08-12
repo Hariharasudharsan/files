@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { processOutbox } from '../../../../lib/infrastructure/workers/OutboxWorker';
 import { registerAuditSubscriber } from '../../../../lib/infrastructure/events/subscribers/AuditSubscriber';
+import { registerWhatsAppListeners } from '../../../../lib/infrastructure/events/listeners/whatsapp-listener';
+import { registerOrderCreatedListeners } from '../../../../lib/infrastructure/events/listeners/order-created-listener';
 
 // Ensure subscribers are registered (this runs once per lambda container if outside handler, but we can call it safely if it's idempotent or just once)
 // Wait, eventBus in Next.js might be re-initialized. It's better to register once. Let's just call it.
 registerAuditSubscriber();
+registerWhatsAppListeners();
+registerOrderCreatedListeners();
 
 export async function GET() {
   try {

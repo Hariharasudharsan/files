@@ -1,7 +1,9 @@
 export interface Address {
   id: string;
   customerId: string;
-  street: string;
+  flatOrHouseNumber: string;
+  localityOrArea: string;
+  landmark?: string;
   city: string;
   state: string;
   pincode: string;
@@ -10,9 +12,13 @@ export interface Address {
 export interface Review {
   id: string;
   productId: string;
-  customerId: string;
+  userId: string;
+  authorName?: string;
   rating: number;
-  comment: string;
+  title?: string;
+  comment?: string;
+  isApproved?: boolean;
+  createdAt?: string;
 }
 
 export interface Coupon {

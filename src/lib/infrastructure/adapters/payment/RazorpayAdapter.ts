@@ -21,7 +21,8 @@ export class RazorpayAdapter implements PaymentPort {
         body: JSON.stringify({
           amount: Math.round(amount * 100), 
           currency: currency,
-          receipt: orderId
+          receipt: orderId,
+          notes: { orderId: orderId }
         })
       });
 

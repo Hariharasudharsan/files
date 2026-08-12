@@ -51,7 +51,9 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
   const name = sanitizeInput(contact.name as string);
   const email = typeof contact.email === "string" ? contact.email.trim().toLowerCase() : "";
   const phone = sanitizeInput(contact.phone as string);
-  const address = sanitizeInput(contact.address as string);
+  const flatOrHouseNumber = sanitizeInput(contact.flatOrHouseNumber as string);
+  const localityOrArea = sanitizeInput(contact.localityOrArea as string);
+  const landmark = sanitizeInput(contact.landmark as string);
   const city = sanitizeInput(contact.city as string);
   const state = sanitizeInput(contact.state as string);
   const pincode = sanitizeInput(contact.pincode as string);
@@ -71,8 +73,16 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
     errors.push("A valid 10-digit Indian mobile number is required.");
   }
 
-  if (!address || address.length < 10 || address.length > 200) {
-    errors.push("Address must be between 10 and 200 characters.");
+  if (!flatOrHouseNumber || flatOrHouseNumber.length < 1 || flatOrHouseNumber.length > 50) {
+    errors.push("Flat/House number is required and must be under 50 characters.");
+  }
+
+  if (!localityOrArea || localityOrArea.length < 3 || localityOrArea.length > 100) {
+    errors.push("Locality/Area is required and must be between 3 and 100 characters.");
+  }
+
+  if (landmark && landmark.length > 100) {
+    errors.push("Landmark must be under 100 characters.");
   }
 
   if (!city || city.length < 2) {
@@ -91,6 +101,6 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
 
   return ok({
     items,
-    contact: { name, email, phone, address, city, state, pincode, whatsappOptIn },
+    contact: { name, email, phone, flatOrHouseNumber, localityOrArea, landmark, city, state, pincode, whatsappOptIn },
   });
 }

@@ -4,6 +4,7 @@ import { OrderStatus, PaymentStatus, FulfillmentStatus } from "@prisma/client";
 import { eventBus } from "../../infrastructure/events/EventBus";
 import { OrderCreatedEvent } from "../domain/events/DomainEvent";
 import { PricingService, PricingItemInput, VariantData, CouponData } from "../domain/services/PricingService";
+import { getServerEnv } from "../config/env";
 
 const razorpayAdapter = new RazorpayAdapter();
 
@@ -12,7 +13,9 @@ export interface CreateOrderDTO {
     name: string;
     email: string;
     phone: string;
-    address: string;
+    flatOrHouseNumber: string;
+    localityOrArea: string;
+    landmark?: string;
     city: string;
     state: string;
     pincode: string;
@@ -76,7 +79,15 @@ export class OrderService {
     }));
 
     // Use pure PricingService
-    const pricing = PricingService.calculate(pricingInput, variantMap, couponData, isB2B);
+    const env = getServerEnv();
+    const pricing = PricingService.calculate(
+      pricingInput,
+      variantMap,
+      couponData,
+      isB2B,
+      dto.contact.state,
+      env.sellerState
+    );
 
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
@@ -84,6 +95,9 @@ export class OrderService {
           userId: user.id,
           subTotal: pricing.subTotal,
           taxTotal: pricing.taxTotal,
+          cgstTotal: pricing.cgstTotal,
+          sgstTotal: pricing.sgstTotal,
+          igstTotal: pricing.igstTotal,
           shippingTotal: pricing.shippingTotal,
           discountTotal: pricing.discountTotal,
           total: pricing.totalAmount,
@@ -100,21 +114,55 @@ export class OrderService {
       });
 
       if (dbCoupon) {
-        await tx.coupon.update({
-          where: { id: dbCoupon.id },
+        // Atomic conditional update to prevent race conditions on usage limit.
+        // We use the dbCoupon.usageLimit read at the start of checkout as a literal.
+        // This is an acceptable tradeoff since usageLimit changes rarely, but it ensures
+        // we never exceed it even with concurrent checkouts.
+        const result = await tx.coupon.updateMany({
+          where: {
+            id: dbCoupon.id,
+            ...(dbCoupon.usageLimit !== null ? { usedCount: { lt: dbCoupon.usageLimit } } : {})
+          },
           data: { usedCount: { increment: 1 } },
         });
+
+        if (result.count === 0) {
+          throw new Error("Coupon usage limit reached.");
+        }
       }
 
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
       for (const item of dto.items) {
+        // Find a warehouse with enough stock
+        const level = await tx.inventoryLevel.findFirst({
+          where: { productVariantId: item.productVariantId, available: { gte: item.qty } }
+        });
+        if (!level) throw new Error("This item just went out of stock.");
+
+        // Atomically update inventory
+        const updated = await tx.inventoryLevel.updateMany({
+          where: {
+            warehouseId: level.warehouseId,
+            productVariantId: item.productVariantId,
+            available: { gte: item.qty }
+          },
+          data: {
+            available: { decrement: item.qty },
+            reserved: { increment: item.qty }
+          }
+        });
+
+        if (updated.count === 0) {
+          throw new Error("This item just went out of stock.");
+        }
+
         await tx.inventoryReservation.create({
           data: {
             productVariantId: item.productVariantId,
             orderId: newOrder.id,
             qty: item.qty,
             expiresAt,
-            status: 'active',
+            status: 'ACTIVE',
           },
         });
       }

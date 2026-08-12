@@ -14,12 +14,19 @@ const envSchema = z.object({
 
   // Application URLs
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  NEXT_PUBLIC_SITE_URL: process.env.NODE_ENV === "production" 
+    ? z.string().url() 
+    : z.string().url().optional(),
 
   // ERPNext (Frappe Cloud) Configurations
   ERPNEXT_URL: z.string().url().optional(),
   ERPNEXT_API_KEY: z.string().optional(),
   ERPNEXT_API_SECRET: z.string().optional(),
   ERPNEXT_WEBHOOK_SECRET: z.string().optional(),
+
+  // Seller Details
+  SELLER_STATE: z.string().optional().default("Tamil Nadu"),
+  SELLER_GSTIN: z.string().optional(),
 
   // Queue & Redis (For future use)
   REDIS_URL: z.string().url().optional(),
@@ -57,6 +64,8 @@ export function getServerEnv() {
         ? `token ${env.ERPNEXT_API_KEY}:${env.ERPNEXT_API_SECRET}`
         : undefined,
     erpWebhookSecret: env.ERPNEXT_WEBHOOK_SECRET,
+    sellerState: env.SELLER_STATE,
+    sellerGstin: env.SELLER_GSTIN,
     s3: {
       endpoint: env.S3_ENDPOINT,
       region: env.S3_REGION,

@@ -3,7 +3,19 @@ import { OrderService } from "@/lib/core/application/OrderService";
 import { Logger } from "@/lib/infrastructure/logger";
 import { validateCreateOrderPayload } from "@/lib/validation/orders";
 
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+  const key = `ratelimit:checkout:${ip}`;
+  const limit = parseInt(process.env.RATE_LIMIT_CHECKOUT_MAX || "10");
+  const windowSec = parseInt(process.env.RATE_LIMIT_CHECKOUT_WINDOW_SEC || "60");
+
+  const { success } = await RateLimiter.check(key, limit, windowSec);
+  if (!success) {
+    return NextResponse.json({ error: "Too many checkout attempts. Please try again later." }, { status: 429 });
+  }
+
   try {
     const payload = await request.json();
     const validation = validateCreateOrderPayload(payload);

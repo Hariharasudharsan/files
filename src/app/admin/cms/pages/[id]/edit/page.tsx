@@ -10,6 +10,7 @@ export default async function EditCmsPage({ params }: { params: Promise<{ id: st
   
   const page = await prisma.cmsPage.findUnique({
     where: { id },
+    include: { versions: { orderBy: { version: 'desc' } } }
   });
 
   if (!page) notFound();
@@ -33,6 +34,8 @@ export default async function EditCmsPage({ params }: { params: Promise<{ id: st
     await savePage(formData);
     redirect("/admin/cms/pages");
   };
+
+  const publishedAtValue = page.publishedAt ? new Date(page.publishedAt.getTime() - page.publishedAt.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -69,9 +72,15 @@ export default async function EditCmsPage({ params }: { params: Promise<{ id: st
           <p className="text-xs text-surface-500 mt-2">You can use standard Markdown to format your page (e.g. ## Headings, **bold**, *italics*, [links](#)).</p>
         </div>
 
-        <div className="flex items-center gap-3 bg-surface-50 p-4 rounded-xl border border-surface-200">
-          <input type="checkbox" name="isPublished" id="isPublished" defaultChecked={page.status === 'PUBLISHED'} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
-          <label htmlFor="isPublished" className="text-sm font-semibold text-surface-900">Publish immediately</label>
+        <div className="flex flex-col gap-4 bg-surface-50 p-4 rounded-xl border border-surface-200">
+          <div className="flex items-center gap-3">
+            <input type="checkbox" name="isPublished" id="isPublished" defaultChecked={page.status === 'PUBLISHED'} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
+            <label htmlFor="isPublished" className="text-sm font-semibold text-surface-900">Publish immediately</label>
+          </div>
+          <div className="flex items-center gap-3">
+            <label htmlFor="publishedAt" className="text-sm font-semibold text-surface-900 w-32">Or schedule for:</label>
+            <input type="datetime-local" name="publishedAt" id="publishedAt" defaultValue={publishedAtValue} className="flex-1 border-surface-300 rounded-lg px-4 py-2 text-sm" />
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">
@@ -80,6 +89,37 @@ export default async function EditCmsPage({ params }: { params: Promise<{ id: st
           </Button>
         </div>
       </form>
+
+      {/* Version History */}
+      <div className="bg-white p-8 rounded-2xl border border-surface-200 shadow-sm mt-8">
+        <h2 className="text-lg font-bold text-surface-900 mb-4">Version History</h2>
+        <div className="space-y-4">
+          {page.versions.map((v) => (
+            <div key={v.id} className="flex items-center justify-between p-4 border rounded-lg bg-surface-50">
+              <div>
+                <p className="font-medium text-surface-900">Version {v.version}</p>
+                <p className="text-xs text-surface-500">{new Date(v.createdAt).toLocaleString()}</p>
+                {page.activeVersionId === v.id && (
+                  <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-full mt-1 inline-block">Active Version</span>
+                )}
+              </div>
+              {page.activeVersionId !== v.id && (
+                <form action={async () => {
+                  "use server";
+                  const { rollbackToVersion } = await import("../../actions");
+                  await rollbackToVersion(page.id, v.id);
+                  const { redirect } = await import("next/navigation");
+                  redirect(`/admin/cms/pages/${page.id}/edit`);
+                }}>
+                  <button type="submit" className="px-3 py-1.5 text-sm border border-surface-300 rounded hover:bg-surface-100 font-medium transition-colors">
+                    Restore this version
+                  </button>
+                </form>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

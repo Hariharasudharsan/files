@@ -53,6 +53,9 @@ export class ShiprocketAdapter implements ShippingPort {
         pickup_location: "Primary Warehouse",
         billing_customer_name: "Customer", // Mapped from Customer relation
         billing_last_name: "",
+        // TODO: When fully implemented, map the new Indian address fields:
+        // billing_address: order.shippingAddress.flatOrHouseNumber + ', ' + order.shippingAddress.localityOrArea
+        // billing_address_2: order.shippingAddress.landmark || ''
         billing_address: "Address", // Mapped from Customer relation
         billing_city: "City",
         billing_pincode: "123456",

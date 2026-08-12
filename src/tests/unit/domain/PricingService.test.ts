@@ -60,4 +60,30 @@ describe('PricingService', () => {
     expect(() => PricingService.calculate(items, variantsMap, coupon, false))
       .toThrowError(/Minimum order value/);
   });
+
+  it('should split tax into CGST and SGST for intra-state (same state)', () => {
+    const items = [{ productVariantId: 'v1', qty: 1, taxRate: 18 }]; // price: 100, tax: 18
+    const result = PricingService.calculate(items, variantsMap, null, false, 'Tamil Nadu', 'Tamil Nadu');
+    
+    expect(result.taxTotal).toBe(18);
+    expect(result.cgstTotal).toBe(9);
+    expect(result.sgstTotal).toBe(9);
+    expect(result.igstTotal).toBe(0);
+    expect(result.calculatedItems[0].cgstAmount).toBe(9);
+    expect(result.calculatedItems[0].sgstAmount).toBe(9);
+    expect(result.calculatedItems[0].igstAmount).toBe(0);
+  });
+
+  it('should allocate full tax to IGST for inter-state (different state)', () => {
+    const items = [{ productVariantId: 'v1', qty: 1, taxRate: 18 }]; // price: 100, tax: 18
+    const result = PricingService.calculate(items, variantsMap, null, false, 'Karnataka', 'Tamil Nadu');
+    
+    expect(result.taxTotal).toBe(18);
+    expect(result.cgstTotal).toBe(0);
+    expect(result.sgstTotal).toBe(0);
+    expect(result.igstTotal).toBe(18);
+    expect(result.calculatedItems[0].cgstAmount).toBe(0);
+    expect(result.calculatedItems[0].sgstAmount).toBe(0);
+    expect(result.calculatedItems[0].igstAmount).toBe(18);
+  });
 });

@@ -38,9 +38,11 @@ test.describe('Checkout Flow', () => {
     // 7. Fill Shipping Details
     await page.fill('input[name="firstName"]', 'John');
     await page.fill('input[name="lastName"]', 'Doe');
-    await page.fill('input[name="address1"]', '123 Test Street');
+    await page.fill('input[name="flatOrHouseNumber"]', 'Flat 201, ABC Apartments');
+    await page.fill('input[name="localityOrArea"]', 'Anna Nagar');
+    await page.fill('input[name="landmark"]', 'Near Post Office');
     await page.fill('input[name="city"]', 'Chennai');
-    await page.fill('input[name="postalCode"]', '600001');
+    await page.fill('input[name="pincode"]', '600001');
     await page.fill('input[name="phone"]', '9876543210');
     
     // 8. Place Order

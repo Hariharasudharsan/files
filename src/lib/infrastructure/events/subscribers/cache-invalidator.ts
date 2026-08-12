@@ -1,7 +1,7 @@
 import { eventBus } from "../EventBus";
 import { CacheService } from "../../cache/cache-service";
 import { CacheNamespaces } from "../../cache/cache-policies";
-import { getStorefrontProducts } from "@/lib/services/catalog-service";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 import { Logger } from "../../logger";
 
 /**
@@ -24,7 +24,7 @@ export function initializeCacheInvalidators() {
     // Cache Warming! 
     // We execute a background fetch so the next customer doesn't pay the cache miss penalty.
     Logger.info("[CacheInvalidator] Warming cache in background...");
-    getStorefrontProducts().then(() => {
+    CatalogService.getStorefrontProducts().then(() => {
       Logger.info("[CacheInvalidator] Cache warming complete.");
     }).catch((err) => {
       Logger.error("[CacheInvalidator] Cache warming failed", { error: err });

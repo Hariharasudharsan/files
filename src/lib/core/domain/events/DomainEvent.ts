@@ -80,3 +80,31 @@ export class ProductUpdatedEvent implements DomainEvent {
     };
   }
 }
+
+export class ShipmentStatusUpdatedEvent implements DomainEvent {
+  public id: string;
+  public aggregateId: string;
+  public aggregateType = 'Shipment';
+  public eventType = 'ShipmentStatusUpdated';
+  public occurredAt: Date;
+  public payload: {
+    shipmentId: string;
+    orderId: string;
+    status: string;
+    trackingUrl: string;
+    userPhone: string;
+  };
+
+  constructor(shipmentId: string, orderId: string, status: string, trackingUrl: string, userPhone: string) {
+    this.id = crypto.randomUUID();
+    this.aggregateId = shipmentId;
+    this.occurredAt = new Date();
+    this.payload = {
+      shipmentId,
+      orderId,
+      status,
+      trackingUrl,
+      userPhone
+    };
+  }
+}
