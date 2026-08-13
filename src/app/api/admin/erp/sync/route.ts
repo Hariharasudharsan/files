@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ERPSyncService } from "@/lib/core/application/erp-sync-service";
+import { ERPSyncService } from "@/lib/infrastructure/erpnext/erp-sync-service";
 
 export async function POST() {
   try {

@@ -1,5 +1,5 @@
 import { createWorker } from '../queue/bullmq';
-import { ERPSyncService } from "@/lib/core/application/erp-sync-service";
+import { ERPSyncService } from "@/lib/infrastructure/erpnext/erp-sync-service";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { Logger } from "../logger";
 
