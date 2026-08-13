@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProductsByCategory, getAllCategories } from "@/lib/services/catalog-service";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters from "@/components/ProductFilters";
 import { Filter } from "lucide-react";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const categories = await getAllCategories();
+  const categories = await CatalogService.getAllCategories();
   const category = categories.find(c => c.slug === slug.toLowerCase());
   
   return {
@@ -20,14 +20,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const categories = await getAllCategories();
+  const categories = await CatalogService.getAllCategories();
   const category = categories.find(c => c.slug === slug.toLowerCase());
 
   if (!category) {
     notFound();
   }
 
-  const products = await getProductsByCategory(category.slug);
+  const products = await CatalogService.getProductsByCategory(category.slug);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">

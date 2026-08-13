@@ -1,5 +1,5 @@
 import type { IRepository, PaginatedResult } from "./core";
-import type { Product as DomainProduct, ProductVariant as DomainProductVariant } from "@/lib/domain/entities/product";
+import type { Product as DomainProduct, ProductVariant as DomainProductVariant } from "@/lib/core/domain/entities/product";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export class ProductRepository implements IRepository<DomainProduct, string> {

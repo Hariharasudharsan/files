@@ -30,7 +30,7 @@ export default function CartDrawer() {
         })
         .catch(console.error);
     }
-  }, [isOpen, items.length]);
+  }, [isOpen, items]);
 
   const shipping = total > 500 ? 0 : 50;
 

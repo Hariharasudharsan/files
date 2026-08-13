@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Address } from "@/lib/domain/entities/commerce";
+import type { Address } from "@/lib/core/domain/entities/commerce";
 
 export class AddressRepository implements IRepository<Address, string> {
   async findById(id: string): Promise<Address | null> { return null; }

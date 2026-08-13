@@ -82,24 +82,23 @@ export default async function Home() {
       </MotionSection>
 
 
-      {/* Reviews */}
+      {/* How it's made */}
       <MotionSection className="bg-surface-50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center">
-          <h2 className="font-display text-3xl font-bold text-surface-950 mb-12">Loved by Families</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i, idx) => (
-              <MotionDiv key={i} delay={idx * 0.15} className="glass rounded-2xl p-8 text-left">
-                <div className="flex gap-1 mb-4 text-accent-500">
-                  <Star className="fill-current w-5 h-5" />
-                  <Star className="fill-current w-5 h-5" />
-                  <Star className="fill-current w-5 h-5" />
-                  <Star className="fill-current w-5 h-5" />
-                  <Star className="fill-current w-5 h-5" />
-                </div>
-                <p className="text-surface-900/80 mb-6 italic">
-                  &quot;Absolutely amazing! Reminds me of my grandmother&apos;s cooking. The Appalams are so crispy and perfectly spiced.&quot;
+          <h2 className="font-display text-3xl font-bold text-surface-950 mb-12">Sun-Dried Tradition: How It&apos;s Made</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
+            {[
+              { time: "Dawn", desc: "Fresh ingredients are sourced and dough is kneaded with traditional spices." },
+              { time: "Midday", desc: "The dough is hand-rolled or pressed and laid out under the scorching sun." },
+              { time: "Dusk", desc: "After hours of sun-drying, the papads achieve their signature crispness." },
+              { time: "Night", desc: "They are hygienically packed to seal in the freshness and flavor." }
+            ].map((step, idx) => (
+              <MotionDiv key={step.time} delay={idx * 0.15} className="glass rounded-2xl p-8 border border-surface-200 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-400 to-yellow-500"></div>
+                <h3 className="font-display text-xl font-bold text-surface-950 mb-3 text-orange-600">{step.time}</h3>
+                <p className="text-surface-900/80 leading-relaxed">
+                  {step.desc}
                 </p>
-                <p className="font-bold text-surface-950">- Happy Customer {i}</p>
               </MotionDiv>
             ))}
           </div>

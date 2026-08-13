@@ -27,14 +27,14 @@ On Windows PowerShell, use `npm.cmd run dev` if script execution policy blocks `
 - `lib/integrations/erp`: ERPNext adapter, sync queue, retry, and webhook handling.
 - `lib/api`: browser API service helpers.
 - `lib/validation`: request validation.
-- `data`: internal catalog seed/snapshot data.
+- `data`: Postgres database via Prisma (requires live DB and NextAuth secret to run).
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full analysis, dependency inventory, missing production infrastructure, and the reason behind each architectural improvement.
+See [src/lib/ARCHITECTURE.md](src/lib/ARCHITECTURE.md) for the full analysis, dependency inventory, missing production infrastructure, and the reason behind each architectural improvement.
 
 ## Data Flow
 
 - Products are read through the storefront catalog service, not directly from ERPNext.
-- Checkout posts to the storefront API route at `/api/orders`.
+- Checkout posts to the storefront API route at `/api/v1/orders/init-payment`.
 - The order API validates the request, accepts a storefront order, and queues ERP sync asynchronously.
 - ERP webhook events post to `/api/webhooks/erpnext` and are queued for internal synchronization.
 

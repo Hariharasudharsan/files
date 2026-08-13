@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AddToCartButton from '@/components/AddToCartButton';
-import type { Product } from '@/lib/domain/entities/product';
+import type { Product } from '@/lib/core/domain/entities/product';
 
 // Mock the Zustand store
 vi.mock('@/store/useCartStore', () => ({

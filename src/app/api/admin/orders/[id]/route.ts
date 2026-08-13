@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
 import { updateOrderStatus } from "@/lib/repositories/order-repository";
 import { z } from "zod";
-import { updateOrderStatusSchema } from "@/lib/domain/schemas/admin";
+import { updateOrderStatusSchema } from "@/lib/core/domain/schemas/admin";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

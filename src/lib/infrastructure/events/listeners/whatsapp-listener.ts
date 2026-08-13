@@ -1,7 +1,7 @@
 import { eventBus } from "../EventBus";
 import type { OrderPaidEvent, ShipmentStatusUpdatedEvent } from "@/lib/core/domain/events/DomainEvent";
 import { Logger } from "@/lib/infrastructure/logger";
-import { WhatsAppService } from "@/lib/services/whatsapp-service";
+import { WhatsAppService } from "@/lib/core/application/whatsapp-service";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 const whatsappService = new WhatsAppService();

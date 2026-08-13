@@ -18,11 +18,8 @@ export default async function AdminRolesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-surface-950">Roles & Permissions</h1>
-          <p className="text-surface-500 mt-1">Review and manage system roles and their granted capabilities.</p>
+          <p className="text-surface-500 mt-1">View system roles and their granted capabilities. This is a read-only reference.</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Create Role
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -61,11 +58,6 @@ export default async function AdminRolesPage() {
                 )}
               </ul>
             </div>
-            {!role.isSystem && (
-              <div className="p-4 border-t border-surface-100 bg-surface-50 text-right">
-                <Button variant="outline" size="sm">Edit Role</Button>
-              </div>
-            )}
           </div>
         ))}
       </div>

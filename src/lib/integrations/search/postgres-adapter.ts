@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { Logger } from "@/lib/infrastructure/logger";
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 import type { ISearchAdapter, SearchFilters, SearchResult } from "./types";
 
 export class PostgresSearchAdapter implements ISearchAdapter {

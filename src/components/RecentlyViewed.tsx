@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 import ProductCard from "./ProductCard";
 
 const RECENTLY_VIEWED_KEY = "mathuram_recently_viewed";

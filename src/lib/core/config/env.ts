@@ -57,6 +57,7 @@ export const env = parsedEnv.data;
 
 export function getServerEnv() {
   return {
+    siteUrl: env.NEXT_PUBLIC_SITE_URL || env.NEXT_PUBLIC_APP_URL,
     nodeEnv: env.NODE_ENV,
     erpBaseUrl: env.ERPNEXT_URL,
     erpAuthToken:

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { InventorySnapshot, Product, ProductVariant } from "@/lib/domain/entities/product";
+import type { InventorySnapshot, Product, ProductVariant } from "@/lib/core/domain/entities/product";
 import { Logger } from "@/lib/infrastructure/logger";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 

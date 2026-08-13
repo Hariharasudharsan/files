@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Star } from "lucide-react";
-import type { Review } from "@/lib/domain/entities/commerce";
+import type { Review } from "@/lib/core/domain/entities/commerce";
 
 export default function ProductReviews({ productId }: { productId: string }) {
   const [reviews, setReviews] = useState<Review[]>([]);

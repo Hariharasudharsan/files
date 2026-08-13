@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
 export default function WhatsAppWidget() {
+  // TODO: Replace NEXT_PUBLIC_WHATSAPP_NUMBER in .env with the real number once available
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function WhatsAppWidget() {
             Need help with your order? Chat with us!
           </div>
           <a
-            href="https://wa.me/919876543210" // Example number
+            href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-xl hover:bg-green-600 hover:scale-110 transition-all duration-300"

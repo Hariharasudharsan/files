@@ -1,7 +1,7 @@
 import "server-only";
 
 import crypto from "crypto";
-import type { CreateOrderInput, StorefrontOrder } from "@/lib/domain/entities/order";
+import type { CreateOrderInput, StorefrontOrder } from "@/lib/core/domain/entities/order";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { OrderStatus, PaymentStatus, FulfillmentStatus } from "@prisma/client";
 

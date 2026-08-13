@@ -1,6 +1,6 @@
-import type { StorefrontOrder } from "@/lib/domain/entities/order";
-import type { CustomerProfile } from "@/lib/domain/entities/customer";
-import type { Product } from "@/lib/domain/entities/product";
+import type { StorefrontOrder } from "@/lib/core/domain/entities/order";
+import type { CustomerProfile } from "@/lib/core/domain/entities/customer";
+import type { Product } from "@/lib/core/domain/entities/product";
 
 export interface DomainEvent {
   eventName: string;

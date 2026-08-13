@@ -15,15 +15,15 @@ export default function Footer() {
           {/* Brand & Newsletter */}
           <div className="lg:col-span-1 space-y-6">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 font-display text-xl font-bold text-white shadow-md shadow-primary-600/20">
-                M
-              </span>
-              <span className="leading-tight">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
+                <span className="font-display text-xl font-bold">S</span>
+              </div>
+              <div className="hidden sm:block">
                 <span className="block font-display text-lg font-bold text-white tracking-tight">Sridha&apos;s Store</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-500">
                   Heritage Kitchen
                 </span>
-              </span>
+              </div>
             </Link>
             <p className="text-sm leading-relaxed text-surface-400">
               Authentic, factory-direct traditional foods. Sun-dried, hygienically packed, and delivered across India.

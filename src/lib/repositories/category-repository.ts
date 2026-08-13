@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Category } from "@/lib/domain/entities/product";
+import type { Category } from "@/lib/core/domain/entities/product";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export class CategoryRepository implements IRepository<Category, string> {

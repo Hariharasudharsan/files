@@ -1,6 +1,6 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import type { StorefrontOrder } from "@/lib/domain/entities/order";
+import type { StorefrontOrder } from "@/lib/core/domain/entities/order";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "",

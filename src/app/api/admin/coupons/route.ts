@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
 import { CouponRepository } from "@/lib/repositories/coupon-repository";
 import { z } from "zod";
-import { createCouponSchema } from "@/lib/domain/schemas/admin";
+import { createCouponSchema } from "@/lib/core/domain/schemas/admin";
 
 export async function POST(req: Request) {
   try {

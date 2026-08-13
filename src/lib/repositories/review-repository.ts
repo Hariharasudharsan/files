@@ -1,5 +1,5 @@
 import type { IRepository } from "./core";
-import type { Review } from "@/lib/domain/entities/commerce";
+import type { Review } from "@/lib/core/domain/entities/commerce";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export class ReviewRepository implements IRepository<Review, string> {

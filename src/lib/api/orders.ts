@@ -1,4 +1,4 @@
-import type { CreateOrderInput } from "@/lib/domain/entities/order";
+import type { CreateOrderInput } from "@/lib/core/domain/entities/order";
 import { postJson } from "@/lib/api/http";
 
 export interface InitPaymentResponse {

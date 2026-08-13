@@ -7,7 +7,7 @@ import { X, Check, Plus, Package } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCartStore } from "@/store/useCartStore";
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 
 interface QuickViewModalProps {
   product: Product;

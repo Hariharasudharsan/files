@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 import { searchAdapter } from "@/lib/integrations/search/postgres-adapter";
 import { listPublishedProducts, listAllCategories, listPublishedProductsByCategory } from "@/lib/repositories/catalog-repository";
 import { Logger } from "@/lib/infrastructure/logger";

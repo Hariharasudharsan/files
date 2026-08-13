@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { analytics } from "@/lib/services/analytics-service";
+import { analytics } from "@/lib/core/application/analytics-service";
 
 export async function POST(req: NextRequest) {
   try {

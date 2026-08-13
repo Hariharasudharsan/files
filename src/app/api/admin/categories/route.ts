@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
 import { CategoryRepository } from "@/lib/repositories/category-repository";
 import { z } from "zod";
-import { createCategorySchema } from "@/lib/domain/schemas/admin";
+import { createCategorySchema } from "@/lib/core/domain/schemas/admin";
 
 export async function POST(req: Request) {
   try {

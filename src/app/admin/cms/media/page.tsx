@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Upload, Trash2, Copy, FileImageIcon } from "lucide-react";
+import Image from "next/image";
 
 export default function MediaLibraryPage() {
   const [media, setMedia] = useState<any[]>([]);
@@ -99,7 +100,7 @@ export default function MediaLibraryPage() {
           <div key={item.id} className="group relative border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
             <div className="aspect-square bg-gray-100 flex items-center justify-center overflow-hidden">
               {item.type === "IMAGE" ? (
-                <img src={item.url} alt={item.alt} className="w-full h-full object-cover" />
+                <Image src={item.url} alt={item.alt} fill unoptimized className="object-cover" />
               ) : (
                 <FileImageIcon className="w-12 h-12 text-gray-400" />
               )}

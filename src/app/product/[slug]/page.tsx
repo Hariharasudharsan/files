@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Package } from "lucide-react";
-import { getProductBySlug } from "@/lib/services/catalog-service";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductGallery from "@/components/ProductGallery";
 import ProductAccordions from "@/components/ProductAccordions";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await CatalogService.getProductBySlug(slug);
   
   if (!product) {
     return { title: 'Product Not Found' };
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await CatalogService.getProductBySlug(slug);
 
   if (!product) {
     notFound();

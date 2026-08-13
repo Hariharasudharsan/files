@@ -2,7 +2,7 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import SearchFilters from "@/components/SearchFilters";
-import { getAllCategories } from "@/lib/services/catalog-service";
+import { CatalogService } from "@/lib/core/application/CatalogService";
 import SearchSortDesktop from "@/components/SearchSortDesktop";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +68,7 @@ export default async function SearchPage({
     });
   }
 
-  const categories = await getAllCategories();
+  const categories = await CatalogService.getAllCategories();
 
   return (
     <div className="bg-surface-50 min-h-screen pb-20">

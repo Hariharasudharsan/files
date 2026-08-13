@@ -8,7 +8,7 @@ import { Check, Package, Plus, Star, Heart, Eye } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { signIn } from "next-auth/react";
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import QuickViewModal from "@/components/QuickViewModal";
@@ -166,19 +166,11 @@ export default function ProductCard({ product }: { product: Product }) {
       </div>
 
       <div className="flex flex-1 flex-col p-6">
-        <div className="flex gap-1 mb-3 text-accent-500">
-          <Star className="w-3.5 h-3.5 fill-current" />
-          <Star className="w-3.5 h-3.5 fill-current" />
-          <Star className="w-3.5 h-3.5 fill-current" />
-          <Star className="w-3.5 h-3.5 fill-current" />
-          <Star className="w-3.5 h-3.5 fill-current" />
-        </div>
-        
         <h3 className="font-display font-bold text-lg text-surface-950 group-hover:text-primary-700 transition-colors">{product.name}</h3>
         {product.description && (
           <p className="mt-2 line-clamp-2 text-sm text-surface-900/60 font-light leading-relaxed">{product.description}</p>
         )}
-        <p className="mt-1 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Mathuram foods</p>
+        <p className="mt-1 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Sridha&apos;s Store</p>
 
         <div className="mt-auto flex items-end justify-between pt-6">
           <div className="flex flex-col">

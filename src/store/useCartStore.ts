@@ -2,8 +2,8 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { CartItem } from "@/lib/domain/entities/order";
-import type { Product, ProductVariant } from "@/lib/domain/entities/product";
+import type { CartItem } from "@/lib/core/domain/entities/order";
+import type { Product, ProductVariant } from "@/lib/core/domain/entities/product";
 
 interface CartState {
   items: CartItem[];

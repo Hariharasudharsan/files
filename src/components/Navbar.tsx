@@ -38,12 +38,12 @@ export default function Navbar() {
               <div className="relative h-12 w-12 rounded-full overflow-hidden border border-surface-200 shadow-sm transition-transform group-hover:scale-105">
                 <Image src="/logo.png" alt="Sridha's Store Logo" fill sizes="48px" priority className="object-cover" />
               </div>
-              <span className="leading-tight hidden sm:block">
+              <div className="hidden sm:block">
                 <span className="block font-display text-xl font-bold text-surface-950 tracking-tight group-hover:text-primary-700 transition-colors">Sridha&apos;s Store</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-600">
                   Heritage Kitchen
                 </span>
-              </span>
+              </div>
             </Link>
           </div>
 

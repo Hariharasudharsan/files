@@ -1,4 +1,4 @@
-import type { ProductVariant } from "@/lib/domain/entities/product";
+import type { ProductVariant } from "@/lib/core/domain/entities/product";
 
 export interface CheckoutContact {
   name: string;

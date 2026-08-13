@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
-import { ProductService, CreateProductDTO } from "@/modules/catalog/application/ProductService";
+import { CatalogService, CreateProductDTO } from "@/lib/core/application/CatalogService";
 import { z } from "zod";
-import { createProductSchema } from "@/lib/domain/schemas/admin";
+import { createProductSchema } from "@/lib/core/domain/schemas/admin";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = createProductSchema.parse(body);
 
-    const result = await ProductService.createProduct(data as CreateProductDTO);
+    const result = await CatalogService.createProduct(data as CreateProductDTO);
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

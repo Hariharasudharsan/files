@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
-import { WhatsAppService } from "@/lib/services/whatsapp-service";
+import { WhatsAppService } from "@/lib/core/application/whatsapp-service";
 
 export async function POST() {
   try {

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { signIn } from "next-auth/react";
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 
 export default function AddToCartButton({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);

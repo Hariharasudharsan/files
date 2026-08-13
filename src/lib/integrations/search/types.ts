@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/domain/entities/product";
+import type { Product } from "@/lib/core/domain/entities/product";
 
 export interface SearchFilters {
   category?: string;
