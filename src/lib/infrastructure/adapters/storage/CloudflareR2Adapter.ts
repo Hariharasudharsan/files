@@ -13,7 +13,7 @@ export class CloudflareR2Adapter implements StoragePort {
     const accessKeyId = process.env.R2_ACCESS_KEY_ID;
     const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
     this.bucketName = process.env.R2_BUCKET_NAME || "mathuram-assets";
-    this.publicDomain = process.env.R2_PUBLIC_DOMAIN || "https://assets.mathuramfoods.com";
+    this.publicDomain = process.env.R2_PUBLIC_DOMAIN || "https://assets.sridhasstore.com";
 
     if (!accountId || !accessKeyId || !secretAccessKey) {
       Logger.warn("Cloudflare R2 credentials are missing. Storage operations will fail.");

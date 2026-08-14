@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingCart, Search, User, Menu } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import MarqueeBanner from "./MarqueeBanner";
@@ -16,7 +16,13 @@ export default function Navbar() {
   const totalItems = useCartStore((s) => s.getTotalItems());
   const hasHydrated = useCartStore((s) => s.hasHydrated);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   if (pathname.startsWith("/checkout")) return null;
 
@@ -31,7 +37,7 @@ export default function Navbar() {
           
           {/* Left Side: Logo & Mobile Menu */}
           <div className="flex items-center gap-4">
-            <button className="md:hidden text-surface-900 hover:text-primary-600 transition-colors">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-surface-900 hover:text-primary-600 transition-colors">
               <Menu className="h-6 w-6" />
             </button>
             <Link href="/" className="flex items-center gap-3 group">
@@ -130,6 +136,51 @@ export default function Navbar() {
 
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50 transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Sidebar */}
+          <div className="relative flex w-4/5 max-w-sm flex-col bg-white shadow-xl h-full animate-slide-in-right">
+            <div className="flex items-center justify-between p-4 border-b border-surface-200">
+              <span className="font-display font-bold text-lg text-surface-950">Menu</span>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-surface-500 hover:text-surface-900"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              <div className="space-y-3">
+                <h3 className="font-display font-bold text-surface-950 text-lg">Categories</h3>
+                <ul className="space-y-3 pl-2 border-l-2 border-surface-100">
+                  <li><Link href="/category/appalam" className="block text-surface-700 hover:text-primary-600">Appalams</Link></li>
+                  <li><Link href="/category/vadam" className="block text-surface-700 hover:text-primary-600">Vadams</Link></li>
+                  <li><Link href="/category/vathal" className="block text-surface-700 hover:text-primary-600">Vathals</Link></li>
+                  <li><Link href="/category/pickles" className="block text-surface-700 hover:text-primary-600">Pickles & Thokku</Link></li>
+                  <li><Link href="/category/combo-packs" className="block text-primary-700 font-medium">Combo Packs</Link></li>
+                </ul>
+              </div>
+
+              <div className="space-y-3 border-t border-surface-200 pt-6">
+                <ul className="space-y-4">
+                  <li><Link href="/category/new-arrivals" className="block font-medium text-surface-950">New Arrivals</Link></li>
+                  <li><Link href="/category/bestsellers" className="block font-medium text-surface-950">Bestsellers</Link></li>
+                  <li><Link href="/account" className="block font-medium text-surface-950">My Account</Link></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

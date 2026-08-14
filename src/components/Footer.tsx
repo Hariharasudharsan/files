@@ -69,7 +69,7 @@ export default function Footer() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>123 Heritage Lane, Madurai,<br/>Tamil Nadu 625001</span>
+                <span>415/1B, Mettu street, venbedu,<br/>Chengalpattu - 603110</span>
               </li>
               <li className="flex items-start gap-3 text-surface-200">
                 <Phone className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
@@ -77,7 +77,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>support@sridhasstore.com</span>
+                <span>sridhasstore@gmail.com</span>
               </li>
             </ul>
             </div>
@@ -85,6 +85,7 @@ export default function Footer() {
 
         <div className="border-t border-surface-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-surface-500">
           <p>© {new Date().getFullYear()} Sridha&apos;s Store. All rights reserved.</p>
+          <p>FSSAI License No: 12425008003227</p>
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

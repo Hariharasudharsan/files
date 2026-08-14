@@ -389,6 +389,7 @@ model Coupon {
   minOrderValue Decimal? @db.Decimal(10, 2)
   maxDiscount   Decimal? @db.Decimal(10, 2)
   usageLimit    Int?
+  perUserLimit  Int?
   usedCount     Int      @default(0)
   validFrom     DateTime
   validUntil    DateTime
@@ -422,6 +423,7 @@ model Order {
   billingAddress  Json?
 
   status            OrderStatus       @default(PENDING)
+  paymentMethod     String            @default("RAZORPAY") // RAZORPAY, COD
   paymentStatus     PaymentStatus     @default(UNPAID)
   fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
 
@@ -935,4 +937,11 @@ model NotificationTemplate {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InvoiceSequence {
+  id        String   @id @default(uuid())
+  year      Int      @unique
+  lastValue Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

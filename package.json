@@ -1,10 +1,10 @@
 {
-  "name": "mathuram-foods",
+  "name": "sridhas-store",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --turbo",
+    "build": "npx prisma generate && next build",
     "build:worker": "tsup src/lib/infrastructure/workers/index.ts --format cjs --env.NODE_ENV production",
     "start": "next start",
     "test": "vitest run",
@@ -23,6 +23,9 @@
     "@prisma/client": "^7.9.0",
     "@sentry/nextjs": "^10.69.0",
     "@tailwindcss/typography": "^0.5.20",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
+    "aria-query": "^5.3.2",
     "bullmq": "^5.81.2",
     "date-fns": "^4.4.0",
     "dotenv": "^17.4.2",

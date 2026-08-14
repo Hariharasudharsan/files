@@ -25,17 +25,15 @@ function parseItems(value: unknown, errors: string[]): OrderItemInput[] {
 
     const itemCode = typeof item.item_code === "string" ? item.item_code.trim() : "";
     const qty = Number(item.qty);
-    const rate = Number(item.rate);
 
     if (!itemCode) errors.push(`Item ${index + 1} is missing an item code.`);
     if (!Number.isFinite(qty) || qty <= 0) errors.push(`Item ${index + 1} quantity is invalid.`);
-    if (!Number.isFinite(rate) || rate < 0) errors.push(`Item ${index + 1} rate is invalid.`);
 
-    if (!itemCode || !Number.isFinite(qty) || qty <= 0 || !Number.isFinite(rate) || rate < 0) {
+    if (!itemCode || !Number.isFinite(qty) || qty <= 0) {
       return [];
     }
 
-    return [{ productVariantId: itemCode, qty, rate }];
+    return [{ productVariantId: itemCode, qty }];
   });
 }
 
@@ -58,6 +56,9 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
   const state = sanitizeInput(contact.state as string);
   const pincode = sanitizeInput(contact.pincode as string);
   const whatsappOptIn = contact.whatsappOptIn === true;
+  
+  const paymentMethod = typeof payload.paymentMethod === "string" ? payload.paymentMethod.trim() : undefined;
+  const couponCode = typeof payload.couponCode === "string" ? payload.couponCode.trim() : undefined;
   
   const items = parseItems(payload.items, errors);
 
@@ -102,5 +103,7 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
   return ok({
     items,
     contact: { name, email, phone, flatOrHouseNumber, localityOrArea, landmark, city, state, pincode, whatsappOptIn },
+    paymentMethod,
+    couponCode,
   });
 }

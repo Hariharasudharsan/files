@@ -29,6 +29,24 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  
+  const [paymentMethod, setPaymentMethod] = useState("RAZORPAY");
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{code: string, discount: number, discountType: string} | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  const calculateDiscount = () => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discountType === 'FIXED') {
+      return appliedCoupon.discount;
+    } else {
+      return Math.min((total * appliedCoupon.discount) / 100, appliedCoupon.discount); // assuming discountValue is percentage here
+    }
+  };
+
+  const discountAmount = calculateDiscount();
+  const finalTotal = total + shipping - discountAmount;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
@@ -68,9 +86,17 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
 
     try {
       const initRes = await initPaymentRequest({
-        items: items.map((i) => ({ productVariantId: i.id, qty: i.qty, rate: i.price })),
+        items: items.map((i) => ({ productVariantId: i.id, qty: i.qty })),
         contact: form,
+        paymentMethod,
+        couponCode: appliedCoupon?.code
       });
+
+      if (initRes.isCOD) {
+        setStatus("success");
+        clearCart();
+        return;
+      }
 
       const options = {
         key: initRes.key,
@@ -115,6 +141,29 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
     } catch (err) {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong initializing checkout.");
+    }
+  };
+
+  const applyCoupon = async () => {
+    if (!couponCodeInput.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    try {
+      const res = await fetch(`/api/v1/coupons/validate?code=${couponCodeInput}`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Invalid coupon");
+      }
+      setAppliedCoupon({
+        code: data.coupon.code,
+        discount: data.coupon.discountValue,
+        discountType: data.coupon.discountType
+      });
+      setCouponCodeInput("");
+    } catch (err) {
+      setCouponError(err instanceof Error ? err.message : "Failed to apply coupon");
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -369,6 +418,34 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                   {errorMsg}
                 </div>
               )}
+              
+              <div className="glass p-6 rounded-2xl border border-surface-200 space-y-5">
+                <h2 className="font-display text-xl font-semibold text-surface-950 mb-4 border-b border-surface-200 pb-4">Payment Method</h2>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-surface-50 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="RAZORPAY"
+                      checked={paymentMethod === "RAZORPAY"}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-5 h-5 text-primary-600 accent-primary-600"
+                    />
+                    <span className="font-medium text-surface-950">Pay Online (Cards, UPI, NetBanking)</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-surface-50 transition-colors">
+                    <input 
+                      type="radio" 
+                      name="paymentMethod" 
+                      value="COD"
+                      checked={paymentMethod === "COD"}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-5 h-5 text-primary-600 accent-primary-600"
+                    />
+                    <span className="font-medium text-surface-950">Cash on Delivery (COD)</span>
+                  </label>
+                </div>
+              </div>
             </form>
           </div>
 
@@ -404,16 +481,39 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                 </div>
                 
                 {/* Coupon Input */}
-                <div className="pt-4 flex gap-2">
-                  <input type="text" placeholder="Gift card or discount code" className="flex-1 bg-white border border-surface-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500" />
-                  <button className="bg-surface-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-800 transition-colors">
-                    Apply
-                  </button>
+                <div className="pt-4 flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Gift card or discount code" 
+                      value={couponCodeInput}
+                      onChange={(e) => setCouponCodeInput(e.target.value)}
+                      className="flex-1 bg-white border border-surface-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary-500 uppercase" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                      className="bg-surface-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-surface-800 transition-colors disabled:opacity-50"
+                    >
+                      {isApplyingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                    </button>
+                  </div>
+                  {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                  {appliedCoupon && (
+                    <div className="flex items-center justify-between bg-green-50 text-green-700 px-3 py-2 rounded-lg text-sm">
+                      <span className="font-semibold">{appliedCoupon.code}</span>
+                      <div className="flex items-center gap-2">
+                        <span>-₹{discountAmount.toLocaleString("en-IN")}</span>
+                        <button type="button" onClick={() => setAppliedCoupon(null)} className="text-green-800 hover:text-green-950 font-bold ml-2">✕</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between font-display text-2xl font-bold text-surface-950 pt-4 border-t border-surface-200 mt-2">
                   <span>Total</span>
-                  <span>₹{(total + shipping).toLocaleString("en-IN")}</span>
+                  <span>₹{finalTotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -429,7 +529,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" /> Processing...
                   </>
                 ) : (
-                  `Pay ₹${(total + shipping).toLocaleString("en-IN")}`
+                  `Pay ₹${finalTotal.toLocaleString("en-IN")}`
                 )}
               </Button>
             </div>

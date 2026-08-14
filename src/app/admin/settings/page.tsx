@@ -9,9 +9,9 @@ export default async function AdminSettingsPage() {
   });
 
   const configValue = (storeConfig?.value as any) || {
-    storeName: "Mathuram Foods",
-    supportEmail: "support@mathuram.com",
-    metaTitle: "Mathuram Foods - Authentic Organic Spices",
+    storeName: "Sridha's Store",
+    supportEmail: "sridhasstore@gmail.com",
+    metaTitle: "Sridha's Store - Authentic Organic Spices",
     metaDescription: "Discover our premium range of organic spices and authentic food products..."
   };
 

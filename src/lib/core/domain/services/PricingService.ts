@@ -12,6 +12,7 @@ export interface VariantData {
   length?: number | null;
   width?: number | null;
   height?: number | null;
+  taxRate?: number;
 }
 
 export interface CouponData {
@@ -77,7 +78,7 @@ export class PricingService {
           discountTotal = Number(coupon.maxDiscount);
         }
       } else {
-        discountTotal = Number(coupon.discountValue);
+        discountTotal = Math.min(Number(coupon.discountValue), subTotalBeforeDiscount);
       }
     }
 
@@ -95,17 +96,19 @@ export class PricingService {
     const selState = sellerState?.trim().toLowerCase() || '';
     const isIntraState = sState === selState && sState !== '';
 
+    const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
     const calculatedItems = items.map((i) => {
       const variant = variantsMap.get(i.productVariantId)!;
       const rate = isB2B && variant.wholesalePrice ? Number(variant.wholesalePrice) : Number(variant.price);
       const itemSubtotal = rate * i.qty;
       
       const itemDiscount = subTotalBeforeDiscount > 0 ? (itemSubtotal / subTotalBeforeDiscount) * discountTotal : 0;
-      const discountedItemTotalBeforeTax = itemSubtotal - itemDiscount;
+      const discountedItemTotalBeforeTax = round2(itemSubtotal - itemDiscount);
 
       const taxRate = i.taxRate || 0;
-      const taxAmount = (discountedItemTotalBeforeTax * taxRate) / 100;
-      const itemTotal = discountedItemTotalBeforeTax + taxAmount;
+      const taxAmount = round2((discountedItemTotalBeforeTax * taxRate) / 100);
+      const itemTotal = round2(discountedItemTotalBeforeTax + taxAmount);
       
       let cgstAmount = 0;
       let sgstAmount = 0;
@@ -113,8 +116,8 @@ export class PricingService {
 
       if (taxAmount > 0) {
         if (isIntraState) {
-          cgstAmount = taxAmount / 2;
-          sgstAmount = taxAmount / 2;
+          cgstAmount = round2(taxAmount / 2);
+          sgstAmount = round2(taxAmount - cgstAmount);
         } else {
           igstAmount = taxAmount;
         }

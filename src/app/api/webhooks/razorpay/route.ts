@@ -10,6 +10,7 @@ const razorpayAdapter = new RazorpayAdapter();
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+import { OrderService } from "../../../../lib/core/application/OrderService";
 
 export async function POST(req: Request) {
   // Try to get IP, fallback to a global ratelimit if we can't extract IP from standard Request
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
 
     const payload = JSON.parse(rawBody);
     const eventType = payload.event;
-    const eventId = payload.payload?.payment?.entity?.id || crypto.randomUUID();
+    // Idempotency key from Razorpay payload
+    const eventId = req.headers.get('x-razorpay-event-id') || payload.id || crypto.randomUUID();
 
     // 2. Idempotency Check via WebhookEvent table
     const existingWebhook = await prisma.webhookEvent.findFirst({
@@ -73,93 +75,15 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true }, { status: 200 });
       }
 
-      // Fast path idempotency check
       const order = await prisma.order.findUnique({
         where: { id: orderId },
-        select: { paymentStatus: true }
+        select: { total: true }
       });
 
-      if (order?.paymentStatus !== PaymentStatus.PAID) {
-        try {
-          // 5. Wrap updates, inserts, and event publication in a single database transaction
-          await prisma.$transaction(async (tx) => {
-            // Update local Order & Payment state
-            const order = await tx.order.update({
-              where: { id: orderId },
-              data: {
-                status: OrderStatus.CONFIRMED,
-                paymentStatus: PaymentStatus.PAID,
-              },
-              include: {
-                items: {
-                  include: { productVariant: true }
-                },
-                user: true,
-              }
-            });
-
-            const env = getServerEnv();
-            const count = await tx.invoice.count();
-            const invoiceNumber = `INV-${new Date().getFullYear()}-${String(count + 1).padStart(6, '0')}`;
-
-            await tx.invoice.create({
-              data: {
-                orderId,
-                invoiceNumber,
-                sellerGstin: env.sellerGstin || null,
-                buyerDetails: {
-                  name: order.user?.name,
-                  email: order.user?.email,
-                  phone: order.user?.phone,
-                  shippingAddress: order.shippingAddress,
-                  billingAddress: order.billingAddress,
-                },
-                lineItems: order.items.map(item => ({
-                  productName: item.productVariant.name,
-                  qty: item.qty,
-                  rate: item.rate.toNumber(),
-                  taxRate: item.taxRate.toNumber(),
-                  taxAmount: item.taxAmount.toNumber(),
-                  cgstAmount: item.cgstAmount.toNumber(),
-                  sgstAmount: item.sgstAmount.toNumber(),
-                  igstAmount: item.igstAmount.toNumber(),
-                  total: item.total.toNumber(),
-                })),
-                taxTotals: {
-                  taxTotal: order.taxTotal.toNumber(),
-                  cgstTotal: order.cgstTotal.toNumber(),
-                  sgstTotal: order.sgstTotal.toNumber(),
-                  igstTotal: order.igstTotal.toNumber(),
-                }
-              }
-            });
-
-            await tx.paymentTransaction.create({
-              data: {
-                orderId,
-                amount: verification.amount || 0,
-                provider: 'razorpay',
-                transactionId: verification.transactionId!,
-                status: 'captured',
-              },
-            });
-
-            // Update reservations to COMMITTED
-            await tx.inventoryReservation.updateMany({
-              where: { orderId, status: { in: ['ACTIVE', 'active'] } },
-              data: { status: 'COMMITTED' }
-            });
-
-            // Emit Domain Event via Outbox inside the same transaction
-            const orderPaidEvent = new OrderPaidEvent(orderId, verification.amount || 0, verification.transactionId!);
-            await eventBus.publishWithinTransaction(tx, orderPaidEvent);
-          });
-        } catch (error: any) {
-          if (error.code === 'P2002') {
-            console.log('Webhook race condition caught for transaction', verification.transactionId);
-          } else {
-            throw error;
-          }
+      if (order) {
+        const result = await OrderService.confirmPayment(orderId, order.total.toNumber(), verification.transactionId);
+        if (result.message === "Race condition mitigated") {
+          console.log('Webhook race condition caught for transaction', verification.transactionId);
         }
       }
     } else if (eventType === 'refund.processed') {

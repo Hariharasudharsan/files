@@ -16,7 +16,6 @@ export interface CheckoutContact {
 export interface OrderItemInput {
   productVariantId: string;
   qty: number;
-  rate: number;
 }
 
 export interface CartItem extends ProductVariant {
@@ -47,6 +46,8 @@ export interface StorefrontOrder {
 export interface CreateOrderInput {
   items: OrderItemInput[];
   contact: CheckoutContact;
+  paymentMethod?: string;
+  couponCode?: string;
 }
 
 export interface CreateOrderResult {

@@ -27,39 +27,44 @@ export class ERPSyncService {
   async processJob(job: any) {
     console.log(`[ERPSync] Processing ${job.entityType} ${job.entityId}`);
 
-    // Increment attempts
-    await prisma.eRPSync.update({
-      where: { id: job.id },
-      data: { attempts: { increment: 1 } }
-    });
+    try {
+      // Increment attempts
+      await prisma.eRPSync.update({
+        where: { id: job.id },
+        data: { attempts: { increment: 1 } }
+      });
 
-    let targetId = null;
+      let targetId = null;
 
-    if (job.entityType === "Order") {
-      targetId = await this.syncOrder(job.entityId);
-    } else if (job.entityType === "User") {
-      targetId = await this.syncCustomer(job.entityId);
-    } else {
-      throw new Error(`Unsupported entity type: ${job.entityType}`);
+      if (job.entityType === "Order") {
+        targetId = await this.syncOrder(job.entityId);
+      } else if (job.entityType === "User") {
+        targetId = await this.syncCustomer(job.entityId);
+      } else {
+        throw new Error(`Unsupported entity type: ${job.entityType}`);
+      }
+
+      // Mark Success
+      await prisma.eRPSync.update({
+        where: { id: job.id },
+        data: {
+          status: "SUCCESS",
+          targetId: targetId,
+          lastError: null,
+        }
+      });
+
+      await prisma.syncHistory.create({
+        data: {
+          syncId: job.id,
+          status: "SUCCESS",
+          message: `Successfully synced to ${targetId}`
+        }
+      });
+    } catch (error: any) {
+      await this.markJobFailed(job.id, error.message);
+      throw error; // Re-throw so BullMQ can handle exponential backoff
     }
-
-    // Mark Success
-    await prisma.eRPSync.update({
-      where: { id: job.id },
-      data: {
-        status: "SUCCESS",
-        targetId: targetId,
-        lastError: null,
-      }
-    });
-
-    await prisma.syncHistory.create({
-      data: {
-        syncId: job.id,
-        status: "SUCCESS",
-        message: `Successfully synced to ${targetId}`
-      }
-    });
   }
 
   private async syncCustomer(userId: string): Promise<string> {

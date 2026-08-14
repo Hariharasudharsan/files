@@ -3,6 +3,8 @@ import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useEffect } from 'react';
 import './globals.css';
 
+import * as Sentry from '@sentry/nextjs';
+
 export default function GlobalError({
   error,
   reset,
@@ -11,7 +13,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Sentry or Datadog reporting could go here
+    Sentry.captureException(error);
     console.error('CRITICAL GLOBAL ERROR:', error);
   }, [error]);
 

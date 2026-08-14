@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: mathuram_postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mathuram_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-mathuram_db}
     ports:
       - "5432:5432"
     volumes:
@@ -33,8 +33,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgres://postgres:password@postgres:5432/mathuram_db
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - NODE_ENV=production
     depends_on:
       - postgres
@@ -47,8 +47,8 @@ services:
       dockerfile: Dockerfile.worker
     container_name: mathuram_worker
     environment:
-      - DATABASE_URL=postgres://postgres:password@postgres:5432/mathuram_db
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       - NODE_ENV=production
     depends_on:
       - postgres

@@ -81,7 +81,7 @@ export async function handleDeliveryNote(payload: any) {
         billing_pincode: address.pincode || "000000",
         billing_state: address.state || "N/A",
         billing_country: "India",
-        billing_email: address.email || "support@mathuram.com",
+        billing_email: address.email || "sridhasstore@gmail.com",
         billing_phone: address.phone || "0000000000",
         shipping_is_billing: true,
         order_items: items.map((i: any) => ({

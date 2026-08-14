@@ -127,7 +127,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
             <MotionDiv delay={0.2} className="prose text-surface-700 leading-relaxed">
               <p>{product.description}</p>
-              <p className="mt-4 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Mathuram foods</p>
+              <p className="mt-4 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Sridha&apos;s Store</p>
             </MotionDiv>
 
             <MotionDiv delay={0.3} className="mt-8">

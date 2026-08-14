@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 
 export default function WhatsAppWidget() {
   // TODO: Replace NEXT_PUBLIC_WHATSAPP_NUMBER in .env with the real number once available
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "919876543210";
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "917708838059";
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {

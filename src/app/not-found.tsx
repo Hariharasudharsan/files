@@ -30,7 +30,7 @@ export default function NotFound() {
 
       <div className="mt-16 pt-8 border-t border-surface-200 w-full max-w-md mx-auto">
         <p className="text-sm font-semibold text-surface-500 flex items-center justify-center gap-2">
-          <MapPin className="w-4 h-4" /> Lost? Reach out to support@mathuram.com
+          <MapPin className="w-4 h-4" /> Lost? Reach out to sridhasstore@gmail.com
         </p>
       </div>
     </div>

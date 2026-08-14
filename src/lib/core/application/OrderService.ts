@@ -21,8 +21,9 @@ export interface CreateOrderDTO {
     pincode: string;
     whatsappOptIn?: boolean;
   };
-  items: Array<{ productVariantId: string; qty: number; rate: number; taxRate?: number }>;
+  items: Array<{ productVariantId: string; qty: number }>;
   couponCode?: string;
+  paymentMethod?: string;
 }
 
 export class OrderService {
@@ -32,7 +33,8 @@ export class OrderService {
   static async checkout(dto: CreateOrderDTO) {
     const variantIds = dto.items.map(i => i.productVariantId);
     const variants = await prisma.productVariant.findMany({
-      where: { id: { in: variantIds } }
+      where: { id: { in: variantIds } },
+      include: { product: true }
     });
     
     // Map Prisma variants to Pricing VariantData
@@ -44,6 +46,7 @@ export class OrderService {
       length: v.length,
       width: v.width,
       height: v.height,
+      taxRate: v.product?.gstRate ? v.product.gstRate.toNumber() : 0,
     }]));
 
     const user = await prisma.user.upsert({
@@ -62,6 +65,13 @@ export class OrderService {
       if (dbCoupon.validUntil < new Date() || dbCoupon.validFrom > new Date()) throw new Error("Coupon is expired or not yet valid.");
       if (dbCoupon.usageLimit && dbCoupon.usedCount >= dbCoupon.usageLimit) throw new Error("Coupon usage limit reached.");
       
+      if (dbCoupon.perUserLimit) {
+        const userUsage = await prisma.order.count({
+          where: { userId: user.id, couponId: dbCoupon.id }
+        });
+        if (userUsage >= dbCoupon.perUserLimit) throw new Error("You have reached the maximum usage limit for this coupon.");
+      }
+      
       couponData = {
         id: dbCoupon.id,
         code: dbCoupon.code,
@@ -72,11 +82,14 @@ export class OrderService {
       };
     }
 
-    const pricingInput: PricingItemInput[] = dto.items.map(i => ({
-      productVariantId: i.productVariantId,
-      qty: i.qty,
-      taxRate: i.taxRate,
-    }));
+    const pricingInput: PricingItemInput[] = dto.items.map(i => {
+      const v = variantMap.get(i.productVariantId);
+      return {
+        productVariantId: i.productVariantId,
+        qty: i.qty,
+        taxRate: v?.taxRate || 0,
+      };
+    });
 
     // Use pure PricingService
     const env = getServerEnv();
@@ -101,7 +114,8 @@ export class OrderService {
           shippingTotal: pricing.shippingTotal,
           discountTotal: pricing.discountTotal,
           total: pricing.totalAmount,
-          status: OrderStatus.PENDING,
+          status: dto.paymentMethod === 'COD' ? OrderStatus.CONFIRMED : OrderStatus.PENDING,
+          paymentMethod: dto.paymentMethod || 'RAZORPAY',
           paymentStatus: PaymentStatus.UNPAID,
           fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
           shippingAddress: dto.contact as any,
@@ -173,6 +187,14 @@ export class OrderService {
       return newOrder;
     });
 
+    if (dto.paymentMethod === 'COD') {
+      return {
+        orderId: order.id,
+        totalAmount: pricing.totalAmount,
+        paymentIntent: { success: true, transactionId: `COD_${order.id}`, amount: pricing.totalAmount, currency: 'INR' },
+      };
+    }
+
     const paymentIntent = await razorpayAdapter.createPaymentIntent(order.id, pricing.totalAmount, 'INR');
 
     return {
@@ -181,4 +203,112 @@ export class OrderService {
       paymentIntent,
     };
   }
+
+  /**
+   * Idempotently confirms payment for an order and generates an invoice with a concurrent-safe sequence.
+   */
+  static async confirmPayment(orderId: string, amount: number, transactionId: string) {
+    const currentOrder = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { paymentStatus: true }
+    });
+
+    if (currentOrder?.paymentStatus === PaymentStatus.PAID) {
+      return { success: true, message: "Order already paid" };
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Atomic check-and-update
+        const updateResult = await tx.order.updateMany({
+          where: { id: orderId, paymentStatus: { not: PaymentStatus.PAID } },
+          data: {
+            status: OrderStatus.CONFIRMED,
+            paymentStatus: PaymentStatus.PAID,
+          },
+        });
+
+        if (updateResult.count === 0) {
+          return; // Already processed by a concurrent transaction
+        }
+
+        const order = await tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          include: {
+            items: { include: { productVariant: true } },
+            user: true,
+          }
+        });
+
+        // Atomic Invoice Sequence Generation
+        const currentYear = new Date().getFullYear();
+        const sequence = await tx.invoiceSequence.upsert({
+          where: { year: currentYear },
+          update: { lastValue: { increment: 1 } },
+          create: { year: currentYear, lastValue: 1 },
+        });
+
+        const env = getServerEnv();
+        const invoiceNumber = `INV-${currentYear}-${String(sequence.lastValue).padStart(6, '0')}`;
+
+        await tx.invoice.create({
+          data: {
+            orderId,
+            invoiceNumber,
+            sellerGstin: env.sellerGstin || null,
+            buyerDetails: {
+              name: order.user?.name,
+              email: order.user?.email,
+              phone: order.user?.phone,
+              shippingAddress: order.shippingAddress,
+              billingAddress: order.billingAddress,
+            },
+            lineItems: order.items.map(item => ({
+              productName: item.productVariant.name,
+              qty: item.qty,
+              rate: item.rate.toNumber(),
+              taxRate: item.taxRate.toNumber(),
+              taxAmount: item.taxAmount.toNumber(),
+              cgstAmount: item.cgstAmount.toNumber(),
+              sgstAmount: item.sgstAmount.toNumber(),
+              igstAmount: item.igstAmount.toNumber(),
+              total: item.total.toNumber(),
+            })),
+            taxTotals: {
+              taxTotal: order.taxTotal.toNumber(),
+              cgstTotal: order.cgstTotal.toNumber(),
+              sgstTotal: order.sgstTotal.toNumber(),
+              igstTotal: order.igstTotal.toNumber(),
+            }
+          }
+        });
+
+        await tx.paymentTransaction.create({
+          data: {
+            orderId,
+            amount: amount,
+            provider: 'razorpay',
+            transactionId: transactionId,
+            status: 'captured',
+          },
+        });
+
+        await tx.inventoryReservation.updateMany({
+          where: { orderId, status: { in: ['ACTIVE', 'active'] } },
+          data: { status: 'COMMITTED' }
+        });
+
+        const orderPaidEvent = new OrderPaidEvent(orderId, amount, transactionId);
+        await eventBus.publishWithinTransaction(tx, orderPaidEvent);
+      });
+      return { success: true };
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        console.log('Race condition caught for transaction', transactionId);
+        return { success: true, message: "Race condition mitigated" };
+      }
+      throw error;
+    }
+  }
 }
+

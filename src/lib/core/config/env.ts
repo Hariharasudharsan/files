@@ -24,18 +24,25 @@ const envSchema = z.object({
   ERPNEXT_API_SECRET: z.string().optional(),
   ERPNEXT_WEBHOOK_SECRET: z.string().optional(),
 
+  // Payment Gateway
+  RAZORPAY_KEY_ID: z.string().min(1, "Razorpay Key ID is required"),
+  RAZORPAY_KEY_SECRET: z.string().min(1, "Razorpay Secret is required"),
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(1, "Razorpay Webhook Secret is required"),
+
   // Seller Details
   SELLER_STATE: z.string().optional().default("Tamil Nadu"),
   SELLER_GSTIN: z.string().optional(),
 
   // Queue & Redis (For future use)
-  REDIS_URL: z.string().url().optional(),
+  REDIS_URL: z.string().url("REDIS_URL is required"),
+  UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL is required"),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
 
   // Database
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().url("DATABASE_URL is required"),
 
   // Security Secrets
-  AUTH_SECRET: z.string().min(32).optional(),
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
   // S3 / R2 Storage
   S3_ENDPOINT: z.string().url().optional(),
   S3_REGION: z.string().optional(),

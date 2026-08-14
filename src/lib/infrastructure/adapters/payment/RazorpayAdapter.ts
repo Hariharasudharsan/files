@@ -47,7 +47,15 @@ export class RazorpayAdapter implements PaymentPort {
     const webhookSecret = secret || process.env.RAZORPAY_WEBHOOK_SECRET || '';
     const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(payload).digest('hex');
     
-    if (expectedSignature === signature) {
+    let isValid = false;
+    if (expectedSignature.length === signature.length) {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, 'utf-8'),
+        Buffer.from(signature, 'utf-8')
+      );
+    }
+    
+    if (isValid) {
       try {
         const parsed = JSON.parse(payload);
         if (parsed.event === 'payment.captured') {
@@ -66,8 +74,29 @@ export class RazorpayAdapter implements PaymentPort {
     return { isValid: false };
   }
 
+  verifyPaymentSignature(paymentId: string, orderId: string, signature: string): boolean {
+    const secret = this.keySecret;
+    const generatedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(orderId + "|" + paymentId)
+      .digest("hex");
+    return generatedSignature === signature;
+  }
+
   async refundPayment(transactionId: string, amount?: number): Promise<boolean> {
-    // Minimal implementation for refund
-    return true;
+    try {
+      const body = amount ? { amount: Math.round(amount * 100) } : {};
+      const response = await fetch(`https://api.razorpay.com/v1/payments/${transactionId}/refund`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')}`
+        },
+        body: JSON.stringify(body)
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 }

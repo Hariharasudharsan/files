@@ -20,7 +20,7 @@ const outfit = Outfit({
   variable: "--font-outfit",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.mathuramfoods.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sridhasstore.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -72,8 +72,7 @@ const organizationJsonLd = {
     "contactType": "Customer Service"
   },
   sameAs: [
-    "https://facebook.com/mathuramfoods",
-    "https://instagram.com/mathuramfoods"
+    "https://www.instagram.com/sridhas_store?igsh=MWxlOXNkMmVqM3VrNQ=="
   ]
 };
 

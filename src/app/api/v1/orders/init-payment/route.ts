@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
     const checkoutResult = await OrderService.checkout({
       contact: validation.data.contact,
       items: validation.data.items,
+      couponCode: payload.couponCode,
+      paymentMethod: payload.paymentMethod || 'RAZORPAY',
     });
 
     if (!checkoutResult.paymentIntent.success) {
@@ -48,7 +50,8 @@ export async function POST(request: NextRequest) {
       razorpayOrderId: checkoutResult.paymentIntent.transactionId,
       amount: checkoutResult.paymentIntent.amount,
       currency: checkoutResult.paymentIntent.currency,
-      key: process.env.RAZORPAY_KEY_ID
+      key: process.env.RAZORPAY_KEY_ID,
+      isCOD: payload.paymentMethod === 'COD'
     }, { status: 200 });
   } catch (err) {
     Logger.error("Init payment failed", { error: err instanceof Error ? err.message : String(err) });
