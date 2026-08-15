@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCartStore } from "@/store/useCartStore";
 import type { Product } from "@/lib/core/domain/entities/product";
+import { businessConfig } from "@/config/business.config";
 
 interface QuickViewModalProps {
   product: Product;
@@ -128,7 +129,7 @@ export default function QuickViewModal({ product, isOpen, onClose }: QuickViewMo
               </div>
 
               <div className="prose prose-sm text-surface-600 mb-8 max-w-none">
-                <p>{product.description || "Authentic, factory-direct from Sridha's Store."}</p>
+                <p>{product.description || `Authentic, factory-direct from ${businessConfig.brandName}.`}</p>
                 {product.ingredients && (
                   <>
                     <h4 className="text-surface-950 mt-4 mb-1 font-semibold">Ingredients</h4>

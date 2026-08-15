@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/infrastructure/database/prisma";
 import { notFound } from "next/navigation";
 import { Metadata } from 'next';
 import { ComponentRegistry } from "@/components/cms/ComponentRegistry";
+import { CmsService } from "@/lib/core/application/CmsService";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +10,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   let page: any = null;
   try {
-    page = await prisma.cmsPage.findFirst({
-      where: { slug, status: "PUBLISHED" },
-    });
+    const cmsData = await CmsService.getCmsPageBySlug(slug);
+    page = cmsData?.page;
   } catch (e) {
     console.warn("Database unreachable during build. Skipping metadata fetch for CMS page.");
   }
@@ -35,31 +34,22 @@ export default async function DynamicCmsPage({ params }: { params: Promise<{ slu
     notFound();
   }
 
-  let page: any = null;
-  let version: any = null;
+  let cmsData: any = null;
   
   try {
-    page = await prisma.cmsPage.findFirst({
-      where: { slug, status: "PUBLISHED" },
-    });
-
-    if (page && page.activeVersionId) {
-      version = await prisma.cmsPageVersion.findUnique({
-        where: { id: page.activeVersionId },
-      });
-    }
+    cmsData = await CmsService.getCmsPageBySlug(slug);
   } catch (e) {
     console.warn("Database unreachable during build. Skipping content fetch for CMS page.");
   }
 
-  if (!page || !version) {
+  if (!cmsData || !cmsData.page || !cmsData.version) {
     notFound();
   }
 
   // Content should be a JSON array of blocks
   let blocks = [];
   try {
-    blocks = typeof version.content === "string" ? JSON.parse(version.content) : version.content;
+    blocks = typeof cmsData.version.content === "string" ? JSON.parse(cmsData.version.content) : cmsData.version.content;
   } catch (e) {
     console.error("Failed to parse CMS blocks:", e);
   }

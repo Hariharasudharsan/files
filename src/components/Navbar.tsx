@@ -8,12 +8,13 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import MarqueeBanner from "./MarqueeBanner";
+import { businessConfig } from "@/config/business.config";
 
 const SearchAutocomplete = dynamic(() => import("./SearchAutocomplete"), { ssr: false });
 
 export default function Navbar() {
   const toggleCart = useCartStore((s) => s.toggleCart);
-  const totalItems = useCartStore((s) => s.getTotalItems());
+  const totalItems = useCartStore((s) => s.totalItems);
   const hasHydrated = useCartStore((s) => s.hasHydrated);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function Navbar() {
                 <Image src="/logo.png" alt="Sridha's Store Logo" fill sizes="48px" priority className="object-cover" />
               </div>
               <div className="hidden sm:block">
-                <span className="block font-display text-xl font-bold text-surface-950 tracking-tight group-hover:text-primary-700 transition-colors">Sridha&apos;s Store</span>
+                <span className="block font-display text-xl font-bold text-surface-950 tracking-tight group-hover:text-primary-700 transition-colors">{businessConfig.brandName}</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-600">
                   Heritage Kitchen
                 </span>

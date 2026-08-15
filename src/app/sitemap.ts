@@ -1,16 +1,21 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+import { businessConfig } from "@/config/business.config";
+
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.sridhasstore.com";
+  const SITE_URL = businessConfig.domain;
 
   // Base routes
   const routes = [
     "",
     "/search",
+    "/about",
     "/contact",
+    "/shipping-policy",
+    "/returns",
     "/terms",
     "/privacy",
   ].map((route) => ({

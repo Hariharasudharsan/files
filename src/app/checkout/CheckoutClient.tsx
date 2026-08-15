@@ -4,11 +4,13 @@ import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, CheckCircle2, Loader2, Package } from "lucide-react";
+import { businessConfig } from "@/config/business.config";
 import Link from "next/link";
 import Script from "next/script";
 import { initPaymentRequest, verifyPaymentRequest } from "@/lib/api/orders";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/Button";
+import { IndianStates } from "@/lib/core/domain/value-objects/IndianState";
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -16,7 +18,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
   const items = useCartStore((s) => s.items);
   const hasHydrated = useCartStore((s) => s.hasHydrated);
   const clearCart = useCartStore((s) => s.clearCart);
-  const total = useCartStore((s) => s.getTotalPrice());
+  const total = useCartStore((s) => s.totalPrice);
 
   const shipping = total > 999 ? 0 : 50;
 
@@ -24,7 +26,8 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
     name: initialUser?.name || "", 
     email: initialUser?.email || "", 
     phone: "", flatOrHouseNumber: "", localityOrArea: "", landmark: "", city: "", state: "", pincode: "",
-    whatsappOptIn: true
+    whatsappOptIn: true,
+    gstin: ""
   });
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -74,8 +77,11 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
     if (form.localityOrArea.trim().length < 3) errors.localityOrArea = "Locality/Area must be at least 3 characters.";
     if (form.landmark && form.landmark.trim().length > 100) errors.landmark = "Landmark is too long.";
     if (form.city.trim().length < 2) errors.city = "City is required.";
-    if (form.state.trim().length < 2) errors.state = "State is required.";
+    if (!IndianStates.includes(form.state as any)) errors.state = "Valid Indian state is required.";
     if (!/^[0-9]{6}$/.test(form.pincode)) errors.pincode = "Valid 6-digit Pincode is required.";
+    if (form.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(form.gstin)) {
+      errors.gstin = "Invalid GSTIN format.";
+    }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -102,7 +108,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
         key: initRes.key,
         amount: initRes.amount,
         currency: initRes.currency,
-        name: "Sridha's Store",
+        name: businessConfig.brandName,
         description: "Order Payment",
         order_id: initRes.razorpayOrderId,
         handler: async function (response: any) {
@@ -224,7 +230,7 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
           <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Continue Shopping
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           {/* Checkout Form */}
           <div className="lg:col-span-7">
             <h1 className="font-display text-3xl font-bold text-surface-950 mb-2">Checkout</h1>
@@ -301,6 +307,22 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                     />
                     <span className="group-hover:text-surface-950 transition-colors font-medium">Get order updates and offers on WhatsApp</span>
                   </label>
+                </div>
+                <div>
+                  <label htmlFor="gstin" className="mb-2 block text-sm font-semibold text-surface-900">
+                    GSTIN (Optional for B2B)
+                  </label>
+                  <input
+                    id="gstin"
+                    name="gstin"
+                    type="text"
+                    value={form.gstin}
+                    onChange={handleChange}
+                    aria-invalid={!!validationErrors.gstin}
+                    className={`w-full rounded-xl border bg-white px-4 py-3 text-surface-950 uppercase focus:outline-none focus:ring-2 transition-shadow ${validationErrors.gstin ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
+                    placeholder="22AAAAA0000A1Z5"
+                  />
+                  {validationErrors.gstin && <p className="mt-1 text-xs text-red-500">{validationErrors.gstin}</p>}
                 </div>
               </div>
 
@@ -381,16 +403,20 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                     <label htmlFor="state" className="mb-2 block text-sm font-semibold text-surface-900">
                       State
                     </label>
-                    <input
+                    <select
                       id="state"
                       name="state"
-                      type="text"
                       required
                       value={form.state}
-                      onChange={handleChange}
+                      onChange={handleChange as any}
                       aria-invalid={!!validationErrors.state}
                       className={`w-full rounded-xl border bg-white px-4 py-3 text-surface-950 focus:outline-none focus:ring-2 transition-shadow ${validationErrors.state ? 'border-red-400 focus:ring-red-500' : 'border-surface-300 focus:ring-primary-500'}`}
-                    />
+                    >
+                      <option value="" disabled>Select State</option>
+                      {IndianStates.map((state) => (
+                        <option key={state} value={state}>{state}</option>
+                      ))}
+                    </select>
                     {validationErrors.state && <p className="mt-1 text-xs text-red-500">{validationErrors.state}</p>}
                   </div>
                   <div>
@@ -433,17 +459,19 @@ export default function CheckoutClient({ initialUser }: { initialUser?: { name: 
                     />
                     <span className="font-medium text-surface-950">Pay Online (Cards, UPI, NetBanking)</span>
                   </label>
-                  <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-surface-50 transition-colors">
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="COD"
-                      checked={paymentMethod === "COD"}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-5 h-5 text-primary-600 accent-primary-600"
-                    />
-                    <span className="font-medium text-surface-950">Cash on Delivery (COD)</span>
-                  </label>
+                  {process.env.NEXT_PUBLIC_ENABLE_COD === "true" && (
+                    <label className="flex items-center gap-3 p-4 border rounded-xl cursor-pointer hover:bg-surface-50 transition-colors">
+                      <input 
+                        type="radio" 
+                        name="paymentMethod" 
+                        value="COD"
+                        checked={paymentMethod === "COD"}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-5 h-5 text-primary-600 accent-primary-600"
+                      />
+                      <span className="font-medium text-surface-950">Cash on Delivery (COD)</span>
+                    </label>
+                  )}
                 </div>
               </div>
             </form>

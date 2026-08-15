@@ -1,12 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone, Loader2, CheckCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { businessConfig } from "@/config/business.config";
 
 export default function Footer() {
   const pathname = usePathname();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
   if (pathname.startsWith("/checkout")) return null;
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) return;
+
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/v1/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const json = await res.json();
+      
+      if (res.ok) {
+        setStatus("success");
+        setMessage(json.message);
+        setEmail("");
+      } else {
+        setStatus("error");
+        setMessage(json.error || "Subscription failed");
+      }
+    } catch (err) {
+      setStatus("error");
+      setMessage("An error occurred");
+    }
+  };
+
   return (
     <footer className="bg-surface-950 text-surface-300 border-t border-surface-900 pt-16 pb-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -19,7 +53,7 @@ export default function Footer() {
                 <span className="font-display text-xl font-bold">S</span>
               </div>
               <div className="hidden sm:block">
-                <span className="block font-display text-lg font-bold text-white tracking-tight">Sridha&apos;s Store</span>
+                <span className="block font-display text-lg font-bold text-white tracking-tight">{businessConfig.brandName}</span>
                 <span className="block text-[10px] font-medium uppercase tracking-widest text-primary-500">
                   Heritage Kitchen
                 </span>
@@ -30,12 +64,29 @@ export default function Footer() {
             </p>
             <div className="space-y-3">
               <p className="text-sm font-semibold text-white">Subscribe to our newsletter</p>
-              <div className="flex">
-                <input type="email" placeholder="Email address" className="bg-surface-900 border border-surface-800 rounded-l-lg px-3 py-2 text-sm w-full outline-none focus:border-primary-500 text-white placeholder:text-surface-600" />
-                <button className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-r-lg text-sm font-semibold transition-colors">
-                  Join
+              <form onSubmit={handleSubscribe} className="flex">
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={status === "loading" || status === "success"}
+                  placeholder="Email address" 
+                  className="bg-surface-900 border border-surface-800 rounded-l-lg px-3 py-2 text-sm w-full outline-none focus:border-primary-500 text-white placeholder:text-surface-600 disabled:opacity-50" 
+                  required
+                />
+                <button 
+                  type="submit"
+                  disabled={status === "loading" || status === "success"}
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-r-lg text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center min-w-[60px]"
+                >
+                  {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : status === "success" ? <CheckCircle className="w-4 h-4" /> : "Join"}
                 </button>
-              </div>
+              </form>
+              {message && (
+                <p className={`text-xs ${status === "success" ? "text-green-400" : "text-red-400"}`}>
+                  {message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -69,23 +120,23 @@ export default function Footer() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>415/1B, Mettu street, venbedu,<br/>Chengalpattu - 603110</span>
+                <span>{businessConfig.address.line1}, {businessConfig.address.line2 && `${businessConfig.address.line2}, `}<br/>{businessConfig.address.city} - {businessConfig.address.pincode}</span>
               </li>
               <li className="flex items-start gap-3 text-surface-200">
                 <Phone className="w-5 h-5 text-primary-400 shrink-0 mt-0.5" />
-                <span>+91 7708838059<br/><span className="text-sm text-surface-400">Mon-Sat, 9AM-6PM</span></span>
+                <span>{businessConfig.supportPhone}<br/><span className="text-sm text-surface-400">Mon-Sat, 9AM-6PM</span></span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-primary-500 shrink-0" />
-                <span>sridhasstore@gmail.com</span>
+                <span>{businessConfig.supportEmail}</span>
               </li>
             </ul>
             </div>
           </div>
 
         <div className="border-t border-surface-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-surface-500">
-          <p>© {new Date().getFullYear()} Sridha&apos;s Store. All rights reserved.</p>
-          <p>FSSAI License No: 12425008003227</p>
+          <p>© {new Date().getFullYear()} {businessConfig.brandName}. All rights reserved.</p>
+          {businessConfig.compliance.fssaiLicense && <p>FSSAI License No: {businessConfig.compliance.fssaiLicense}</p>}
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>

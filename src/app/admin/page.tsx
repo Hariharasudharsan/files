@@ -5,11 +5,30 @@ import { Button } from "@/components/ui/Button";
 
 export default async function AdminDashboard() {
   // Fetch high-level metrics
-  const [orderCount, productCount, customerCount] = await Promise.all([
+  const [
+    orderCount, 
+    productCount, 
+    customerCount,
+    revenueData,
+    lowStockCount,
+    failedSyncCount
+  ] = await Promise.all([
     prisma.order.count(),
     prisma.product.count(),
     prisma.user.count({ where: { roleId: null } }),
+    prisma.order.aggregate({
+      _sum: { total: true },
+      where: { status: { not: "CANCELLED" } }
+    }),
+    prisma.inventoryLevel.count({
+      where: { available: { lte: 10 } }
+    }),
+    prisma.eRPSync.count({
+      where: { status: "FAILED" }
+    })
   ]);
+
+  const totalRevenue = revenueData._sum.total?.toNumber() || 0;
 
   // We could calculate revenue, but for the MVP dashboard we'll just pull the most recent 5 orders
   const recentOrders = await prisma.order.findMany({
@@ -19,7 +38,7 @@ export default async function AdminDashboard() {
   });
 
   const STATS = [
-    { title: "Total Revenue", value: "₹45,231", icon: DollarSign, trend: "+12.5%", color: "text-green-600" },
+    { title: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: DollarSign, trend: "+12.5%", color: "text-green-600" },
     { title: "Total Orders", value: orderCount.toString(), icon: ShoppingBag, trend: "+5.2%", color: "text-blue-600" },
     { title: "Total Customers", value: customerCount.toString(), icon: Users, trend: "+2.1%", color: "text-purple-600" },
     { title: "Products", value: productCount.toString(), icon: Package, trend: "0%", color: "text-orange-600" },
@@ -112,16 +131,30 @@ export default async function AdminDashboard() {
             </h2>
           </div>
           <div className="p-6 flex-1 flex flex-col gap-4">
-            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
-              <h4 className="font-semibold text-amber-900 text-sm">Low Stock Alert</h4>
-              <p className="text-xs text-amber-700 mt-1">3 variants are running low on inventory.</p>
-              <Link href="/admin/inventory" className="text-xs font-bold text-amber-900 mt-2 inline-block underline">Review Inventory</Link>
-            </div>
-            <div className="p-4 rounded-xl border border-red-200 bg-red-50">
-              <h4 className="font-semibold text-red-900 text-sm">Failed ERP Syncs</h4>
-              <p className="text-xs text-red-700 mt-1">2 orders failed to sync to ERPNext.</p>
-              <Link href="/admin/sync-logs" className="text-xs font-bold text-red-900 mt-2 inline-block underline">View Sync Logs</Link>
-            </div>
+            {lowStockCount > 0 ? (
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
+                <h4 className="font-semibold text-amber-900 text-sm">Low Stock Alert</h4>
+                <p className="text-xs text-amber-700 mt-1">{lowStockCount} variants are running low on inventory.</p>
+                <Link href="/admin/inventory" className="text-xs font-bold text-amber-900 mt-2 inline-block underline">Review Inventory</Link>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl border border-green-200 bg-green-50">
+                <h4 className="font-semibold text-green-900 text-sm">Inventory Healthy</h4>
+                <p className="text-xs text-green-700 mt-1">All stock levels are optimal.</p>
+              </div>
+            )}
+            {failedSyncCount > 0 ? (
+              <div className="p-4 rounded-xl border border-red-200 bg-red-50">
+                <h4 className="font-semibold text-red-900 text-sm">Failed ERP Syncs</h4>
+                <p className="text-xs text-red-700 mt-1">{failedSyncCount} items failed to sync to ERPNext.</p>
+                <Link href="/admin/sync-logs" className="text-xs font-bold text-red-900 mt-2 inline-block underline">View Sync Logs</Link>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl border border-green-200 bg-green-50">
+                <h4 className="font-semibold text-green-900 text-sm">ERP Sync Healthy</h4>
+                <p className="text-xs text-green-700 mt-1">All queues have processed successfully.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

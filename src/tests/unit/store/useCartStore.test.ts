@@ -93,8 +93,8 @@ describe('useCartStore', () => {
     
     // Using get() from inside the store to reflect latest state
     const totals = useCartStore.getState();
-    expect(totals.getTotalItems()).toBe(3);
-    expect(totals.getTotalPrice()).toBe(450);
+    expect(totals.totalItems).toBe(3);
+    expect(totals.totalPrice).toBe(450);
   });
 
   it('should clear cart', () => {

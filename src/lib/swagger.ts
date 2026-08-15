@@ -6,9 +6,9 @@ export const getApiDocs = async () => {
     definition: {
       openapi: "3.0.0",
       info: {
-        title: "Mathuram Foods API",
-        version: "1.0",
-        description: "API Documentation for Mathuram Foods E-Commerce",
+        title: "Sridha's Store API",
+        version: "1.0.0",
+        description: "API Documentation for Sridha's Store E-Commerce",
       },
       components: {
         securitySchemes: {

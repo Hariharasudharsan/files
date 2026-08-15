@@ -2,6 +2,7 @@ import { Settings, Save, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { saveGlobalSettings } from "./actions";
+import { businessConfig } from "@/config/business.config";
 
 export default async function AdminSettingsPage() {
   const storeConfig = await prisma.settings.findUnique({
@@ -9,10 +10,10 @@ export default async function AdminSettingsPage() {
   });
 
   const configValue = (storeConfig?.value as any) || {
-    storeName: "Sridha's Store",
-    supportEmail: "sridhasstore@gmail.com",
-    metaTitle: "Sridha's Store - Authentic Organic Spices",
-    metaDescription: "Discover our premium range of organic spices and authentic food products..."
+    storeName: businessConfig.brandName,
+    supportEmail: businessConfig.supportEmail,
+    metaTitle: businessConfig.seo.defaultTitle,
+    metaDescription: businessConfig.seo.defaultDescription
   };
 
   return (

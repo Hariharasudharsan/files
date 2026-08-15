@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
+import { businessConfig } from "@/config/business.config";
 
 export default function Loading() {
   return (
@@ -8,7 +9,7 @@ export default function Loading() {
         <div className="relative w-32 h-32 animate-pulse-slow">
           <Image
             src="/logo.png"
-            alt="Sridha's Store Loading"
+            alt={`${businessConfig.brandName} Loading`}
             fill
             sizes="128px"
             className="object-contain"

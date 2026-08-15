@@ -9,6 +9,8 @@ interface CartState {
   items: CartItem[];
   isOpen: boolean;
   hasHydrated: boolean;
+  totalItems: number;
+  totalPrice: number;
 
   openCart: () => void;
   closeCart: () => void;
@@ -19,10 +21,14 @@ interface CartState {
   updateQty: (itemCode: string, qty: number) => void;
   clearCart: () => void;
   setHasHydrated: (value: boolean) => void;
-
-  getTotalItems: () => number;
-  getTotalPrice: () => number;
 }
+
+const calculateTotals = (items: CartItem[]) => {
+  return {
+    totalItems: items.reduce((sum, i) => sum + i.qty, 0),
+    totalPrice: items.reduce((sum, i) => sum + i.qty * i.price, 0),
+  };
+};
 
 export const useCartStore = create<CartState>()(
   persist(
@@ -30,6 +36,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       isOpen: false,
       hasHydrated: false,
+      totalItems: 0,
+      totalPrice: 0,
 
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
@@ -51,25 +59,25 @@ export const useCartStore = create<CartState>()(
                 product_category: product.category_id || "",
                 qty 
               }];
-          return { items, isOpen: true };
+          return { items, isOpen: true, ...calculateTotals(items) };
         }),
 
       removeItem: (itemCode) =>
-        set((state) => ({ items: state.items.filter((i) => i.item_code !== itemCode) })),
+        set((state) => {
+          const items = state.items.filter((i) => i.item_code !== itemCode);
+          return { items, ...calculateTotals(items) };
+        }),
 
       updateQty: (itemCode, qty) =>
-        set((state) => ({
-          items:
-            qty <= 0
-              ? state.items.filter((i) => i.item_code !== itemCode)
-              : state.items.map((i) => (i.item_code === itemCode ? { ...i, qty } : i)),
-        })),
+        set((state) => {
+          const items = qty <= 0
+            ? state.items.filter((i) => i.item_code !== itemCode)
+            : state.items.map((i) => (i.item_code === itemCode ? { ...i, qty } : i));
+          return { items, ...calculateTotals(items) };
+        }),
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], totalItems: 0, totalPrice: 0 }),
       setHasHydrated: (value) => set({ hasHydrated: value }),
-
-      getTotalItems: () => get().items.reduce((sum, i) => sum + i.qty, 0),
-      getTotalPrice: () => get().items.reduce((sum, i) => sum + i.qty * i.price, 0),
     }),
     {
       name: "mathuram-cart",

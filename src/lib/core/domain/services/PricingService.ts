@@ -1,3 +1,5 @@
+import { isStateEqual, type IndianState } from '../value-objects/IndianState';
+
 export interface PricingItemInput {
   productVariantId: string;
   qty: number;
@@ -53,8 +55,8 @@ export class PricingService {
     variantsMap: Map<string, VariantData>,
     coupon: CouponData | null,
     isB2B: boolean,
-    shippingState?: string,
-    sellerState?: string
+    shippingState?: string | IndianState,
+    sellerState?: string | IndianState
   ): PricingResult {
     let subTotalBeforeDiscount = 0;
     let discountTotal = 0;
@@ -92,9 +94,7 @@ export class PricingService {
     let totalVolumetricWeightKg = 0;
     
     // Normalize states for comparison
-    const sState = shippingState?.trim().toLowerCase() || '';
-    const selState = sellerState?.trim().toLowerCase() || '';
-    const isIntraState = sState === selState && sState !== '';
+    const isIntraState = isStateEqual(shippingState, sellerState);
 
     const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 

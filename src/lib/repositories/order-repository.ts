@@ -3,7 +3,8 @@ import "server-only";
 import crypto from "crypto";
 import type { CreateOrderInput, StorefrontOrder } from "@/lib/core/domain/entities/order";
 import { prisma } from "@/lib/infrastructure/database/prisma";
-import { OrderStatus, PaymentStatus, FulfillmentStatus } from "@prisma/client";
+import { OrderStatus, PaymentStatus, FulfillmentStatus, Prisma } from "@prisma/client";
+import { OutboxService } from "@/lib/infrastructure/events/OutboxService";
 
 function createOrderId(): string {
   return `MF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${crypto
@@ -79,9 +80,9 @@ export async function markOrderAsPaidAndCreateTransaction(
   transactionId: string
 ) {
   return await prisma.$transaction(async (tx) => {
-    await tx.order.update({
+    const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      data: { paymentStatus: PaymentStatus.PAID }
+      data: { paymentStatus: PaymentStatus.CAPTURED }
     });
 
     await tx.paymentTransaction.create({
@@ -94,6 +95,16 @@ export async function markOrderAsPaidAndCreateTransaction(
         status: "captured",
       }
     });
+
+    await OutboxService.publish(
+      tx,
+      orderId,
+      "Order",
+      "OrderPaid",
+      { orderId, transactionId, amount: total }
+    );
+    
+    return updatedOrder;
   });
 }
 
@@ -143,22 +154,38 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
   const discountTotal = 0;
   const total = subTotal + taxTotal + shippingTotal - discountTotal;
 
-  const orderRecord = await prisma.order.create({
-    data: {
-      id,
-      userId: user.id,
-      subTotal,
-      taxTotal,
-      shippingTotal,
-      discountTotal,
-      total,
-      status: OrderStatus.PENDING,
-      paymentStatus: PaymentStatus.UNPAID,
-      fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
-      items: {
-        create: itemsForCreation,
+  const orderRecord = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({
+      data: {
+        id,
+        userId: user.id,
+        subTotal,
+        taxTotal,
+        shippingTotal,
+        discountTotal,
+        total,
+        status: OrderStatus.CREATED,
+        paymentStatus: PaymentStatus.CREATED,
+        fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
+        items: {
+          create: itemsForCreation,
+        }
       }
-    }
+    });
+
+    await OutboxService.publish(
+      tx,
+      order.id,
+      "Order",
+      "OrderCreated",
+      { orderId: order.id }
+    );
+    
+    // Also explicitly create the ERPSync record here in PENDING state 
+    // so it's visible in the dashboard immediately as pending sync
+    await OutboxService.queueERPSync(tx, "Order", order.id, order.id);
+    
+    return order;
   });
 
   const order: StorefrontOrder = {
@@ -166,7 +193,7 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
     items: itemsForCreation.map(i => ({ ...i, productVariantId: i.productVariantId })),
     contact: input.contact,
     total: orderRecord.total.toNumber(),
-    status: "PENDING", 
+    status: "CREATED", 
     erp_sync_status: "queued",
     created_at: orderRecord.createdAt.toISOString(),
   };

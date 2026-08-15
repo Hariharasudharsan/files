@@ -8,7 +8,7 @@ import { useCartStore } from "@/store/useCartStore";
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const toggleCart = useCartStore(s => s.toggleCart);
-  const totalItems = useCartStore(s => s.getTotalItems());
+  const totalItems = useCartStore(s => s.totalItems);
   const hasHydrated = useCartStore(s => s.hasHydrated);
 
   // Hide on checkout

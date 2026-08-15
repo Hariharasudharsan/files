@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { Star, CheckCircle } from "lucide-react";
 import type { Review } from "@/lib/core/domain/entities/commerce";
+import ReviewForm from "./ReviewForm";
 
 export default function ProductReviews({ productId }: { productId: string }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -46,9 +49,11 @@ export default function ProductReviews({ productId }: { productId: string }) {
       ) : reviews.length === 0 ? (
         <div className="bg-surface-50 p-12 rounded-2xl border border-surface-100 text-center">
           <p className="text-surface-600 mb-6 text-lg">No reviews yet — be the first to review this product</p>
-          <button className="px-8 py-2.5 border-2 border-surface-900 rounded-full font-bold text-surface-900 hover:bg-surface-900 hover:text-white transition-colors">
-            Write a Review
-          </button>
+          {!showForm && !submitted && (
+            <button onClick={() => setShowForm(true)} className="px-8 py-2.5 border-2 border-surface-900 rounded-full font-bold text-surface-900 hover:bg-surface-900 hover:text-white transition-colors">
+              Write a Review
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
@@ -62,9 +67,11 @@ export default function ProductReviews({ productId }: { productId: string }) {
               </div>
               <p className="text-sm text-surface-500">Based on {reviews.length} review{reviews.length === 1 ? "" : "s"}</p>
               
-              <button className="mt-6 w-full py-2.5 border-2 border-surface-900 rounded-full font-bold text-surface-900 hover:bg-surface-900 hover:text-white transition-colors">
-                Write a Review
-              </button>
+              {!showForm && !submitted && (
+                <button onClick={() => setShowForm(true)} className="mt-6 w-full py-2.5 border-2 border-surface-900 rounded-full font-bold text-surface-900 hover:bg-surface-900 hover:text-white transition-colors">
+                  Write a Review
+                </button>
+              )}
             </div>
           </div>
 
@@ -85,6 +92,25 @@ export default function ProductReviews({ productId }: { productId: string }) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {showForm && !submitted && (
+        <ReviewForm 
+          productId={productId} 
+          onSuccess={() => {
+            setShowForm(false);
+            setSubmitted(true);
+          }} 
+          onCancel={() => setShowForm(false)} 
+        />
+      )}
+
+      {submitted && (
+        <div className="mt-8 bg-green-50 text-green-800 p-6 rounded-2xl border border-green-200 flex flex-col items-center text-center">
+          <CheckCircle className="w-12 h-12 text-green-500 mb-4" />
+          <h3 className="text-xl font-bold mb-2">Thank you for your review!</h3>
+          <p className="text-green-700">Your review has been submitted and is pending approval.</p>
         </div>
       )}
     </div>

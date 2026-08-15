@@ -35,6 +35,8 @@ export default withAuth(
     const isAuth = !!token;
     const isAuthPage = req.nextUrl.pathname.startsWith("/account/login");
     const isAdminAuthPage = req.nextUrl.pathname.startsWith("/admin/login");
+
+    if (isAuthPage) {
       if (isAuth) {
         return NextResponse.redirect(new URL("/account", req.url));
       }

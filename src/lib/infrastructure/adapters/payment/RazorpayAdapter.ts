@@ -47,12 +47,14 @@ export class RazorpayAdapter implements PaymentPort {
     const webhookSecret = secret || process.env.RAZORPAY_WEBHOOK_SECRET || '';
     const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(payload).digest('hex');
     
+    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
+    const providedBuffer = Buffer.from(signature, 'utf-8');
+    
     let isValid = false;
-    if (expectedSignature.length === signature.length) {
-      isValid = crypto.timingSafeEqual(
-        Buffer.from(expectedSignature, 'utf-8'),
-        Buffer.from(signature, 'utf-8')
-      );
+    if (expectedBuffer.length === providedBuffer.length) {
+      isValid = crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+    } else {
+      crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
     }
     
     if (isValid) {
@@ -80,12 +82,24 @@ export class RazorpayAdapter implements PaymentPort {
       .createHmac("sha256", secret)
       .update(orderId + "|" + paymentId)
       .digest("hex");
-    return generatedSignature === signature;
+    
+    const expectedBuffer = Buffer.from(generatedSignature, 'utf-8');
+    const providedBuffer = Buffer.from(signature, 'utf-8');
+    
+    if (expectedBuffer.length === providedBuffer.length) {
+      return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+    } else {
+      crypto.timingSafeEqual(expectedBuffer, expectedBuffer);
+      return false;
+    }
   }
 
-  async refundPayment(transactionId: string, amount?: number): Promise<boolean> {
+  async refundPayment(transactionId: string, amount?: number, notes?: any): Promise<{ success: boolean; id?: string; error?: string }> {
     try {
-      const body = amount ? { amount: Math.round(amount * 100) } : {};
+      const body = {
+        ...(amount ? { amount: Math.round(amount * 100) } : {}),
+        ...(notes ? { notes } : {})
+      };
       const response = await fetch(`https://api.razorpay.com/v1/payments/${transactionId}/refund`, {
         method: 'POST',
         headers: {
@@ -94,9 +108,13 @@ export class RazorpayAdapter implements PaymentPort {
         },
         body: JSON.stringify(body)
       });
-      return response.ok;
-    } catch {
-      return false;
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.error?.description || 'Unknown error' };
+      }
+      return { success: true, id: data.id };
+    } catch (error: any) {
+      return { success: false, error: error.message };
     }
   }
 }

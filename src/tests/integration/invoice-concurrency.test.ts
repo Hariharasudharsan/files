@@ -26,7 +26,7 @@ describe('Invoice Sequence Concurrency', () => {
           cgstTotal: 0,
           sgstTotal: 0,
           igstTotal: 0,
-          status: OrderStatus.PENDING,
+          status: OrderStatus.CREATED,
           paymentStatus: PaymentStatus.PENDING,
           chargeableWeightKg: 1,
           shippingAddress: { city: 'Test' },

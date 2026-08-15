@@ -33,6 +33,9 @@ const envSchema = z.object({
   SELLER_STATE: z.string().optional().default("Tamil Nadu"),
   SELLER_GSTIN: z.string().optional(),
 
+  // Features
+  NEXT_PUBLIC_ENABLE_COD: z.string().optional().default("false"),
+
   // Queue & Redis (For future use)
   REDIS_URL: z.string().url("REDIS_URL is required"),
   UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL is required"),
@@ -74,6 +77,7 @@ export function getServerEnv() {
     erpWebhookSecret: env.ERPNEXT_WEBHOOK_SECRET,
     sellerState: env.SELLER_STATE,
     sellerGstin: env.SELLER_GSTIN,
+    enableCod: env.NEXT_PUBLIC_ENABLE_COD === "true",
     s3: {
       endpoint: env.S3_ENDPOINT,
       region: env.S3_REGION,

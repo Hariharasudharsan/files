@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/infrastructure/database/prisma";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import SearchFilters from "@/components/SearchFilters";
 import { CatalogService } from "@/lib/core/application/CatalogService";
+import { searchAdapter } from "@/lib/integrations/search/postgres-adapter";
 import SearchSortDesktop from "@/components/SearchSortDesktop";
 
 export const dynamic = "force-dynamic";
@@ -10,60 +10,36 @@ export const dynamic = "force-dynamic";
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sort?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; category?: string; page?: string }>;
 }) {
   const resolvedSearchParams = await searchParams;
   const query = resolvedSearchParams.q || "";
   const sort = resolvedSearchParams.sort || "relevance";
-  const categoryId = resolvedSearchParams.category;
+  const categoryId = resolvedSearchParams.category as string | undefined;
+  const page = parseInt(resolvedSearchParams.page as string || "1", 10);
+  const limit = 20;
 
-  // Build the where clause
-  let whereClause: any = {};
-  if (query) {
-    whereClause.OR = [
-      { name: { contains: query, mode: 'insensitive' } },
-      { description: { contains: query, mode: 'insensitive' } }
-    ];
-  }
-  if (categoryId) {
-    whereClause.category = {
-      slug: categoryId
-    };
-  }
+  const searchResult = await searchAdapter.searchProducts(
+    query,
+    { category: categoryId },
+    page,
+    limit
+  );
 
-  // Build order by
-  let orderBy: any = undefined;
-  if (sort === 'price_asc') {
-    orderBy = { variants: { _count: 'asc' } }; // placeholder for relation sorting
-  } else if (sort === 'price_desc') {
-    orderBy = { variants: { _count: 'desc' } }; 
-  } else if (sort === 'newest') {
-    orderBy = { createdAt: 'desc' };
-  }
+  let products = searchResult.hits;
 
-  let products = await prisma.product.findMany({
-    where: whereClause,
-    orderBy: orderBy,
-    include: {
-      primaryImage: true,
-      variants: {
-        where: { isDeleted: false },
-        take: 1
-      }
-    }
-  });
-
-  // Handle price sorting in memory since Prisma doesn't natively support sorting by relation min aggregate
+  // In-memory sort is applied ONLY to the current page if price sort is requested.
+  // For true global price sorting, a minPrice field should be denormalized on the Product model.
   if (sort === 'price_asc') {
     products.sort((a, b) => {
-      const priceA = a.variants[0]?.price?.toNumber() || 0;
-      const priceB = b.variants[0]?.price?.toNumber() || 0;
+      const priceA = a.variants[0]?.price || 0;
+      const priceB = b.variants[0]?.price || 0;
       return priceA - priceB;
     });
   } else if (sort === 'price_desc') {
     products.sort((a, b) => {
-      const priceA = a.variants[0]?.price?.toNumber() || 0;
-      const priceB = b.variants[0]?.price?.toNumber() || 0;
+      const priceA = a.variants[0]?.price || 0;
+      const priceB = b.variants[0]?.price || 0;
       return priceB - priceA;
     });
   }

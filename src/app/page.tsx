@@ -2,7 +2,7 @@ import { Factory, Leaf, ShieldCheck, Sun, Star } from "lucide-react";
 import Hero from "@/components/Hero";
 import ProductCard from "@/components/ProductCard";
 import { CatalogService } from "@/lib/core/application/CatalogService";
-import { prisma } from "@/lib/infrastructure/database/prisma";
+import { CmsService } from "@/lib/core/application/CmsService";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { MotionSection, MotionDiv } from "@/components/ui/Motion";
@@ -22,11 +22,7 @@ export default async function Home() {
 
   let banners: any[] = [];
   try {
-    banners = await prisma.banner.findMany({
-      where: { isActive: true },
-      include: { media: true },
-      orderBy: { createdAt: "desc" },
-    });
+    banners = await CmsService.getActiveBanners();
   } catch (e) {
     console.warn("Database unreachable during build. Skipping banners fetch for home page.");
   }

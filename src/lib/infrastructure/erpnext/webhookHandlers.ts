@@ -44,6 +44,11 @@ export async function handleDeliveryNote(payload: any) {
     return;
   }
 
+  if (order.status === "SHIPPED" || order.status === "DELIVERED" || order.status === "COMPLETED") {
+    Logger.info(`Order ${orderId} is already shipped. Skipping.`);
+    return;
+  }
+
   // Update order status
   await prisma.order.update({
     where: { id: orderId },
@@ -120,7 +125,7 @@ export async function handleSalesInvoice(payload: any) {
   if (payload.status === "Paid") {
     await prisma.order.update({
       where: { id: orderId },
-      data: { paymentStatus: "PAID" },
+      data: { paymentStatus: "CAPTURED" },
     });
   }
 }

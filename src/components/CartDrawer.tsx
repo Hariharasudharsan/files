@@ -14,7 +14,7 @@ export default function CartDrawer() {
   const closeCart = useCartStore((s) => s.closeCart);
   const updateQty = useCartStore((s) => s.updateQty);
   const removeItem = useCartStore((s) => s.removeItem);
-  const total = useCartStore((s) => s.getTotalPrice());
+  const total = useCartStore((s) => s.totalPrice);
   const addItem = useCartStore((s) => s.addItem);
 
   const [upsells, setUpsells] = useState<any[]>([]);

@@ -16,7 +16,7 @@ export async function listAllCategories() {
   }
 }
 
-export async function listPublishedProducts(): Promise<Product[]> {
+export async function listPublishedProducts(limit: number = 50): Promise<Product[]> {
   try {
     const products = await prisma.product.findMany({
       where: { 
@@ -26,6 +26,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
           { shelfLifeDays: null }
         ]
       },
+      take: limit,
       include: {
         primaryImage: true,
         variants: {
@@ -90,7 +91,7 @@ export async function listPublishedProducts(): Promise<Product[]> {
   }
 }
 
-export async function listPublishedProductsByCategory(categorySlug: string): Promise<Product[]> {
+export async function listPublishedProductsByCategory(categorySlug: string, limit: number = 50): Promise<Product[]> {
   try {
     const products = await prisma.product.findMany({
       where: { 
@@ -101,6 +102,7 @@ export async function listPublishedProductsByCategory(categorySlug: string): Pro
           { shelfLifeDays: null }
         ]
       },
+      take: limit,
       include: {
         primaryImage: true,
         variants: {
@@ -162,6 +164,83 @@ export async function listPublishedProductsByCategory(categorySlug: string): Pro
   } catch (error) {
     Logger.warn("Error fetching published products by category from DB", { error });
     return [];
+  }
+}
+
+export async function getPublishedProductBySlug(slug: string): Promise<Product | null> {
+  try {
+    const p = await prisma.product.findFirst({
+      where: { 
+        slug,
+        isDeleted: false,
+        OR: [
+          { shelfLifeDays: { gt: 0 } },
+          { shelfLifeDays: null }
+        ]
+      },
+      include: {
+        primaryImage: true,
+        variants: {
+          where: { isDeleted: false },
+          include: {
+            inventoryLevels: true,
+            images: { include: { media: true } }
+          }
+        }
+      }
+    });
+
+    if (!p) return null;
+
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      description: p.description || "",
+      category_id: p.categoryId,
+      ingredients: p.ingredients,
+      nutritional_info: p.nutritionalInfo,
+      shelf_life_days: p.shelfLifeDays,
+      gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
+      isFeatured: p.isFeatured,
+      primaryImage: p.primaryImage ? {
+        id: p.primaryImage.id,
+        url: p.primaryImage.url,
+        alt: p.primaryImage.alt,
+        type: p.primaryImage.type,
+      } : null,
+      created_at: p.createdAt.toISOString(),
+      updated_at: p.updatedAt.toISOString(),
+      variants: p.variants.map((v: any) => ({
+        id: v.id,
+        item_code: v.itemCode,
+        name: v.name,
+        price: v.price ? v.price.toNumber() : 0,
+        wholesalePrice: v.wholesalePrice ? v.wholesalePrice.toNumber() : null,
+        length: v.length,
+        width: v.width,
+        height: v.height,
+        weightGrams: v.weightGrams,
+        inventoryLevels: v.inventoryLevels?.map((il: any) => ({
+          warehouseId: il.warehouseId,
+          available: il.available,
+          reserved: il.reserved,
+          committed: il.committed,
+          sold: il.sold,
+          damaged: il.damaged,
+          returned: il.returned
+        })) || [],
+        images: v.images?.map((vi: any) => ({
+          id: vi.media.id,
+          url: vi.media.url,
+          alt: vi.media.alt,
+          type: vi.media.type,
+        })) || []
+      })),
+    };
+  } catch (error) {
+    Logger.warn("Error fetching product by slug from DB", { slug, error });
+    return null;
   }
 }
 

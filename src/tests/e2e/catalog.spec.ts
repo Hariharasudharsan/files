@@ -5,7 +5,7 @@ test.describe('Catalog Browsing', () => {
     await page.goto('/');
 
     // Expect a title "to contain" a substring.
-    await expect(page).toHaveTitle(/Mathuram Foods/);
+    await expect(page).toHaveTitle(/Sridha's Store/);
 
     // Expect the navbar to be visible
     const navbar = page.locator('nav');

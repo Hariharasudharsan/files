@@ -8,7 +8,7 @@ export default async function AdminAnalyticsPage() {
   // Aggregate Gross Revenue
   const revenueAggregation = await prisma.order.aggregate({
     _sum: { total: true },
-    where: { paymentStatus: "PAID" }
+    where: { paymentStatus: "CAPTURED" }
   });
   const grossRevenue = revenueAggregation._sum.total?.toNumber() || 0;
 

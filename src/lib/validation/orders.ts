@@ -1,11 +1,13 @@
 import type { CreateOrderInput, OrderItemInput } from "@/lib/core/domain/entities/order";
 import { fail, ok, type ValidationResult } from "@/lib/validation/result";
 import { sanitizeInput } from "@/lib/core/security/sanitizer";
+import { IndianStates, type IndianState } from "@/lib/core/domain/value-objects/IndianState";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_PATTERN = /^[A-Za-z\s]+$/;
 const PHONE_PATTERN = /^[0-9]{10}$/;
 const PINCODE_PATTERN = /^[0-9]{6}$/;
+const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -56,6 +58,7 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
   const state = sanitizeInput(contact.state as string);
   const pincode = sanitizeInput(contact.pincode as string);
   const whatsappOptIn = contact.whatsappOptIn === true;
+  const gstin = contact.gstin ? typeof contact.gstin === "string" ? contact.gstin.trim().toUpperCase() : "" : undefined;
   
   const paymentMethod = typeof payload.paymentMethod === "string" ? payload.paymentMethod.trim() : undefined;
   const couponCode = typeof payload.couponCode === "string" ? payload.couponCode.trim() : undefined;
@@ -90,19 +93,23 @@ export function validateCreateOrderPayload(payload: unknown): ValidationResult<C
     errors.push("City is required.");
   }
 
-  if (!state || state.length < 2) {
-    errors.push("State is required.");
+  if (!state || !(IndianStates as readonly string[]).includes(state)) {
+    errors.push("A valid Indian state is required.");
   }
 
   if (!pincode || !PINCODE_PATTERN.test(pincode)) {
     errors.push("A valid 6-digit PIN code is required.");
   }
 
+  if (gstin && !GSTIN_PATTERN.test(gstin)) {
+    errors.push("Invalid GSTIN format.");
+  }
+
   if (errors.length > 0) return fail(errors);
 
   return ok({
     items,
-    contact: { name, email, phone, flatOrHouseNumber, localityOrArea, landmark, city, state, pincode, whatsappOptIn },
+    contact: { name, email, phone, flatOrHouseNumber, localityOrArea, landmark, city, state, pincode, whatsappOptIn, gstin },
     paymentMethod,
     couponCode,
   });

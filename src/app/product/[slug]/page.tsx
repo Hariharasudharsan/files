@@ -14,6 +14,8 @@ import RecentlyViewed, { RecordRecentlyViewed } from "@/components/RecentlyViewe
 import ProductReviews from "@/components/ProductReviews";
 import { ShieldCheck, Truck, Lock } from "lucide-react";
 import { MotionDiv, MotionSection } from "@/components/ui/Motion";
+import { businessConfig } from "@/config/business.config";
+import { getProductJsonLd } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return {
     title: product.name,
-    description: product.description?.slice(0, 160) || `Buy ${product.name} online at Sridha's Store.`,
+    description: product.description?.slice(0, 160) || `Buy ${product.name} online at ${businessConfig.brandName}.`,
     openGraph: {
       title: product.name,
       description: product.description?.slice(0, 160),
@@ -46,22 +48,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const availableStock = product.variants[0]?.inventoryLevels?.reduce((sum, il) => sum + il.available, 0) || 0;
   
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": product.name,
-    "image": product.primaryImage?.url,
-    "description": product.description || `Buy ${product.name} online at Sridha's Store.`,
-    "sku": product.variants[0]?.item_code,
-    "offers": {
-      "@type": "Offer",
-      "url": `https://www.sridhasstore.com/product/${product.slug}`,
-      "priceCurrency": "INR",
-      "price": product.variants[0]?.price,
-      "itemCondition": "https://schema.org/NewCondition",
-      "availability": availableStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
-    }
-  };
+  const jsonLd = getProductJsonLd(product);
 
   return (
     <>
@@ -127,7 +114,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
             <MotionDiv delay={0.2} className="prose text-surface-700 leading-relaxed">
               <p>{product.description}</p>
-              <p className="mt-4 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Sridha&apos;s Store</p>
+              
+              <div className="mt-6 flex flex-col gap-2">
+                <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                  Manufacturer: {businessConfig.brandName}
+                </p>
+                {product.hsnCode && (
+                  <p className="text-xs font-semibold text-surface-500 uppercase tracking-wider">
+                    HSN Code: {product.hsnCode}
+                  </p>
+                )}
+                {product.fssaiLicense || businessConfig.compliance.fssaiLicense ? (
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold text-surface-600 bg-surface-100 px-3 py-1.5 rounded-md w-fit border border-surface-200">
+                    <ShieldCheck className="w-4 h-4 text-primary-600" />
+                    FSSAI: {product.fssaiLicense || businessConfig.compliance.fssaiLicense}
+                  </div>
+                ) : process.env.NODE_ENV === 'development' ? (
+                  <div className="inline-flex items-center gap-2 text-xs font-semibold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-md w-fit border border-orange-200">
+                    <ShieldCheck className="w-4 h-4 text-orange-600" />
+                    FSSAI License: Not Configured (Dev Only)
+                  </div>
+                ) : null}
+              </div>
             </MotionDiv>
 
             <MotionDiv delay={0.3} className="mt-8">

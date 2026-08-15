@@ -73,13 +73,15 @@ export default function ProductAccordions({ ingredients, nutrition, shelfLife, s
         onToggle={() => setOpenIndex(openIndex === sections.length ? -1 : sections.length)}
       >
         <ul className="space-y-4 text-surface-600">
-          <li className="flex gap-3">
-            <ShieldCheck className="h-5 w-5 text-green-600 shrink-0" />
-            <div>
-              <strong className="text-surface-950 block text-sm">FSSAI Certified</strong>
-              <span className="text-xs">100% compliant with food safety standards.</span>
-            </div>
-          </li>
+          {process.env.NEXT_PUBLIC_FSSAI && (
+            <li className="flex gap-3">
+              <ShieldCheck className="h-5 w-5 text-green-600 shrink-0" />
+              <div>
+                <strong className="text-surface-950 block text-sm">FSSAI Certified</strong>
+                <span className="text-xs">100% compliant with food safety standards.</span>
+              </div>
+            </li>
+          )}
           <li className="flex gap-3">
             <Leaf className="h-5 w-5 text-green-600 shrink-0" />
             <div>

@@ -12,6 +12,8 @@ import type { Product } from "@/lib/core/domain/entities/product";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import QuickViewModal from "@/components/QuickViewModal";
+import { businessConfig } from "@/config/business.config";
+import { generateImageAlt } from "@/lib/image";
 
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -91,11 +93,11 @@ export default function ProductCard({ product }: { product: Product }) {
     "@type": "Product",
     name: product.name,
     description:
-      product.description || `${product.name} — authentic, factory-direct from Sridha's Store.`,
+      product.description || `${product.name} — authentic, factory-direct from ${businessConfig.brandName}.`,
     image: product.primaryImage?.url || undefined,
     sku: defaultVariant?.item_code,
-    category: "Sridha's Store", // Assuming static or fetched category
-    brand: { "@type": "Brand", name: "Sridha's Store" },
+    category: businessConfig.brandName, // Assuming static or fetched category
+    brand: { "@type": "Brand", name: businessConfig.brandName },
     offers: {
       "@type": "Offer",
       priceCurrency: "INR",
@@ -118,7 +120,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.primaryImage ? (
           <Image
             src={product.primaryImage.url}
-            alt={product.name}
+            alt={generateImageAlt(product.name)}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -156,11 +158,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Quick Actions Overlay */}
         <div className="absolute right-4 top-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0 duration-300">
-          <button onClick={handleWishlist} className={`p-2.5 rounded-full bg-white shadow-md hover:bg-red-50 transition-colors ${isWishlisted ? 'text-red-500' : 'text-surface-600 hover:text-red-500'}`}>
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
+          <button onClick={handleWishlist} aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`} className={`p-2.5 rounded-full bg-white shadow-md hover:bg-red-50 transition-colors ${isWishlisted ? 'text-red-500' : 'text-surface-600 hover:text-red-500'}`}>
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} aria-hidden="true" />
           </button>
-          <button onClick={handleQuickView} className="p-2.5 rounded-full bg-white shadow-md text-surface-600 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <Eye className="w-4 h-4" />
+          <button onClick={handleQuickView} aria-label={`Quick view ${product.name}`} className="p-2.5 rounded-full bg-white shadow-md text-surface-600 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+            <Eye className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -170,7 +172,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {product.description && (
           <p className="mt-2 line-clamp-2 text-sm text-surface-900/60 font-light leading-relaxed">{product.description}</p>
         )}
-        <p className="mt-1 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: Sridha&apos;s Store</p>
+        <p className="mt-1 text-xs font-semibold text-surface-500 uppercase tracking-wider">Manufacturer: {businessConfig.brandName}</p>
 
         <div className="mt-auto flex items-end justify-between pt-6">
           <div className="flex flex-col">

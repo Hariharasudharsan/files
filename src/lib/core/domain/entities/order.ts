@@ -28,10 +28,9 @@ export interface CartItem extends ProductVariant {
 }
 
 export type OrderStatusEnum = 
-  | "DRAFT" | "PENDING" | "AWAITING_PAYMENT" | "AUTHORIZED" 
-  | "PAID" | "CONFIRMED" | "PACKED" | "READY_TO_SHIP" 
-  | "SHIPPED" | "DELIVERED" | "CANCELLED" | "RETURNED" 
-  | "REFUNDED" | "EXPIRED";
+  | "CREATED" | "PAYMENT_PENDING" | "PAID" | "PAYMENT_FAILED" 
+  | "CONFIRMED" | "PACKED" | "SHIPPED" | "DELIVERED" 
+  | "CANCELLED" | "REFUND_PENDING" | "REFUNDED";
 
 export interface StorefrontOrder {
   id: string;

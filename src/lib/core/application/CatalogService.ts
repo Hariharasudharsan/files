@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Product } from "@/lib/core/domain/entities/product";
-import { listPublishedProducts, listAllCategories, listPublishedProductsByCategory } from "@/lib/repositories/catalog-repository";
+import { listPublishedProducts, listAllCategories, listPublishedProductsByCategory, getPublishedProductBySlug } from "@/lib/repositories/catalog-repository";
 import { CacheService } from "@/lib/infrastructure/cache/cache-service";
 import { CachePolicy } from "@/lib/infrastructure/cache/cache-policies";
 import { searchAdapter } from "@/lib/integrations/search/postgres-adapter";
@@ -50,8 +50,7 @@ export class CatalogService {
     // Product details
     const policy = CachePolicy.Catalog.ProductDetail;
     return await CacheService.remember(policy.key(slug), policy.ttl, async () => {
-      const products = await listPublishedProducts();
-      return products.find(p => p.slug === slug) || null;
+      return await getPublishedProductBySlug(slug);
     });
   }
 

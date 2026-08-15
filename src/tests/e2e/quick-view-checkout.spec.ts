@@ -6,7 +6,7 @@ test.describe('Checkout Flow', () => {
     await page.goto('/');
     
     // Ensure homepage loaded
-    await expect(page.locator('text=Mathuram Foods')).toBeVisible();
+    await expect(page.locator('text=Sridha\'s Store')).toBeVisible();
 
     // 2. Navigate to a Category (e.g. Appalams)
     await page.click('text=Appalams');

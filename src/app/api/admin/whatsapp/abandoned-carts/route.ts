@@ -11,7 +11,7 @@ export async function POST() {
     
     const abandonedOrders = await prisma.order.findMany({
       where: {
-        status: "DRAFT",
+        status: "CREATED",
         updatedAt: { lte: twoHoursAgo },
         user: {
           phone: { not: null },
@@ -24,8 +24,8 @@ export async function POST() {
     const waService = new WhatsAppService();
     let sentCount = 0;
 
-    for (const order of abandonedOrders) {
-      if (order.user.phone) {
+    for (const order of abandonedOrders as any) {
+      if (order.user?.phone) {
         // Send recovery message
         const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?recovery=${order.id}`;
         await waService.sendAbandonedCartRecovery(order.user.phone, checkoutUrl);
@@ -34,7 +34,7 @@ export async function POST() {
         // Update status or log to prevent double sending
         await prisma.order.update({
           where: { id: order.id },
-          data: { status: "PENDING" } // change status to avoid picking up again
+          data: { status: "PAYMENT_PENDING" } // change status to avoid picking up again
         });
       }
     }

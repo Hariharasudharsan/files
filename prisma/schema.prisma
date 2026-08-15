@@ -12,29 +12,26 @@ datasource db {
 // ----------------------------------------------------
 
 enum OrderStatus {
-  DRAFT
-  PENDING
-  AWAITING_PAYMENT
-  AUTHORIZED
+  CREATED
+  PAYMENT_PENDING
   PAID
+  PAYMENT_FAILED
   CONFIRMED
   PACKED
-  READY_TO_SHIP
   SHIPPED
   DELIVERED
   CANCELLED
-  RETURNED
+  REFUND_PENDING
   REFUNDED
-  EXPIRED
 }
 
 enum PaymentStatus {
-  UNPAID
+  CREATED
   AUTHORIZED
-  PAID
-  PARTIALLY_REFUNDED
-  REFUNDED
+  CAPTURED
   FAILED
+  REFUND_PENDING
+  REFUNDED
 }
 
 enum FulfillmentStatus {
@@ -65,6 +62,8 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   products Product[]
+
+  @@index([isDeleted])
 }
 
 model Media {
@@ -150,6 +149,10 @@ model Product {
   frequentlyBoughtTogetherOf FrequentlyBoughtTogether[] @relation("FBTToProduct")
   recentlyViewed             RecentlyViewed[]
   recommendations            Recommendation[]
+
+  @@index([categoryId])
+  @@index([isDeleted])
+  @@index([isFeatured])
 }
 
 model ProductImage {
@@ -231,6 +234,9 @@ model ProductVariant {
   wishlistItems   WishlistItem[]
   inventoryLevels InventoryLevel[]
   images          VariantImage[]
+
+  @@index([isDeleted])
+  @@index([productId])
 }
 
 model VariantImage {
@@ -297,6 +303,7 @@ model User {
   roleId        String?
   role          Role?     @relation(fields: [roleId], references: [id])
   isB2B         Boolean   @default(false)
+  gstin         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -422,9 +429,9 @@ model Order {
   shippingAddress Json?
   billingAddress  Json?
 
-  status            OrderStatus       @default(PENDING)
+  status            OrderStatus       @default(CREATED)
   paymentMethod     String            @default("RAZORPAY") // RAZORPAY, COD
-  paymentStatus     PaymentStatus     @default(UNPAID)
+  paymentStatus     PaymentStatus     @default(CREATED)
   fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
 
   createdAt DateTime @default(now())
@@ -796,6 +803,14 @@ model RecentlyViewed {
   viewedAt  DateTime @default(now())
 
   @@unique([userId, productId])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SavedSearch {

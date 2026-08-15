@@ -29,5 +29,5 @@ export interface PaymentPort {
   /**
    * Refund a captured payment.
    */
-  refundPayment(transactionId: string, amount?: number): Promise<boolean>;
+  refundPayment(transactionId: string, amount?: number, notes?: any): Promise<{ success: boolean; id?: string; error?: string }>;
 }

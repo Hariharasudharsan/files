@@ -1,6 +1,6 @@
-# Mathuram Foods Storefront
+# Sridha's Store Storefront
 
-Independent e-commerce storefront for Mathuram Foods, built with Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, and Next.js Route Handlers.
+Independent e-commerce storefront for Sridha's Store, built with Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, and Next.js Route Handlers.
 
 ERPNext/Frappe Cloud is an external ERP integration only. It is used for inventory, finance, customer records, purchase orders, sales orders, and accounting sync. It is not the website backend, and the storefront is designed to keep browsing and checkout available when ERPNext is temporarily unavailable.
 
