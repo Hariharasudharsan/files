@@ -1,14 +1,25 @@
 import type { CreateOrderInput } from "@/lib/core/domain/entities/order";
 import { postJson } from "@/lib/api/http";
 
-export interface InitPaymentResponse {
-  success: true;
-  orderId: string;
-  razorpayOrderId: string;
-  amount: number;
-  currency: string;
-  key: string;
-}
+export type InitPaymentResponse =
+  | {
+      success: true;
+      orderId: string;
+      isCOD: true;
+      razorpayOrderId?: string;
+      amount?: number;
+      currency?: string;
+      key?: string;
+    }
+  | {
+      success: true;
+      orderId: string;
+      isCOD?: false;
+      razorpayOrderId: string;
+      amount: number;
+      currency: string;
+      key: string;
+    };
 
 export function initPaymentRequest(input: CreateOrderInput): Promise<InitPaymentResponse> {
   return postJson<InitPaymentResponse, CreateOrderInput>("/api/v1/orders/init-payment", input);

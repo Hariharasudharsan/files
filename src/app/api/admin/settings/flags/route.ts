@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
+
 export async function GET() {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
     const flags = await prisma.featureFlag.findMany({
       orderBy: { createdAt: 'desc' }
     });
@@ -14,6 +19,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
     const data = await req.json();
     const flag = await prisma.featureFlag.create({
       data: {
@@ -31,6 +39,9 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
     const data = await req.json();
     const flag = await prisma.featureFlag.update({
       where: { id: data.id },

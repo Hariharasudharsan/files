@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "mathuram_secure_token";
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+import crypto from "crypto";
+import { Logger } from "@/lib/infrastructure/logger";
+
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
 /**
  * GET handler for Meta Cloud API Webhook Verification
@@ -24,7 +28,36 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const limit = parseInt(process.env.RATE_LIMIT_WEBHOOK_MAX || "50");
+    const windowSec = parseInt(process.env.RATE_LIMIT_WEBHOOK_WINDOW_SEC || "60");
+    const { success } = await RateLimiter.check(`ratelimit:webhook:whatsapp:${ip}`, limit, windowSec);
+    if (!success) {
+      return new NextResponse("Too many requests", { status: 429 });
+    }
+
+    const signature = req.headers.get("x-hub-signature-256");
+    if (!signature || !process.env.WHATSAPP_APP_SECRET) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const bodyText = await req.text();
+    const expectedSignature = `sha256=${crypto
+      .createHmac("sha256", process.env.WHATSAPP_APP_SECRET)
+      .update(bodyText)
+      .digest("hex")}`;
+
+    // Secure timing-safe comparison
+    try {
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+    } catch (e) {
+      // Length mismatch throws
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const body = JSON.parse(bodyText);
 
     if (body.object !== "whatsapp_business_account") {
       return new NextResponse("Not Found", { status: 404 });
@@ -41,7 +74,7 @@ export async function POST(req: NextRequest) {
             const text = message.text?.body;
             
             if (text) {
-              console.log(`[WhatsApp Webhook] Received message from ${phone}: ${text}`);
+              Logger.info(`[WhatsApp Webhook] Received message from ${phone}`, { text });
               
               // Handle Opt-Out
               if (text.trim().toLowerCase() === "stop") {
@@ -56,15 +89,15 @@ export async function POST(req: NextRequest) {
         // 2. Handle Message Status Updates (Delivered, Read, Failed)
         if (value.statuses && value.statuses.length > 0) {
           for (const status of value.statuses) {
-            console.log(`[WhatsApp Webhook] Message ${status.id} status: ${status.status}`);
+            Logger.info(`[WhatsApp Webhook] Message ${status.id} status: ${status.status}`);
           }
         }
       }
     }
 
     return new NextResponse("OK", { status: 200 });
-  } catch (error) {
-    console.error("WhatsApp Webhook Error:", error);
+  } catch (error: any) {
+    Logger.error("WhatsApp Webhook Error", { error: error.message });
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -72,7 +105,7 @@ export async function POST(req: NextRequest) {
 async function handleOptOut(phone: string) {
   // Strip country code if necessary based on how we store it, 
   // for now assume exact match or partial match
-  console.log(`[WhatsApp Webhook] Opting out user with phone ${phone}`);
+  Logger.info(`[WhatsApp Webhook] Opting out user with phone ${phone}`);
   // In a real scenario, we'd update NotificationPreference where user.phone == phone
 }
 
@@ -86,5 +119,5 @@ async function routeToSupport(phone: string, text: string) {
       details: { message: text }
     }
   });
-  console.log(`[WhatsApp Webhook] Routed to support ticket for ${phone}`);
+  Logger.info(`[WhatsApp Webhook] Routed to support ticket for ${phone}`);
 }

@@ -43,5 +43,9 @@ export const CachePolicy = {
     // Metrics keys are not versioned so they persist across cache flushes
     Hits: "cache:metrics:hits",
     Misses: "cache:metrics:misses",
+  },
+  StaticConfig: {
+    key: (identifier: string) => `${CacheNamespaces.CMS}:${identifier}`,
+    ttl: 3600, // 1 hour
   }
 };

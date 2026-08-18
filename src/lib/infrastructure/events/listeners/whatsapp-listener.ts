@@ -6,7 +6,11 @@ import { prisma } from "@/lib/infrastructure/database/prisma";
 
 const whatsappService = new WhatsAppService();
 
+let isRegistered = false;
+
 export function registerWhatsAppListeners() {
+  if (isRegistered) return;
+  isRegistered = true;
   eventBus.subscribe("OrderPaid", async (e) => {
     const event = e as OrderPaidEvent;
     Logger.info(`[Listener] OrderPaid: Checking WhatsApp opt-in for order ${event.payload.orderId}`);

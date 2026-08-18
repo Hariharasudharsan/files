@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { ReviewRepository } from "@/lib/repositories/review-repository";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/options";
+import { authOptions } from "@/modules/auth/infrastructure/authOptions";
+
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 
 const reviewRepo = new ReviewRepository();
 
 export async function GET(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:reviews_get:${ip}`, 50, 60);
+    if (!success) {
+      return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get("productId");
 
@@ -34,6 +42,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:reviews_post:${ip}`, 10, 60);
+    if (!success) {
+      return NextResponse.json({ success: false, error: "Too many requests" }, { status: 429 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(

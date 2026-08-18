@@ -1,8 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/infrastructure/database/prisma';
 import { revalidatePath } from 'next/cache';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
   try {
     const pagesToPublish = await prisma.cmsPage.findMany({
       where: {

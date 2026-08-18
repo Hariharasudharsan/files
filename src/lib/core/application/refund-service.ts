@@ -18,11 +18,11 @@ export async function processRefund(orderId: string, amountToRefund: number, rea
     if (!order) throw new Error("Order not found");
 
     // Atomic lock on refunds associated with this order to prevent concurrent refunds exceeding the maximum
-    const refunds: any[] = await tx.$queryRaw\`
+    const refunds: any[] = await tx.$queryRaw`
       SELECT * FROM "Refund" 
-      WHERE "orderId" = \${orderId} 
+      WHERE "orderId" = ${orderId} 
       FOR UPDATE
-    \`;
+    `;
 
     const capturedPayments = (order.payments || []).filter((p: any) => p.status === "captured" || p.status === "CAPTURED");
     const totalPaid = capturedPayments.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
@@ -83,4 +83,113 @@ export async function processRefund(orderId: string, amountToRefund: number, rea
 
     return refundRecord;
   });
+}
+
+export async function completeRefund(refundId: string, amount: number, paymentId?: string) {
+  const existingRefund = await prisma.refund.findFirst({
+    where: { transactionId: refundId }
+  });
+
+  if (existingRefund) {
+    if (existingRefund.status !== 'COMPLETED') {
+      await prisma.$transaction(async (tx) => {
+        await tx.refund.update({
+          where: { id: existingRefund.id },
+          data: { status: 'COMPLETED' }
+        });
+        
+        const order = await tx.order.findUnique({
+          where: { id: existingRefund.orderId },
+          include: {
+            payments: true,
+            refunds: true
+          }
+        });
+
+        if (order) {
+          const totalPaid = (order as any).payments.filter((p: any) => p.status === 'CAPTURED').reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+          const totalRefunded = order.refunds.filter((r: any) => r.status === 'COMPLETED').reduce((sum: number, r: any) => sum + Number(r.amount), 0);
+          
+          if (totalRefunded >= totalPaid) {
+            await tx.order.update({
+              where: { id: existingRefund.orderId },
+              data: { 
+                status: 'REFUNDED', 
+                paymentStatus: 'REFUNDED' 
+              }
+            });
+          }
+        }
+        
+        await (tx as any).auditLog.create({
+          data: {
+            action: "REFUND_WEBHOOK_PROCESSED",
+            entity: "Order",
+            entityId: existingRefund.orderId,
+            details: { refundId, amount, partial: true } // partial status implied if not fully refunded
+          }
+        });
+      });
+    }
+  } else if (paymentId) {
+    // Unmatched refund (e.g. initiated via Razorpay Dashboard)
+    Logger.warn("Unmatched external refund received from webhook", { refundId, amount, paymentId });
+    
+    await prisma.$transaction(async (tx) => {
+      const payment = await tx.paymentTransaction.findUnique({
+        where: { transactionId: paymentId },
+        include: { order: true }
+      });
+
+      if (payment && payment.order) {
+        await tx.refund.create({
+          data: {
+            orderId: payment.order.id,
+            amount: amount,
+            reason: "External Refund",
+            transactionId: refundId,
+            status: "COMPLETED"
+          }
+        });
+
+        const order = await tx.order.findUnique({
+          where: { id: payment.order.id },
+          include: { payments: true, refunds: true }
+        });
+
+        if (order) {
+          const totalPaid = order.payments.filter((p: any) => p.status === 'CAPTURED').reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+          const totalRefunded = order.refunds.filter((r: any) => r.status === 'COMPLETED').reduce((sum: number, r: any) => sum + Number(r.amount), 0);
+          
+          if (totalRefunded >= totalPaid) {
+            await tx.order.update({
+              where: { id: payment.order.id },
+              data: { 
+                status: 'REFUNDED', 
+                paymentStatus: 'REFUNDED' 
+              }
+            });
+          }
+        }
+
+        await (tx as any).auditLog.create({
+          data: {
+            action: "UNMATCHED_REFUND_PROCESSED",
+            entity: "Order",
+            entityId: payment.order.id,
+            details: { refundId, amount, paymentId }
+          }
+        });
+      } else {
+        await (tx as any).auditLog.create({
+          data: {
+            action: "UNMATCHED_REFUND_ORPHAN",
+            entity: "Payment",
+            entityId: paymentId,
+            details: { refundId, amount }
+          }
+        });
+      }
+    });
+  }
 }

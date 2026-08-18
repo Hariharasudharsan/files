@@ -1,10 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
+import DOMPurify from 'isomorphic-dompurify';
+
+function sanitizeRecursive(obj: any): any {
+  if (typeof obj === 'string') {
+    return DOMPurify.sanitize(obj);
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeRecursive);
+  }
+  if (obj !== null && typeof obj === 'object') {
+    const sanitized: any = {};
+    for (const key in obj) {
+      sanitized[key] = sanitizeRecursive(obj[key]);
+    }
+    return sanitized;
+  }
+  return obj;
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await checkApiAdminOrManager();
+  if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
   const { id } = await params;
   try {
     const { blocks, publish } = await req.json();
+    const sanitizedBlocks = sanitizeRecursive(blocks);
 
     const page = await prisma.cmsPage.findUnique({
       where: { id },
@@ -22,8 +46,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: {
         pageId: id,
         version: nextVersionNum,
-        content: blocks,
-        createdBy: "Admin User", // would come from session
+        content: sanitizedBlocks,
+        createdBy: auth.user?.email || "Admin User",
       },
     });
 
@@ -47,6 +71,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await checkApiAdminOrManager();
+  if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
   const { id } = await params;
   try {
     const page = await prisma.cmsPage.findUnique({

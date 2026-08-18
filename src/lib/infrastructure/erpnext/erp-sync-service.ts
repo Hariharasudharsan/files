@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
 import { mapCustomer, mapSalesOrder } from "@/lib/infrastructure/erpnext/mappers";
+import { DistributedLock } from "@/lib/infrastructure/cache/lock";
+import { Logger } from "@/lib/infrastructure/logger";
 
 export class ERPSyncService {
   /**
@@ -13,7 +15,7 @@ export class ERPSyncService {
       orderBy: { createdAt: 'asc' }
     });
 
-    console.log(`[ERPSync] Found ${pendingSyncs.length} pending jobs.`);
+    Logger.info(`[ERPSync] Found ${pendingSyncs.length} pending jobs.`);
 
     for (const syncJob of pendingSyncs) {
       try {
@@ -25,7 +27,7 @@ export class ERPSyncService {
   }
 
   async processJob(job: any) {
-    console.log(`[ERPSync] Processing ${job.entityType} ${job.entityId}`);
+    Logger.info(`[ERPSync] Processing ${job.entityType} ${job.entityId}`);
 
     try {
       // Increment attempts
@@ -68,63 +70,67 @@ export class ERPSyncService {
   }
 
   private async syncCustomer(userId: string): Promise<string> {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new Error(`User ${userId} not found`);
+    return DistributedLock.withLock(`sync:user:${userId}`, async () => {
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) throw new Error(`User ${userId} not found`);
 
-    const customerPayload = mapCustomer(user);
+      const customerPayload = mapCustomer(user);
 
-    // Check if exists
-    let customerName = user.erpId;
-    if (!customerName) {
-      const existing = await frappe.queryDocs("Customer", { email_id: user.email });
-      if (existing.length > 0) {
-        customerName = existing[0].name;
+      // Check if exists
+      let customerName = user.erpId;
+      if (!customerName) {
+        const existing = await frappe.queryDocs("Customer", { email_id: user.email });
+        if (existing.length > 0) {
+          customerName = existing[0].name;
+        }
       }
-    }
 
-    if (customerName) {
-      await frappe.updateDoc("Customer", customerName, customerPayload);
-      return customerName;
-    } else {
-      const created = await frappe.createDoc("Customer", customerPayload);
-      
-      // Save mapping back to local DB
-      await prisma.user.update({
-        where: { id: userId },
-        data: { erpId: created.name }
-      });
-      return created.name;
-    }
+      if (customerName) {
+        await frappe.updateDoc("Customer", customerName, customerPayload);
+        return customerName;
+      } else {
+        const created = await frappe.createDoc("Customer", customerPayload);
+        
+        // Save mapping back to local DB
+        await prisma.user.update({
+          where: { id: userId },
+          data: { erpId: created.name }
+        });
+        return created.name;
+      }
+    });
   }
 
   private async syncOrder(orderId: string): Promise<string> {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true, user: true }
+    return DistributedLock.withLock(`sync:order:${orderId}`, async () => {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: true, user: true }
+      });
+      if (!order) throw new Error(`Order ${orderId} not found`);
+
+      let erpCustomerId = order.user.erpId;
+      
+      if (!erpCustomerId) {
+        // Create/sync customer first
+        erpCustomerId = await this.syncCustomer(order.user.id);
+      }
+
+      const payload = mapSalesOrder(order, order.items, erpCustomerId);
+      
+      // Check if order already exists (po_no)
+      const existing = await frappe.queryDocs("Sales Order", { po_no: orderId });
+      if (existing.length > 0) {
+        return existing[0].name;
+      }
+
+      const created = await frappe.createDoc("Sales Order", payload);
+      return created.name;
     });
-    if (!order) throw new Error(`Order ${orderId} not found`);
-
-    let erpCustomerId = order.user.erpId;
-    
-    if (!erpCustomerId) {
-      // Create/sync customer first
-      erpCustomerId = await this.syncCustomer(order.user.id);
-    }
-
-    const payload = mapSalesOrder(order, order.items, erpCustomerId);
-    
-    // Check if order already exists (po_no)
-    const existing = await frappe.queryDocs("Sales Order", { po_no: orderId });
-    if (existing.length > 0) {
-      return existing[0].name;
-    }
-
-    const created = await frappe.createDoc("Sales Order", payload);
-    return created.name;
   }
 
   private async markJobFailed(jobId: string, errorMsg: string) {
-    console.error(`[ERPSync] Job ${jobId} failed:`, errorMsg);
+    Logger.error(`[ERPSync] Job ${jobId} failed`, { errorMsg });
     
     // Check if attempts exceeded max (e.g., 5)
     const job = await prisma.eRPSync.findUnique({ where: { id: jobId } });

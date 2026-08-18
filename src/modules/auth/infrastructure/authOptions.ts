@@ -8,6 +8,7 @@ if (!process.env.ADMIN_EMAIL) {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -16,10 +17,10 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    jwt: async ({ token, user }) => {
-      // user is only defined on initial sign in
-      if (user) {
-        token.id = user.id;
+    session: async ({ session, user }) => {
+      if (session?.user && user) {
+        session.user.id = user.id;
+        
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
           include: {
@@ -30,29 +31,21 @@ export const authOptions: NextAuthOptions = {
         });
         
         if (dbUser?.role) {
-          token.role = {
+          session.user.role = {
             id: dbUser.role.id,
             name: dbUser.role.name
           };
-          token.permissions = dbUser.role.permissions.map(p => `${p.resource}:${p.action}`);
+          session.user.permissions = dbUser.role.permissions.map(p => `${p.resource}:${p.action}`);
         } else {
-          token.role = undefined;
-          token.permissions = [];
+          session.user.role = undefined;
+          session.user.permissions = [];
         }
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      if (session?.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role;
-        session.user.permissions = (token.permissions as string[]) || [];
       }
       return session;
     },
   },
   session: {
-    strategy: "jwt", // Use JWT to avoid DB lookups on every request
+    strategy: "database", // Switched to database for authorization revocation
   },
   pages: {
     signIn: "/account/login",

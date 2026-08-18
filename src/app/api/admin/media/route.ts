@@ -5,8 +5,15 @@ import path from "path";
 import crypto from "crypto";
 // IMPORTANT: Protect this route in production with session checking (e.g., NextAuth/Auth.js)!
 
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
+
 export async function POST(req: NextRequest) {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const alt = formData.get("alt") as string | null;
@@ -40,6 +47,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    }
+
     const mediaFiles = await prisma.media.findMany({
       orderBy: { createdAt: 'desc' }
     });

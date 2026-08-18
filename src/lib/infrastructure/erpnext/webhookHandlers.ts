@@ -44,7 +44,7 @@ export async function handleDeliveryNote(payload: any) {
     return;
   }
 
-  if (order.status === "SHIPPED" || order.status === "DELIVERED" || order.status === "COMPLETED") {
+  if (order.status === "SHIPPED" || order.status === "DELIVERED") {
     Logger.info(`Order ${orderId} is already shipped. Skipping.`);
     return;
   }

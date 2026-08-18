@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { WhatsAppService } from "@/lib/core/application/whatsapp-service";
 
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
+
 export async function POST() {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    
     // In a real application, you'd track abandoned carts using a Cart model or Session.
     // For this demonstration, we'll assume we look up Draft Orders older than 2 hours.
     

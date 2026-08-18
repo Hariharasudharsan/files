@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { processOutbox } from '../../../../lib/infrastructure/workers/OutboxWorker';
 import { registerAuditSubscriber } from '../../../../lib/infrastructure/events/subscribers/AuditSubscriber';
 import { registerWhatsAppListeners } from '../../../../lib/infrastructure/events/listeners/whatsapp-listener';
@@ -10,7 +10,11 @@ registerAuditSubscriber();
 registerWhatsAppListeners();
 registerOrderCreatedListeners();
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     await processOutbox();
     return NextResponse.json({ success: true, message: 'Outbox events processed successfully' });

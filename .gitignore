@@ -6,4 +6,8 @@ node_modules/
 
 *.tsbuildinfo
 
-/lib/generated/prisma
+generated/
+dist/
+test-results/
+playwright-report/
+scratch/

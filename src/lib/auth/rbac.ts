@@ -62,3 +62,30 @@ export async function requirePermission(resource: string, action: string = "read
 
   return session.user;
 }
+
+/**
+ * API Route versions that return null instead of redirecting, 
+ * so the route can return a 401/403 NextResponse.
+ */
+export async function checkApiAdminOrManager() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { authorized: false, status: 401, user: null };
+
+  const roleName = session.user.role?.name;
+  if (roleName !== "ADMIN" && roleName !== "MANAGER") {
+    return { authorized: false, status: 403, user: session.user };
+  }
+
+  return { authorized: true, status: 200, user: session.user };
+}
+
+export async function checkApiPermission(resource: string, action: string = "read") {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return { authorized: false, status: 401, user: null };
+
+  if (!hasPermission(session, resource, action)) {
+    return { authorized: false, status: 403, user: session.user };
+  }
+
+  return { authorized: true, status: 200, user: session.user };
+}

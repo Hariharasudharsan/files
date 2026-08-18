@@ -11,6 +11,7 @@ export interface CheckoutContact {
   state: string;
   pincode: string;
   whatsappOptIn?: boolean;
+  gstin?: string;
 }
 
 export interface OrderItemInput {

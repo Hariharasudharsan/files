@@ -41,6 +41,8 @@ export interface Product {
   nutritional_info: string | null;
   shelf_life_days: number | null;
   gstRate?: number;
+  hsnCode?: string | null;
+  fssaiLicense?: string | null;
   isFeatured?: boolean;
   isDeleted?: boolean;
   searchKeywords?: string[];

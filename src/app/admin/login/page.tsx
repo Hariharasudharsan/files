@@ -7,30 +7,11 @@ import { ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = () => {
     setLoading(true);
-    setError("");
-
-    try {
-      const res = await signIn("credentials", {
-        email,
-        redirect: true,
-        callbackUrl: "/admin",
-      });
-
-      if (res?.error) {
-        setError(res.error);
-        setLoading(false);
-      }
-    } catch (err) {
-      setError("An unexpected error occurred.");
-      setLoading(false);
-    }
+    signIn("google", { callbackUrl: "/admin" });
   };
 
   return (
@@ -49,30 +30,9 @@ export default function AdminLoginPage() {
             <p className="mt-2 text-zinc-400">Sign in with administrator credentials</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-zinc-300 mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3 text-white placeholder-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all"
-                placeholder="admin@example.com"
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-xl border border-red-900/50 bg-red-950/50 p-3 text-sm text-red-400 font-medium text-center">
-                {error}
-              </div>
-            )}
-
+          <div className="space-y-6">
             <Button
-              type="submit"
+              onClick={handleGoogleLogin}
               disabled={loading}
               className="w-full py-6 text-lg bg-primary-600 hover:bg-primary-700 text-white"
             >
@@ -81,10 +41,10 @@ export default function AdminLoginPage() {
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating...
                 </>
               ) : (
-                "Sign In"
+                "Continue with Google"
               )}
             </Button>
-          </form>
+          </div>
         </motion.div>
       </div>
     </div>

@@ -114,7 +114,7 @@ export default function ProductCard({ product }: { product: Product }) {
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <Link href={`/product/${product.slug}`} className="group flex flex-col h-full overflow-hidden rounded-2xl bg-white shadow-sm border border-surface-200 transition-all hover:shadow-xl hover:border-primary-300">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
       <div className="relative aspect-[4/5] overflow-hidden bg-surface-100">
         {product.primaryImage ? (

@@ -4,7 +4,11 @@ import { Logger } from "@/lib/infrastructure/logger";
 import { EnqueueJob } from "@/lib/infrastructure/queue";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+let isRegistered = false;
+
 export function registerOrderCreatedListeners() {
+  if (isRegistered) return;
+  isRegistered = true;
   eventBus.subscribe("OrderCreated", async (e) => {
     const event = e as OrderCreatedEvent;
     Logger.info(`[Listener] OrderCreated: Syncing ERP for order ${event.payload.orderId}`);

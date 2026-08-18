@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { orderSyncQueue, webhookQueue } from "@/lib/infrastructure/queue/bullmq";
 
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
+
 export async function GET() {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+    }
+
     const queues = [
       { name: "SYNC_ORDER", instance: orderSyncQueue },
       { name: "PROCESS_WEBHOOK", instance: webhookQueue },

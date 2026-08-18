@@ -2,30 +2,16 @@ import { NextResponse } from 'next/server';
 import { webhookQueue } from '../../../../lib/infrastructure/queue/bullmq';
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+import { Logger } from "@/lib/infrastructure/logger";
 
 export async function POST(req: Request) {
   try {
-    // Basic rate limit to prevent spam (max 50 reqs / min per IP)
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    // Quick in-memory store hack (resets when Edge isolate goes down)
-    const globalStore = global as any;
-    globalStore.webhookRateLimit = globalStore.webhookRateLimit || new Map();
-    const store = globalStore.webhookRateLimit;
-    
-    const now = Date.now();
-    const attempt = store.get(ip) || { count: 0, timestamp: now };
-    
-    if (now - attempt.timestamp > 60000) {
-      attempt.count = 1;
-      attempt.timestamp = now;
-    } else {
-      attempt.count += 1;
-    }
-    
-    store.set(ip, attempt);
-    
-    if (attempt.count > 50) {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const limit = parseInt(process.env.RATE_LIMIT_WEBHOOK_MAX || "50");
+    const windowSec = parseInt(process.env.RATE_LIMIT_WEBHOOK_WINDOW_SEC || "60");
+    const { success } = await RateLimiter.check(`ratelimit:webhook:erpnext:${ip}`, limit, windowSec);
+    if (!success) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
 
@@ -33,7 +19,7 @@ export async function POST(req: Request) {
     const signature = req.headers.get('x-frappe-webhook-signature') || '';
 
     if (!frappe.verifyWebhookSignature(rawBody, signature)) {
-      console.error('[ERP Webhook] Unauthorized request. Invalid signature.');
+      Logger.warn('[ERP Webhook] Unauthorized request. Invalid signature.');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -49,9 +35,13 @@ export async function POST(req: Request) {
       eventType = 'stock_update';
     }
 
+    const rawEventId = req.headers.get('x-frappe-webhook-id') || payload.name || crypto.randomUUID();
+    const eventId = `erpnext:${rawEventId}`;
+
     // Store in WebhookEvent for audit & fast acknowledgment
     const webhookRecord = await prisma.webhookEvent.create({
       data: {
+        id: eventId,
         provider: 'erpnext',
         eventType,
         payload,
@@ -68,7 +58,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, message: 'Queued for processing' }, { status: 202 });
   } catch (error: any) {
-    console.error('ERPNext Webhook Error:', error);
+    Logger.error('ERPNext Webhook Error', { error: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

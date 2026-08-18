@@ -3,8 +3,15 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { authOptions } from "@/modules/auth/infrastructure/authOptions";
 
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:wishlist_get:${ip}`, 50, 60);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,6 +48,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:wishlist_post:${ip}`, 30, 60);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -84,6 +96,11 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:wishlist_delete:${ip}`, 30, 60);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

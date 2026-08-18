@@ -3,6 +3,7 @@ import { RazorpayAdapter } from '../../../../lib/infrastructure/adapters/payment
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 import { OrderService } from "../../../../lib/core/application/OrderService";
+import { completeRefund } from "../../../../lib/core/application/refund-service";
 import { Logger } from "@/lib/infrastructure/logger";
 
 const razorpayAdapter = new RazorpayAdapter();
@@ -32,7 +33,8 @@ export async function POST(req: Request) {
     const payload = JSON.parse(rawBody);
     const eventType = payload.event;
     // Idempotency key from Razorpay payload
-    const eventId = req.headers.get('x-razorpay-event-id') || payload.id || crypto.randomUUID();
+    const rawEventId = req.headers.get('x-razorpay-event-id') || payload.id || crypto.randomUUID();
+    const eventId = `razorpay:${rawEventId}`;
 
     // 2. Strict Idempotency Check via WebhookEvent table atomic insert
     try {
@@ -103,36 +105,9 @@ export async function POST(req: Request) {
       } else if (eventType === 'refund.processed') {
         const refundId = payload.payload.refund.entity.id;
         const amount = payload.payload.refund.entity.amount / 100;
+        const paymentId = payload.payload.refund.entity.payment_id;
         
-        const existingRefund = await prisma.refund.findFirst({
-          where: { transactionId: refundId }
-        });
-        
-        if (existingRefund && existingRefund.status !== 'COMPLETED') {
-          await prisma.$transaction(async (tx) => {
-            await tx.refund.update({
-              where: { id: existingRefund.id },
-              data: { status: 'COMPLETED' }
-            });
-            
-            await tx.order.update({
-              where: { id: existingRefund.orderId },
-              data: { 
-                status: 'REFUNDED', 
-                paymentStatus: 'REFUNDED' 
-              }
-            });
-            
-            await tx.auditLog.create({
-              data: {
-                action: "REFUND_WEBHOOK_PROCESSED",
-                entity: "Order",
-                entityId: existingRefund.orderId,
-                details: { refundId, amount }
-              }
-            });
-          });
-        }
+        await completeRefund(refundId, amount, paymentId);
       }
 
       // 4. Mark Webhook as Processed

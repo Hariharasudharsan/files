@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isStateEqual, IndianStates } from '../../lib/core/domain/value-objects/IndianState';
+import { isStateEqual, IndianStates } from '@/lib/core/domain/value-objects/IndianState';
 
 describe('IndianState', () => {
   it('should validate exact matches', () => {

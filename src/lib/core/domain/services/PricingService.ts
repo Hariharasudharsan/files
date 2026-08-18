@@ -106,7 +106,7 @@ export class PricingService {
       const itemDiscount = subTotalBeforeDiscount > 0 ? (itemSubtotal / subTotalBeforeDiscount) * discountTotal : 0;
       const discountedItemTotalBeforeTax = round2(itemSubtotal - itemDiscount);
 
-      const taxRate = i.taxRate || 0;
+      const taxRate = i.taxRate ?? variant.taxRate ?? 0;
       const taxAmount = round2((discountedItemTotalBeforeTax * taxRate) / 100);
       const itemTotal = round2(discountedItemTotalBeforeTax + taxAmount);
       

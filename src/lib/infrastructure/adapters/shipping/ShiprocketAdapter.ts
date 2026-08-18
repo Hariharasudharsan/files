@@ -47,23 +47,23 @@ export class ShiprocketAdapter implements ShippingPort {
 
       // Example simplified payload. In a real system, you would map
       // Order items, dimensions, and weight from the database.
-      const payload = {
-        order_id: order.id,
-        order_date: order.createdAt.toISOString().split("T")[0],
-        pickup_location: "Primary Warehouse",
-        billing_customer_name: "Customer", // Mapped from Customer relation
-        billing_last_name: "",
-        // TODO: When fully implemented, map the new Indian address fields:
-        // billing_address: order.shippingAddress.flatOrHouseNumber + ', ' + order.shippingAddress.localityOrArea
-        // billing_address_2: order.shippingAddress.landmark || ''
-        billing_address: "Address", // Mapped from Customer relation
-        billing_city: "City",
-        billing_pincode: "123456",
-        billing_state: "State",
-        billing_country: "India",
-        billing_email: "test@example.com",
-        billing_phone: "9876543210",
-        shipping_is_billing: true,
+        const shipping = (order.shippingAddress || {}) as any;
+        
+        const payload = {
+          order_id: order.id,
+          order_date: order.createdAt.toISOString().split("T")[0],
+          pickup_location: "Primary Warehouse",
+          billing_customer_name: shipping.name || "Customer",
+          billing_last_name: "",
+          billing_address: shipping.flatOrHouseNumber ? `${shipping.flatOrHouseNumber}, ${shipping.localityOrArea}` : "Address",
+          billing_address_2: shipping.landmark || "",
+          billing_city: shipping.city || "City",
+          billing_pincode: shipping.pincode || "123456",
+          billing_state: shipping.state || "State",
+          billing_country: "India",
+          billing_email: shipping.email || "test@example.com",
+          billing_phone: shipping.phone || "9876543210",
+          shipping_is_billing: true,
         order_items: [
           {
             name: "Order Items",
@@ -115,7 +115,7 @@ export class ShiprocketAdapter implements ShippingPort {
         trackingUrl: `https://shiprocket.co/tracking/${awbData.response.data.awb_code}`,
       };
     } catch (error) {
-      Logger.error(`Shiprocket Adapter Failed for Order ${order.id}`, error);
+      Logger.error(`Shiprocket Adapter Failed for Order ${order.id}`, { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   }
@@ -135,7 +135,7 @@ export class ShiprocketAdapter implements ShippingPort {
       // Simplify status for internal domain usage
       return data.tracking_data.track_status ? "IN_TRANSIT" : "PENDING";
     } catch (error) {
-      Logger.error(`Failed to track AWB ${awbCode}`, error);
+      Logger.error(`Failed to track AWB ${awbCode}`, { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   }

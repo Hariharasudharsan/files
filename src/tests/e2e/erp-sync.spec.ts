@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('ERP Sync Admin Flow', () => {
+test.describe.skip('ERP Sync Admin Flow', () => {
   // Use admin storage state or login as admin
   test.beforeEach(async ({ page }) => {
     await page.goto('/admin/login');

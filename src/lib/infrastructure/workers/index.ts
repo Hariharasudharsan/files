@@ -32,11 +32,11 @@ async function main() {
     await webhookWorker.close();
     await notificationWorker.close();
     await orderSyncWorker.close();
-    process.exit(0);
+    process.exitCode = 0;
   });
 }
 
 main().catch((err) => {
   console.error(err);
-  process.exit(1);
+  process.exitCode = 1;
 });

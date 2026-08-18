@@ -11,6 +11,22 @@ describe('Invoice Sequence Concurrency', () => {
     await prisma.paymentTransaction.deleteMany();
     await prisma.orderItem.deleteMany();
     await prisma.order.deleteMany();
+    await prisma.user.deleteMany({ where: { id: 'test-user-id' } });
+
+    await prisma.user.create({
+      data: {
+        id: 'test-user-id',
+        email: 'testuser@example.com',
+        name: 'Test User'
+      }
+    });
+
+    await prisma.invoiceSequence.create({
+      data: {
+        year: new Date().getFullYear(),
+        lastValue: 0
+      }
+    });
   });
 
   it('should generate unique invoice numbers under concurrent requests', async () => {
@@ -27,8 +43,8 @@ describe('Invoice Sequence Concurrency', () => {
           sgstTotal: 0,
           igstTotal: 0,
           status: OrderStatus.CREATED,
-          paymentStatus: PaymentStatus.PENDING,
-          chargeableWeightKg: 1,
+          paymentStatus: PaymentStatus.CREATED,
+          userId: 'test-user-id',
           shippingAddress: { city: 'Test' },
           billingAddress: { city: 'Test' },
         }
@@ -40,7 +56,8 @@ describe('Invoice Sequence Concurrency', () => {
       OrderService.confirmPayment(order.id, 1000, `txn_${idx}`)
     );
 
-    await Promise.all(promises);
+    const results = await Promise.all(promises);
+    console.log("Results:", results);
 
     const invoices = await prisma.invoice.findMany();
     expect(invoices.length).toBe(5);

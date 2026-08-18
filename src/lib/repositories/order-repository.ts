@@ -164,6 +164,8 @@ export async function createStorefrontOrder(input: CreateOrderInput): Promise<St
         shippingTotal,
         discountTotal,
         total,
+        shippingAddress: input.contact as any,
+        billingAddress: input.contact as any,
         status: OrderStatus.CREATED,
         paymentStatus: PaymentStatus.CREATED,
         fulfillmentStatus: FulfillmentStatus.UNFULFILLED,

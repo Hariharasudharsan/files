@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
+import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
+
 export async function GET(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
+    const { success } = await RateLimiter.check(`ratelimit:track:${ip}`, 30, 60);
+    if (!success) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const searchParams = request.nextUrl.searchParams;
     const orderId = searchParams.get('orderId');
     const email = searchParams.get('email');

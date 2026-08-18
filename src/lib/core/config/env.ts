@@ -38,8 +38,6 @@ const envSchema = z.object({
 
   // Queue & Redis (For future use)
   REDIS_URL: z.string().url("REDIS_URL is required"),
-  UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL is required"),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
 
   // Database
   DATABASE_URL: z.string().url("DATABASE_URL is required"),

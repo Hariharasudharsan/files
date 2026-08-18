@@ -21,7 +21,7 @@ describe('Client Price Manipulation Test', () => {
         variants: {
           create: {
             name: 'Test Variant',
-            sku: 'TEST-SKU',
+            itemCode: 'TEST-SKU',
             price: 100, // Actual price is 100
             weightGrams: 100,
           }
@@ -31,6 +31,26 @@ describe('Client Price Manipulation Test', () => {
     });
 
     const variant = product.variants[0];
+
+    // Create a warehouse
+    const warehouse = await prisma.warehouse.upsert({
+      where: { code: 'TEST-WH' },
+      update: {},
+      create: {
+        code: 'TEST-WH',
+        name: 'Test Warehouse',
+        location: 'Test City'
+      }
+    });
+
+    // Give it some stock
+    await prisma.inventoryLevel.create({
+      data: {
+        productVariantId: variant.id,
+        warehouseId: warehouse.id,
+        available: 10
+      }
+    });
 
     // 2. Client sends an order payload (without rate, because it's been removed from DTO, but we simulate standard order)
     const dto = {

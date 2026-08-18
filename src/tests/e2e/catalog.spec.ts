@@ -8,7 +8,7 @@ test.describe('Catalog Browsing', () => {
     await expect(page).toHaveTitle(/Sridha's Store/);
 
     // Expect the navbar to be visible
-    const navbar = page.locator('nav');
+    const navbar = page.locator('nav').first();
     await expect(navbar).toBeVisible();
   });
 

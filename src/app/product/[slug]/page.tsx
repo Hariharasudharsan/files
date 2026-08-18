@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <RecordRecentlyViewed product={product} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-16 sm:px-6">
         
         {/* Breadcrumb */}

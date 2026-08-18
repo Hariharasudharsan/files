@@ -74,7 +74,7 @@ model Media {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  productPrimaryImages Product[]        @relation("PrimaryImage")
+  productPrimaryImages Product[]      @relation("PrimaryImage")
   productImages        ProductImage[]
   variantImages        VariantImage[]
   cmsBanners           Banner[]
@@ -191,7 +191,7 @@ model RelatedProduct {
   relatedId      String
   relatedProduct Product @relation("RelatedToProduct", fields: [relatedId], references: [id], onDelete: Cascade)
   score          Float?  @default(1.0)
-  
+
   @@unique([productId, relatedId])
 }
 
@@ -270,24 +270,24 @@ model Review {
 // ----------------------------------------------------
 
 model Role {
-  id          String       @id @default(uuid())
-  name        String       @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
   description String?
-  isSystem    Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   permissions Permission[]
   users       User[]
 }
 
 model Permission {
-  id          String   @id @default(uuid())
-  action      String   // e.g. "read", "write", "manage"
-  resource    String   // e.g. "orders", "products", "all"
+  id          String  @id @default(uuid())
+  action      String // e.g. "read", "write", "manage"
+  resource    String // e.g. "orders", "products", "all"
   description String?
 
-  roles       Role[]
+  roles Role[]
 
   @@unique([action, resource])
 }
@@ -425,7 +425,7 @@ model Order {
 
   couponId String?
   coupon   Coupon? @relation(fields: [couponId], references: [id])
-  
+
   shippingAddress Json?
   billingAddress  Json?
 
@@ -468,13 +468,13 @@ model Invoice {
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   invoiceNumber String   @unique // e.g., INV-2026-000001
   issuedAt      DateTime @default(now())
-  
-  sellerGstin   String?
-  buyerDetails  Json     // Snapshot of buyer name, email, phone, billing & shipping addresses
-  lineItems     Json     // Snapshot of items with tax split and rates
-  taxTotals     Json     // Snapshot of overall tax (total, cgst, sgst, igst)
-  
-  createdAt     DateTime @default(now())
+
+  sellerGstin  String?
+  buyerDetails Json // Snapshot of buyer name, email, phone, billing & shipping addresses
+  lineItems    Json // Snapshot of items with tax split and rates
+  taxTotals    Json // Snapshot of overall tax (total, cgst, sgst, igst)
+
+  createdAt DateTime @default(now())
 }
 
 // ----------------------------------------------------
@@ -499,7 +499,7 @@ model InventoryLevel {
   warehouse        Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   productVariantId String
   productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
-  
+
   available Int @default(0)
   reserved  Int @default(0)
   committed Int @default(0)
@@ -521,6 +521,8 @@ model InventoryReservation {
   expiresAt        DateTime
   status           String         @default("ACTIVE") // ACTIVE, COMMITTED, RELEASED
   createdAt        DateTime       @default(now())
+
+  @@index([status, expiresAt])
 }
 
 model PaymentTransaction {
@@ -538,8 +540,6 @@ model PaymentTransaction {
   audits PaymentAudit[]
 }
 
-
-
 model PaymentAudit {
   id                   String             @id @default(uuid())
   paymentTransactionId String
@@ -550,16 +550,16 @@ model PaymentAudit {
 }
 
 model Shipment {
-  id           String         @id @default(uuid())
+  id           String    @id @default(uuid())
   orderId      String
-  order        Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   trackingCode String?
   courier      String? // e.g., Delhivery, BlueDart via Shiprocket
   status       String // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
   dispatchedAt DateTime?
   deliveredAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   items            ShipmentItem[]
   packages         Package[]
@@ -660,21 +660,19 @@ model SyncHistory {
   createdAt DateTime @default(now())
 }
 
-
-
 // ----------------------------------------------------
 // Admin CMS & Audit
 // ----------------------------------------------------
 
 model CmsPage {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   title           String
-  slug            String   @unique
-  status          String   @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  slug            String    @unique
+  status          String    @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
   publishedAt     DateTime?
   activeVersionId String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   versions CmsPageVersion[]
 }
@@ -690,8 +688,6 @@ model CmsPageVersion {
 
   @@unique([pageId, version])
 }
-
-
 
 model CmsBlock {
   id        String   @id @default(uuid())
@@ -842,13 +838,13 @@ model NotificationPreference {
 }
 
 model EventLog {
-  id          String   @id @default(uuid())
-  eventName   String   // e.g., page_view, add_to_cart, checkout
-  userId      String?
-  sessionId   String?
-  url         String?
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  eventName String // e.g., page_view, add_to_cart, checkout
+  userId    String?
+  sessionId String?
+  url       String?
+  metadata  Json?
+  createdAt DateTime @default(now())
 }
 
 model LoyaltyAccount {
@@ -943,15 +939,15 @@ model FeatureFlag {
 }
 
 model NotificationTemplate {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  type        String   // EMAIL, SMS, PUSH
-  subject     String?
-  body        String   @db.Text
-  variables   Json?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  type      String // EMAIL, SMS, PUSH
+  subject   String?
+  body      String   @db.Text
+  variables Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model InvoiceSequence {

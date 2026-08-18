@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/lib/infrastructure/database/prisma';
 import { POST as RazorpayWebhookHandler } from '@/app/api/webhooks/razorpay/route';
@@ -25,7 +26,7 @@ describe('Webhook Replay Test', () => {
         igstTotal: 0,
         status: 'CREATED',
         paymentStatus: 'CREATED',
-        chargeableWeightKg: 1,
+        userId: 'test-user-id',
         shippingAddress: { city: 'Test' },
         billingAddress: { city: 'Test' },
       }
@@ -49,7 +50,9 @@ describe('Webhook Replay Test', () => {
 
     const createRequest = () => {
       const headers = new Headers();
-      headers.set('x-razorpay-signature', 'fake_sig'); // We need to mock signature verification in adapter, or just expect the test to hit the idempotency check first if it's already recorded.
+      const crypto = require('crypto');
+      const validSig = crypto.createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET || 'test').update(reqBody).digest('hex');
+      headers.set('x-razorpay-signature', validSig);
       headers.set('x-razorpay-event-id', eventId);
       
       return new Request('http://localhost/api/webhooks/razorpay', {
@@ -63,7 +66,7 @@ describe('Webhook Replay Test', () => {
     // For this integration test, let's just insert a processed webhook first to simulate replay.
     await prisma.webhookEvent.create({
       data: {
-        id: eventId,
+        id: `razorpay:${eventId}`,
         provider: 'razorpay',
         eventType: 'payment.captured',
         payload: JSON.parse(reqBody),

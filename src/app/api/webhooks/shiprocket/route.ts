@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     
     // In a real application, verify signature or custom headers
     const shiprocketToken = req.headers.get('x-api-key');
-    if (shiprocketToken !== process.env.SHIPROCKET_WEBHOOK_TOKEN && process.env.NODE_ENV === 'production') {
+    const expectedToken = process.env.SHIPROCKET_WEBHOOK_TOKEN;
+    if (!expectedToken || shiprocketToken !== expectedToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

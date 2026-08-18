@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/modules/auth/infrastructure/authOptions";
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
 import { CouponRepository } from "@/lib/repositories/coupon-repository";
 import { z } from "zod";
 import { createCouponSchema } from "@/lib/core/domain/schemas/admin";
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role?.name !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
     }
 
     const body = await req.json();
@@ -40,9 +39,9 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role?.name !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
     }
 
     const repo = new CouponRepository();

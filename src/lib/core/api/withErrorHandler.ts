@@ -23,7 +23,7 @@ export function withErrorHandler(handler: Handler): Handler {
         );
       }
 
-      Logger.error("Unhandled API exception", error);
+      Logger.error("Unhandled API exception", { error: error instanceof Error ? error.message : String(error) });
 
       // In production, mask the actual error details from the client
       const isDev = process.env.NODE_ENV !== "production";

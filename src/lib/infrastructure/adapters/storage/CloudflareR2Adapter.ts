@@ -41,7 +41,7 @@ export class CloudflareR2Adapter implements StoragePort {
       await this.client.send(command);
       return `${this.publicDomain}/${key}`;
     } catch (error) {
-      Logger.error(`Failed to upload file to R2: ${key}`, error);
+      Logger.error(`Failed to upload file to R2: ${key}`, { error: error instanceof Error ? error.message : String(error) });
       throw new Error("Storage upload failed");
     }
   }
@@ -54,7 +54,7 @@ export class CloudflareR2Adapter implements StoragePort {
       });
       await this.client.send(command);
     } catch (error) {
-      Logger.error(`Failed to delete file from R2: ${key}`, error);
+      Logger.error(`Failed to delete file from R2: ${key}`, { error: error instanceof Error ? error.message : String(error) });
       throw new Error("Storage delete failed");
     }
   }
@@ -68,7 +68,7 @@ export class CloudflareR2Adapter implements StoragePort {
       // Await the presigned URL generation
       return await awsGetSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
     } catch (error) {
-      Logger.error(`Failed to generate signed URL for R2: ${key}`, error);
+      Logger.error(`Failed to generate signed URL for R2: ${key}`, { error: error instanceof Error ? error.message : String(error) });
       throw new Error("Storage signed URL generation failed");
     }
   }

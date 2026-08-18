@@ -5,14 +5,19 @@ import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
   const key = `ratelimit:coupons:${ip}`;
-  
-  const { success } = await RateLimiter.check(key, 50, 60);
-  if (!success) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
-  }
-
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
+
+  if (!code) {
+    return NextResponse.json({ error: "Coupon code is required" }, { status: 400 });
+  }
+
+  const { success } = await RateLimiter.check(key, 50, 60);
+  const { success: codeSuccess } = await RateLimiter.check(`ratelimit:coupon_code:${code.toUpperCase()}`, 100, 60);
+  
+  if (!success || !codeSuccess) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
 
   if (!code) {
     return NextResponse.json({ error: "Coupon code is required" }, { status: 400 });
