@@ -8,6 +8,7 @@
     "build:worker": "tsup src/lib/infrastructure/workers/index.ts --format cjs --env.NODE_ENV production",
     "start": "next start",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint",
     "prepare": "husky",
     "infra:up": "docker-compose up -d",
