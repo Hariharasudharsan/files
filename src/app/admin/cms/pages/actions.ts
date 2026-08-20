@@ -26,6 +26,9 @@ export async function savePage(formData: FormData) {
   const title = formData.get("title") as string;
   const slug = formData.get("slug") as string;
   const content = formData.get("content") as string;
+  const type = (formData.get("type") as string) || "PAGE";
+  const excerpt = formData.get("excerpt") as string | null;
+  const featuredImage = formData.get("featuredImage") as string | null;
   const isPublished = formData.get("isPublished") === "on";
   const publishedAtStr = formData.get("publishedAt") as string | null;
 
@@ -53,7 +56,7 @@ export async function savePage(formData: FormData) {
   if (id) {
     const page = await prisma.cmsPage.update({
       where: { id },
-      data: { title, slug, status, publishedAt },
+      data: { title, slug, status, publishedAt, type, excerpt, featuredImage },
     });
     
     const version = await prisma.cmsPageVersion.create({
@@ -70,7 +73,7 @@ export async function savePage(formData: FormData) {
     });
   } else {
     const page = await prisma.cmsPage.create({
-      data: { title, slug, status, publishedAt },
+      data: { title, slug, status, publishedAt, type, excerpt, featuredImage },
     });
     
     const version = await prisma.cmsPageVersion.create({
@@ -88,7 +91,8 @@ export async function savePage(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  revalidatePath(`/${slug}`);
+  revalidatePath(type === "STORY" ? `/stories/${slug}` : `/${slug}`);
+  if (type === "STORY") revalidatePath("/stories");
   revalidatePath("/admin/cms/pages");
 }
 

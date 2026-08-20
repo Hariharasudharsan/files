@@ -1,4 +1,5 @@
 'use client';
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { useEffect } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
@@ -15,7 +16,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     Sentry.captureException(error);
-    console.error('Global Error Boundary Caught:', error);
+    Logger.error('Global Error Boundary Caught:', error);
   }, [error]);
 
   return (

@@ -12,7 +12,7 @@ export const redisClient = new Redis(redisOptions);
 let hasLoggedRedisError = false;
 redisClient.on("error", (err) => {
   if (!hasLoggedRedisError) {
-    console.warn(`[WARN] Redis Cache Connection Error: ${err.message}. Cache will be bypassed.`);
+    Logger.warn(`[WARN] Redis Cache Connection Error: ${err.message}. Cache will be bypassed.`);
     hasLoggedRedisError = true;
   }
 });

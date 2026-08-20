@@ -18,6 +18,18 @@ export type CreateProductDTO = {
   compareAtPrice?: number;
   itemCode: string; // SKU
   weightGrams?: number;
+  
+  // New Fields
+  fryingTemp?: string;
+  airFryerSetting?: string;
+  microwaveTime?: string;
+  spiceLevel?: string;
+  dietType?: string;
+  region?: string;
+  mealPairing?: string;
+  isSubscribable?: boolean;
+  subscriptionDiscountPercent?: number;
+  badgeIds?: string[];
 };
 
 export class CatalogService {
@@ -81,6 +93,20 @@ export class CatalogService {
           slug: data.slug,
           description: data.description,
           categoryId: data.categoryId,
+          fryingTemp: data.fryingTemp,
+          airFryerSetting: data.airFryerSetting,
+          microwaveTime: data.microwaveTime,
+          spiceLevel: data.spiceLevel,
+          dietType: data.dietType,
+          region: data.region,
+          mealPairing: data.mealPairing,
+          isSubscribable: data.isSubscribable,
+          subscriptionDiscountPercent: data.subscriptionDiscountPercent,
+          ...(data.badgeIds?.length ? {
+            badges: {
+              create: data.badgeIds.map(id => ({ badgeId: id }))
+            }
+          } : {})
         },
       });
 
@@ -97,6 +123,47 @@ export class CatalogService {
       });
 
       return { product, variant };
+    });
+  }
+
+  static async getFeaturedReviews() {
+    const policy = CachePolicy.Catalog.Published;
+    return await CacheService.remember("featured_reviews", policy.ttl, async () => {
+      return await prisma.review.findMany({
+        where: { isFeatured: true, isApproved: true },
+        include: { user: { select: { name: true } }, product: { select: { name: true, slug: true } } },
+        orderBy: { createdAt: "desc" }
+      });
+    });
+  }
+
+  static async getPromotedCoupon() {
+    const policy = CachePolicy.Catalog.Published;
+    return await CacheService.remember("promoted_coupon", policy.ttl, async () => {
+      const now = new Date();
+      const coupon = await prisma.coupon.findFirst({
+        where: { 
+          isPromoted: true, 
+          isActive: true,
+          validUntil: { gte: now }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      if (!coupon) return null;
+
+      let product = null;
+      if (coupon.promotedProductId) {
+        product = await prisma.product.findUnique({
+          where: { id: coupon.promotedProductId },
+          include: { 
+            primaryImage: true,
+            variants: true
+          }
+        });
+      }
+
+      return { coupon, product };
     });
   }
 }

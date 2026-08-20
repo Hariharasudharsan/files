@@ -13,6 +13,7 @@ describe('PricingService', () => {
       variantsMap,
       null,
       false,
+      new Map(),
       'Tamil Nadu',
       'Tamil Nadu'
     );
@@ -34,6 +35,7 @@ describe('PricingService', () => {
       variantsMap,
       null,
       false,
+      new Map(),
       'Karnataka',
       'Tamil Nadu'
     );
@@ -56,6 +58,7 @@ describe('PricingService', () => {
       zeroTaxVariants,
       null,
       false,
+      new Map(),
       'Tamil Nadu',
       'Tamil Nadu'
     );
@@ -72,6 +75,7 @@ describe('PricingService', () => {
       variantsMap,
       { id: 'c1', code: 'PROMO10', discountType: 'PERCENTAGE', discountValue: 10 },
       false,
+      new Map(),
       'Tamil Nadu',
       'Tamil Nadu'
     );

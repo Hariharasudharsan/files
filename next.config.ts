@@ -11,9 +11,18 @@ const externalImageHostname = (() => {
   const imageHost = process.env.NEXT_PUBLIC_IMAGE_HOST || process.env.ERP_BASE_URL;
 
   try {
-    return imageHost ? new URL(imageHost).hostname : "**";
+    if (!imageHost) {
+      if (process.env.NODE_ENV !== "production") {
+        return "example.com";
+      }
+      throw new Error("Image host not set");
+    }
+    return new URL(imageHost).hostname;
   } catch {
-    return "**";
+    if (process.env.NODE_ENV !== "production") {
+      return "example.com";
+    }
+    throw new Error("NEXT_PUBLIC_IMAGE_HOST or ERP_BASE_URL must be a valid URL in production.");
   }
 })();
 
@@ -48,7 +57,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: ws: wss:; frame-src 'self' https://api.razorpay.com;",
+            value: "default-src 'self'; script-src 'self' https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.razorpay.com wss://ws.pusherapp.com; frame-src 'self' https://api.razorpay.com;",
           },
         ],
       },

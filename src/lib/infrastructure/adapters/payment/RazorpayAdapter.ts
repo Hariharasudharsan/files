@@ -117,4 +117,60 @@ export class RazorpayAdapter implements PaymentPort {
       return { success: false, error: error.message };
     }
   }
+
+  async createPlan(name: string, amount: number, currency: string, period: string, interval: number): Promise<{ success: boolean; planId?: string; error?: string }> {
+    try {
+      const response = await fetch('https://api.razorpay.com/v1/plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')}`
+        },
+        body: JSON.stringify({
+          period,
+          interval,
+          item: {
+            name,
+            amount: Math.round(amount * 100),
+            currency,
+            description: `Plan for ${name}`
+          }
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.error?.description || 'Failed to create plan' };
+      }
+      return { success: true, planId: data.id };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  async createSubscription(planId: string, totalCount: number, notes?: any): Promise<{ success: boolean; subscriptionId?: string; error?: string }> {
+    try {
+      const response = await fetch('https://api.razorpay.com/v1/subscriptions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Basic ${Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64')}`
+        },
+        body: JSON.stringify({
+          plan_id: planId,
+          total_count: totalCount,
+          customer_notify: 1,
+          notes
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, error: data.error?.description || 'Failed to create subscription' };
+      }
+      return { success: true, subscriptionId: data.id };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
 }

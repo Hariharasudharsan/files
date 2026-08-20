@@ -48,8 +48,17 @@ export default async function AdminPagesPage() {
               ) : (
                 pages.map((page) => (
                   <tr key={page.id} className="hover:bg-surface-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-surface-950">{page.title}</td>
-                    <td className="px-6 py-4 text-primary-600 font-mono">/{page.slug}</td>
+                    <td className="px-6 py-4 font-bold text-surface-950">
+                      {page.title}
+                      {page.type === "STORY" && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
+                          Story
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-primary-600 font-mono">
+                      /{page.type === "STORY" ? `stories/${page.slug}` : page.slug}
+                    </td>
                     <td className="px-6 py-4">
                       <form action={async () => { "use server"; await togglePagePublish(page.id, page.status !== "PUBLISHED"); }}>
                         <button type="submit" className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${page.status === 'PUBLISHED' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-surface-100 text-surface-600 border border-surface-200'}`}>
@@ -60,7 +69,7 @@ export default async function AdminPagesPage() {
                     <td className="px-6 py-4 text-surface-500">{new Date(page.updatedAt).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/${page.slug}`} target="_blank">
+                        <Link href={`/${page.type === "STORY" ? `stories/${page.slug}` : page.slug}`} target="_blank">
                           <button className="p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
                             View
                           </button>

@@ -11,12 +11,12 @@ export async function POST(request: NextRequest) {
   const limit = parseInt(process.env.RATE_LIMIT_CHECKOUT_MAX || "10");
   const windowSec = parseInt(process.env.RATE_LIMIT_CHECKOUT_WINDOW_SEC || "60");
 
-  const { success } = await RateLimiter.check(key, limit, windowSec);
-  if (!success) {
-    return NextResponse.json({ error: "Too many checkout attempts. Please try again later." }, { status: 429 });
-  }
-
   try {
+    const { success } = await RateLimiter.check(key, limit, windowSec);
+    if (!success) {
+      return NextResponse.json({ error: "Too many checkout attempts. Please try again later." }, { status: 429 });
+    }
+
     const payload = await request.json();
     const validation = validateCreateOrderPayload(payload);
     
@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
     const checkoutResult = await OrderService.checkout({
       contact: validation.data.contact,
       items: validation.data.items,
-      couponCode: payload.couponCode,
-      paymentMethod: payload.paymentMethod || 'RAZORPAY',
+      couponCode: validation.data.couponCode,
+      paymentMethod: validation.data.paymentMethod || 'RAZORPAY',
     });
 
     if (!checkoutResult.paymentIntent.success) {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       amount: checkoutResult.paymentIntent.amount,
       currency: checkoutResult.paymentIntent.currency,
       key: process.env.RAZORPAY_KEY_ID,
-      isCOD: payload.paymentMethod === 'COD'
+      isCOD: validation.data.paymentMethod === 'COD'
     }, { status: 200 });
   } catch (err) {
     Logger.error("Init payment failed", { error: err instanceof Error ? err.message : String(err) });

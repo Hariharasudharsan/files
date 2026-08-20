@@ -50,6 +50,13 @@ export default async function AdminBannersPage() {
                         {banner.link}
                       </a>
                     )}
+                    {banner.subtitle && <p className="text-sm text-surface-600 mt-1">{banner.subtitle}</p>}
+                    <div className="mt-2 text-xs text-surface-400">
+                      {banner.validFrom ? new Date(banner.validFrom).toLocaleDateString() : 'Always'} 
+                      {' - '} 
+                      {banner.validUntil ? new Date(banner.validUntil).toLocaleDateString() : 'Forever'}
+                      {' | Sort: '}{banner.sortOrder}
+                    </div>
                   </div>
                   <div className="mt-4 flex justify-end">
                     <form action={async () => { "use server"; await deleteBanner(banner.id); }}>
@@ -81,7 +88,25 @@ export default async function AdminBannersPage() {
                 <label className="block text-sm font-semibold text-surface-700 mb-1">Target Link (Optional)</label>
                 <input type="text" name="link" className="w-full border-surface-300 rounded-lg" placeholder="/category/snacks" />
               </div>
-              <Button type="submit" className="w-full flex items-center justify-center gap-2 mt-2">
+              <div>
+                <label className="block text-sm font-semibold text-surface-700 mb-1">Subtitle</label>
+                <input type="text" name="subtitle" className="w-full border-surface-300 rounded-lg" placeholder="Shop our new collection" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-surface-700 mb-1">Valid From</label>
+                  <input type="datetime-local" name="validFrom" className="w-full border-surface-300 rounded-lg text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-surface-700 mb-1">Valid Until</label>
+                  <input type="datetime-local" name="validUntil" className="w-full border-surface-300 rounded-lg text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-surface-700 mb-1">Sort Order</label>
+                <input type="number" name="sortOrder" defaultValue="0" className="w-full border-surface-300 rounded-lg" />
+              </div>
+              <Button type="submit" className="w-full flex items-center justify-center gap-2 mt-4">
                 <Plus className="w-4 h-4" /> Add Banner
               </Button>
             </form>

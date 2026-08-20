@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { RazorpayAdapter } from '../../../../lib/infrastructure/adapters/payment/RazorpayAdapter';
-import { prisma } from "@/lib/infrastructure/database/prisma";
+import { WebhookRepository } from "@/lib/repositories/webhook-repository";
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 import { OrderService } from "../../../../lib/core/application/OrderService";
+import { handlePaymentFailure, findOrderByIdWithItemsAndUser } from "@/lib/repositories/order-repository";
+import { InventoryRepository } from "@/lib/repositories/inventory-repository";
 import { completeRefund } from "../../../../lib/core/application/refund-service";
 import { Logger } from "@/lib/infrastructure/logger";
 
@@ -14,12 +16,12 @@ export async function POST(req: Request) {
   const limit = parseInt(process.env.RATE_LIMIT_WEBHOOK_MAX || "100");
   const windowSec = parseInt(process.env.RATE_LIMIT_WEBHOOK_WINDOW_SEC || "60");
 
-  const { success } = await RateLimiter.check(key, limit, windowSec);
-  if (!success) {
-    return NextResponse.json({ error: "Too many webhook requests." }, { status: 429 });
-  }
-
   try {
+    const { success } = await RateLimiter.check(key, limit, windowSec);
+    if (!success) {
+      return NextResponse.json({ error: "Too many webhook requests." }, { status: 429 });
+    }
+
     const rawBody = await req.text();
     const signature = req.headers.get('x-razorpay-signature') || '';
 
@@ -38,30 +40,25 @@ export async function POST(req: Request) {
 
     // 2. Strict Idempotency Check via WebhookEvent table atomic insert
     try {
-      await prisma.webhookEvent.create({
-        data: {
-          id: eventId,
-          provider: 'razorpay',
-          eventType,
-          payload,
-          status: 'processing',
-        },
+      await WebhookRepository.createEvent({
+        id: eventId,
+        provider: 'razorpay',
+        eventType,
+        payload,
+        status: 'PROCESSING',
       });
     } catch (e: any) {
       if (e.code === 'P2002') { // Unique constraint violation
-        const existing = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
-        if (existing?.status === 'processed') {
+        const existing = await WebhookRepository.findEventById(eventId);
+        if (existing?.status === 'PROCESSED') {
           return NextResponse.json({ message: 'Webhook already processed' }, { status: 200 });
         }
-        if (existing?.status === 'processing') {
+        if (existing?.status === 'PROCESSING') {
           // Could be a genuine concurrent retry from Razorpay, drop it
           return NextResponse.json({ message: 'Webhook is already processing concurrently' }, { status: 409 });
         }
         // If 'failed', we allow retry by updating status back to processing
-        await prisma.webhookEvent.update({
-          where: { id: eventId },
-          data: { status: 'processing', error: null }
-        });
+        await WebhookRepository.updateEventStatus(eventId, 'PROCESSING');
       } else {
         throw e;
       }
@@ -76,10 +73,7 @@ export async function POST(req: Request) {
           throw new Error('orderId missing in payload');
         }
 
-        const order = await prisma.order.findUnique({
-          where: { id: orderId },
-          select: { total: true }
-        });
+        const order = await findOrderByIdWithItemsAndUser(orderId);
 
         if (order) {
           const result = await OrderService.confirmPayment(orderId, order.total.toNumber(), verification.transactionId);
@@ -90,16 +84,10 @@ export async function POST(req: Request) {
       } else if (eventType === 'payment.failed') {
         const orderId = payload.payload.payment.entity.notes?.orderId;
         if (orderId) {
-          await prisma.order.updateMany({
-            where: { id: orderId, paymentStatus: 'CREATED' },
-            data: { status: 'PAYMENT_FAILED', paymentStatus: 'FAILED' }
-          });
+          await handlePaymentFailure(orderId);
           
           // Release inventory reservation if failed early
-          await prisma.inventoryReservation.updateMany({
-            where: { orderId, status: 'ACTIVE' },
-            data: { status: 'RELEASED' }
-          });
+          await InventoryRepository.releaseReservations(orderId);
           Logger.info('Payment failed and reservations released', { orderId });
         }
       } else if (eventType === 'refund.processed') {
@@ -108,21 +96,32 @@ export async function POST(req: Request) {
         const paymentId = payload.payload.refund.entity.payment_id;
         
         await completeRefund(refundId, amount, paymentId);
+      } else if (eventType === 'subscription.charged') {
+        const subscriptionId = payload.payload.subscription.entity.id;
+        const paymentId = payload.payload.payment.entity.id;
+        const amount = payload.payload.payment.entity.amount / 100;
+
+        // Try to find the CustomerSubscription
+        const { prisma } = await import('@/lib/infrastructure/database/prisma');
+        const subscription = await prisma.customerSubscription.findUnique({
+          where: { razorpaySubscriptionId: subscriptionId },
+          include: { user: true }
+        });
+
+        if (subscription) {
+           await OrderService.generateReplenishmentOrder(subscription, paymentId, amount);
+        } else {
+           Logger.warn('Subscription charged but not found in DB', { subscriptionId });
+        }
       }
 
       // 4. Mark Webhook as Processed
-      await prisma.webhookEvent.update({
-        where: { id: eventId },
-        data: { status: 'processed', processedAt: new Date() },
-      });
+      await WebhookRepository.updateEventStatus(eventId, 'PROCESSED');
 
       return NextResponse.json({ success: true }, { status: 200 });
 
     } catch (innerError: any) {
-      await prisma.webhookEvent.update({
-        where: { id: eventId },
-        data: { status: 'failed', error: innerError.message, processedAt: new Date() },
-      });
+      await WebhookRepository.updateEventStatus(eventId, 'FAILED', innerError.message);
       throw innerError;
     }
   } catch (error: any) {

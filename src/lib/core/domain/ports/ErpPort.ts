@@ -1,4 +1,4 @@
-import { Order, User } from "@prisma/client";
+import type { Order, User } from "@prisma/client";
 
 export interface SyncResult {
   success: boolean;

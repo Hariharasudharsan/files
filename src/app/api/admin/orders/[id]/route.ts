@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { checkApiAdminOrManager } from "@/lib/auth/rbac";
 import { updateOrderStatus } from "@/lib/repositories/order-repository";
@@ -24,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: (error as any).errors }, { status: 400 });
     }
-    console.error("[PATCH /api/admin/orders]", error);
+    Logger.error("[PATCH /api/admin/orders]", error);
     import("@sentry/nextjs").then(Sentry => Sentry.captureException(error));
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

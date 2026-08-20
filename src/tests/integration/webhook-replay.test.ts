@@ -70,7 +70,7 @@ describe('Webhook Replay Test', () => {
         provider: 'razorpay',
         eventType: 'payment.captured',
         payload: JSON.parse(reqBody),
-        status: 'processed'
+        status: 'PROCESSED'
       }
     });
 

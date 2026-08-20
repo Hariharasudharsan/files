@@ -1,19 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { Truck, MapPin } from "lucide-react";
+import { Truck, MapPin, Loader2 } from "lucide-react";
 
 export default function DeliveryEstimate() {
   const [pincode, setPincode] = useState("");
   const [estimate, setEstimate] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const checkDelivery = () => {
+  const checkDelivery = async () => {
     if (pincode.length === 6) {
-      // Mock logic: If it starts with 6 (South India), faster delivery
-      if (pincode.startsWith("6") || pincode.startsWith("5")) {
-        setEstimate("Get it by Tomorrow, 10 PM");
-      } else {
-        setEstimate("Get it by 2-3 business days");
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/shipping/calculate?pincode=${pincode}`);
+        const data = await res.json();
+        
+        if (data.serviceable) {
+          setEstimate(`Get it by ${data.eta}`);
+        } else {
+          setEstimate(null);
+          setError("Not Serviceable at this Pincode");
+        }
+      } catch (err) {
+        setError("Failed to check delivery estimate");
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -47,13 +60,15 @@ export default function DeliveryEstimate() {
               </div>
               <button 
                 onClick={checkDelivery}
-                disabled={pincode.length !== 6}
-                className="bg-surface-900 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-surface-800 transition-colors"
+                disabled={pincode.length !== 6 || loading}
+                className="bg-surface-900 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-surface-800 transition-colors flex items-center justify-center min-w-[70px]"
               >
-                Check
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Check"}
               </button>
             </div>
           )}
+          
+          {error && <p className="text-red-500 text-xs mt-2 font-medium">{error}</p>}
           
           <p className="text-xs text-surface-500 mt-3">Free shipping on orders over ₹999.</p>
         </div>

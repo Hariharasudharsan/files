@@ -2,38 +2,45 @@
 @plugin "@tailwindcss/typography";
 
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-outfit);
+  --font-sans: var(--theme-font-sans, var(--font-inter));
+  --font-display: var(--theme-font-display, var(--font-fraunces));
   
-  /* Premium Terracotta/Earthy palette */
-  --color-primary-50: #fdf8f5;
-  --color-primary-100: #f8ece8;
-  --color-primary-200: #eed5cc;
-  --color-primary-300: #e1b4a5;
-  --color-primary-400: #d18d76;
-  --color-primary-500: #c26c4f;
-  --color-primary-600: #b15538;
-  --color-primary-700: #93432a;
-  --color-primary-800: #7b3925;
-  --color-primary-900: #653121;
-  --color-primary-950: #36160d;
+  /* Brand palette */
+  --color-brand-deep: var(--theme-brand-deep, #3368A0);
+  --color-brand-mid: var(--theme-brand-mid, #66A3BF);
+  --color-brand-tint: var(--theme-brand-tint, #C8DFDB);
+  --color-base: var(--theme-base, #F2EFE7);
+  
+  /* Accent */
+  --color-accent-fry: var(--theme-accent-fry, #C97A2B);
 
-  /* Gold Accent */
-  --color-accent-500: #d4af37;
-  --color-accent-600: #aa8c2c;
+  /* Radius */
+  --radius: var(--theme-radius, 0.5rem);
+  /* Legacy Aliases for pre-existing components */
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e1;
+  --color-surface-400: #94a3b8;
+  --color-surface-500: #64748b;
+  --color-surface-600: #475569;
+  --color-surface-700: #334155;
+  --color-surface-800: #1e293b;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #020617;
 
-  /* Dark sophisticated text/surface */
-  --color-surface-50: #faf9f8;
-  --color-surface-100: #f3f1ee;
-  --color-surface-200: #e7e5e4;
-  --color-surface-300: #d6d3d1;
-  --color-surface-400: #a8a29e;
-  --color-surface-500: #78716c;
-  --color-surface-600: #57534e;
-  --color-surface-700: #44403c;
-  --color-surface-800: #292524;
-  --color-surface-900: #1c1917;
-  --color-surface-950: #0c0a09;
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+
   /* Animations */
   --animate-fade-in: fade-in 0.5s ease-out forwards;
   --animate-slide-up: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -64,7 +71,7 @@
     @apply bg-white/80 backdrop-blur-lg border border-white/30 shadow-sm transition-all duration-300;
   }
   .glass-dark {
-    @apply bg-surface-950/80 backdrop-blur-xl border border-surface-800 shadow-xl;
+    @apply bg-brand-deep/80 backdrop-blur-xl border border-brand-deep shadow-xl;
   }
   .hover-lift {
     @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg;

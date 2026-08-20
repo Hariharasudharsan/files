@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { ERPSyncService } from "@/lib/infrastructure/erpnext/erp-sync-service";
 
@@ -17,7 +18,7 @@ export async function POST() {
     
     return NextResponse.json({ message: "Sync process completed successfully." });
   } catch (error: any) {
-    console.error("Manual Sync Trigger Failed:", error);
+    Logger.error("Manual Sync Trigger Failed:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

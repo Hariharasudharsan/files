@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/infrastructure/database/prisma";
+import { AuditLogRepository } from "@/lib/repositories/audit-log-repository";
 
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 import crypto from "crypto";
@@ -111,13 +111,11 @@ async function handleOptOut(phone: string) {
 
 async function routeToSupport(phone: string, text: string) {
   // Save to local database for admin panel viewing
-  await prisma.auditLog.create({
-    data: {
-      action: "WHATSAPP_INBOUND",
-      entity: "Support",
-      entityId: phone,
-      details: { message: text }
-    }
+  await AuditLogRepository.createLog({
+    action: "WHATSAPP_INBOUND",
+    entity: "Support",
+    entityId: phone,
+    details: { message: text }
   });
   Logger.info(`[WhatsApp Webhook] Routed to support ticket for ${phone}`);
 }

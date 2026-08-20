@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -20,8 +21,8 @@ export default function PageBuilder() {
       if (res.ok) {
         return await res.json();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      Logger.error("Fetch page data error", e);
     }
     return null;
   }, [id]);
@@ -89,8 +90,8 @@ export default function PageBuilder() {
           router.push(`/${page.slug}`);
         }
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      Logger.error("Save page error", e);
       alert("Failed to save");
     } finally {
       setSaving(false);

@@ -1,6 +1,21 @@
-/**
- * Structured logger that automatically redacts sensitive information.
- */
+import pino from "pino";
+import { env } from "@/lib/core/config/env";
+
+const isProduction = env.NODE_ENV === "production";
+
+const pinoLogger = pino({
+  level: isProduction ? "info" : "debug",
+  transport: isProduction
+    ? undefined
+    : {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          ignore: "pid,hostname",
+        },
+      },
+});
+
 export class Logger {
   private static redact(obj: any): any {
     if (!obj) return obj;
@@ -19,30 +34,35 @@ export class Logger {
     return redacted;
   }
 
-  static info(message: string, context?: Record<string, any>) {
-    console.log(JSON.stringify({
-      level: 'INFO',
-      timestamp: new Date().toISOString(),
-      message,
-      ...(context ? { context: this.redact(context) } : {})
-    }));
+  static trace(message: string, context?: any) {
+    if (context) pinoLogger.trace({ context: this.redact(context) }, message);
+    else pinoLogger.trace(message);
   }
 
-  static error(message: string, context?: Record<string, any>) {
-    console.error(JSON.stringify({
-      level: 'ERROR',
-      timestamp: new Date().toISOString(),
-      message,
-      ...(context ? { context: this.redact(context) } : {})
-    }));
+  static debug(message: string, context?: any) {
+    if (context) pinoLogger.debug({ context: this.redact(context) }, message);
+    else pinoLogger.debug(message);
   }
 
-  static warn(message: string, context?: Record<string, any>) {
-    console.warn(JSON.stringify({
-      level: 'WARN',
-      timestamp: new Date().toISOString(),
-      message,
-      ...(context ? { context: this.redact(context) } : {})
-    }));
+  static info(message: string, context?: any) {
+    if (context) pinoLogger.info({ context: this.redact(context) }, message);
+    else pinoLogger.info(message);
+  }
+
+  static warn(message: string, context?: any) {
+    if (context) pinoLogger.warn({ context: this.redact(context) }, message);
+    else pinoLogger.warn(message);
+  }
+
+  static error(message: string, context?: any) {
+    if (context) {
+      if (context instanceof Error) {
+        pinoLogger.error({ err: { message: context.message, stack: context.stack } }, message);
+      } else {
+        pinoLogger.error({ context: this.redact(context) }, message);
+      }
+    } else {
+      pinoLogger.error(message);
+    }
   }
 }

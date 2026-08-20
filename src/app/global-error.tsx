@@ -1,4 +1,5 @@
 'use client';
+import { Logger } from "@/lib/infrastructure/logger";
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useEffect } from 'react';
 import './globals.css';
@@ -14,7 +15,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     Sentry.captureException(error);
-    console.error('CRITICAL GLOBAL ERROR:', error);
+    Logger.error('CRITICAL GLOBAL ERROR:', error);
   }, [error]);
 
   return (

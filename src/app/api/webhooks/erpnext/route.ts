@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { webhookQueue } from '../../../../lib/infrastructure/queue/bullmq';
-import { prisma } from "@/lib/infrastructure/database/prisma";
+import { WebhookRepository } from "@/lib/repositories/webhook-repository";
 import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 import { Logger } from "@/lib/infrastructure/logger";
@@ -39,15 +39,30 @@ export async function POST(req: Request) {
     const eventId = `erpnext:${rawEventId}`;
 
     // Store in WebhookEvent for audit & fast acknowledgment
-    const webhookRecord = await prisma.webhookEvent.create({
-      data: {
+    let webhookRecord;
+    try {
+      webhookRecord = await WebhookRepository.createEvent({
         id: eventId,
         provider: 'erpnext',
         eventType,
         payload,
-        status: 'pending',
-      },
-    });
+        status: 'PENDING',
+      });
+    } catch (e: any) {
+      if (e.code === 'P2002') { // Unique constraint violation
+        const existing = await WebhookRepository.findEventById(eventId);
+        if (existing?.status === 'PROCESSED' || existing?.status === 'COMPLETED' as any) {
+          return NextResponse.json({ message: 'Webhook already processed' }, { status: 200 });
+        }
+        if (existing?.status === 'PENDING' || existing?.status === 'PROCESSING') {
+          return NextResponse.json({ message: 'Webhook is already processing concurrently' }, { status: 409 });
+        }
+        // If 'failed', allow retry by updating status back to pending
+        webhookRecord = await WebhookRepository.updateEventStatus(eventId, 'PENDING');
+      } else {
+        throw e;
+      }
+    }
 
     // Enqueue for async processing in BullMQ worker
     await webhookQueue.add('process-erp-webhook', {

@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { createWorker } from '../queue/bullmq';
 import { frappe } from "@/lib/infrastructure/erpnext/FrappeClient";
 import { prisma } from "@/lib/infrastructure/database/prisma";
@@ -6,7 +7,7 @@ export const paymentWorker = createWorker(
   'SYNC_PAYMENT',
   async (job) => {
     const { orderId, amount, transactionId } = job.data;
-    console.log(`Processing SYNC_PAYMENT job for order: ${orderId}`);
+    Logger.info(`Processing SYNC_PAYMENT job for order: ${orderId}`);
 
     // Fetch the ERPSync record to get the ERPNext Sales Order ID
     const erpSync = await prisma.eRPSync.findFirst({
@@ -38,7 +39,7 @@ export const paymentWorker = createWorker(
     };
     
     let targetId = null;
-    let status = "FAILED";
+    let status: import("@prisma/client").ERPSyncStatus = "FAILED";
     let lastError = null;
 
     try {
@@ -67,7 +68,7 @@ export const paymentWorker = createWorker(
       throw new Error(`ERPNext Payment Sync Failed: ${lastError}`);
     }
     
-    console.log(`Successfully synced Payment Entry ${targetId} for Sales Order ${erpSalesOrderId}`);
+    Logger.info(`Successfully synced Payment Entry ${targetId} for Sales Order ${erpSalesOrderId}`);
   },
   2
 );

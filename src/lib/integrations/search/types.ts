@@ -5,6 +5,10 @@ export interface SearchFilters {
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
+  spiceLevel?: string[];
+  dietType?: string[];
+  region?: string[];
+  mealPairing?: string[];
 }
 
 export interface SearchResult {

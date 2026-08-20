@@ -23,11 +23,36 @@ export class CmsService {
   static async getActiveBanners() {
     const policy = CachePolicy.StaticConfig;
     return await CacheService.remember(policy.key("banners"), policy.ttl, async () => {
+      const now = new Date();
       return await prisma.banner.findMany({
-        where: { isActive: true },
+        where: { 
+          isActive: true,
+          OR: [
+            { validFrom: null },
+            { validFrom: { lte: now } }
+          ],
+          AND: [
+            {
+              OR: [
+                { validUntil: null },
+                { validUntil: { gte: now } }
+              ]
+            }
+          ]
+        },
         include: { media: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       });
+    });
+  }
+
+  static async getStoreConfig() {
+    const policy = CachePolicy.StaticConfig;
+    return await CacheService.remember(policy.key("store_config"), policy.ttl, async () => {
+      const config = await prisma.settings.findUnique({
+        where: { key: "store_config" }
+      });
+      return (config?.value as any) || {};
     });
   }
 }

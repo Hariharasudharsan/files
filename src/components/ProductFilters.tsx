@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import React, { useState } from "react";
 import { SlidersHorizontal, ChevronDown } from "lucide-react";
@@ -14,7 +15,7 @@ export default function ProductFilters() {
 
   const updateFilters = () => {
     // In a real app, we'd update search params and push to router
-    console.log("Updating filters", { inStock, price });
+    Logger.info("Updating filters", { inStock, price });
   };
 
   return (

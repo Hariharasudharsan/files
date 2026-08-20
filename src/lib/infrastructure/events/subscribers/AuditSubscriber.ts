@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { eventBus } from "../EventBus";
 import { AuditService } from "@/lib/core/application/AuditService";
 
@@ -5,7 +6,7 @@ let isRegistered = false;
 
 export function registerAuditSubscriber() {
   if (isRegistered) return;
-  console.log("Registering AuditSubscriber...");
+  Logger.info("Registering AuditSubscriber...");
   isRegistered = true;
 
   // Subscribe to all Order Created Events
@@ -20,7 +21,7 @@ export function registerAuditSubscriber() {
         payload.userId || null
       );
     } catch (err) {
-      console.error("AuditSubscriber failed to log OrderCreated:", err);
+      Logger.error("AuditSubscriber failed to log OrderCreated:", err);
     }
   });
 
@@ -36,7 +37,7 @@ export function registerAuditSubscriber() {
         payload.userId || null
       );
     } catch (err) {
-      console.error("AuditSubscriber failed to log OrderPaid:", err);
+      Logger.error("AuditSubscriber failed to log OrderPaid:", err);
     }
   });
 
@@ -52,7 +53,7 @@ export function registerAuditSubscriber() {
         null
       );
     } catch (err) {
-      console.error("AuditSubscriber failed to log InventoryReserved:", err);
+      Logger.error("AuditSubscriber failed to log InventoryReserved:", err);
     }
   });
 }

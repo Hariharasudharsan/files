@@ -92,7 +92,7 @@ export async function markOrderAsPaidAndCreateTransaction(
         currency: "INR",
         provider: "razorpay",
         transactionId: transactionId,
-        status: "captured",
+        status: "CAPTURED",
       }
     });
 
@@ -224,5 +224,12 @@ export async function markOrderErpFailed(orderId: string): Promise<void> {
       targetSystem: "erpnext",
       status: "FAILED"
     }
+  });
+}
+
+export async function handlePaymentFailure(orderId: string) {
+  await prisma.order.updateMany({
+    where: { id: orderId, paymentStatus: 'CREATED' },
+    data: { status: 'PAYMENT_FAILED', paymentStatus: 'FAILED' }
   });
 }

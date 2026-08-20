@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 import { 
   LayoutDashboard, ShoppingBag, Tags, Package, Users, Ticket, 
   BarChart, PenTool, Image as ImageIcon, Activity, HardDrive, 
-  Settings, Shield, LogOut, Webhook, RefreshCcw, Bell
+  Settings, Shield, LogOut, Webhook, RefreshCcw, Bell, Globe, Filter
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -25,7 +25,8 @@ const SIDEBAR_SECTIONS = [
     items: [
       { name: "Products", href: "/admin/products", icon: ShoppingBag },
       { name: "Categories", href: "/admin/categories", icon: Tags },
-      { name: "Collections", href: "/admin/collections", icon: Package },
+      { name: "Bundles", href: "/admin/bundles", icon: Package },
+      { name: "Badges", href: "/admin/badges", icon: Tags },
       { name: "Inventory", href: "/admin/inventory", icon: HardDrive },
     ]
   },
@@ -33,7 +34,6 @@ const SIDEBAR_SECTIONS = [
     title: "Sales & Customers",
     items: [
       { name: "Orders", href: "/admin/orders", icon: Ticket },
-      { name: "Customers", href: "/admin/customers", icon: Users },
       { name: "Coupons", href: "/admin/coupons", icon: Ticket },
     ]
   },
@@ -41,7 +41,8 @@ const SIDEBAR_SECTIONS = [
     title: "Content & Media",
     items: [
       { name: "CMS Builder", href: "/admin/cms", icon: PenTool },
-      { name: "Media Library", href: "/admin/media", icon: ImageIcon },
+      { name: "Media Library", href: "/admin/cms/media", icon: ImageIcon },
+      { name: "Theme Settings", href: "/admin/cms/theme", icon: Settings },
     ]
   },
   {
@@ -57,6 +58,11 @@ const SIDEBAR_SECTIONS = [
     title: "System",
     items: [
       { name: "Settings", href: "/admin/settings", icon: Settings },
+      { name: "Feature Flags", href: "/admin/settings/flags", icon: Settings },
+      { name: "Shipping Configuration", href: "/admin/settings/shipping", icon: Package },
+      { name: "Notifications", href: "/admin/settings/notifications", icon: Bell },
+      { name: "Search Filters", href: "/admin/settings/filters", icon: Filter },
+      { name: "Translations", href: "/admin/settings/translations", icon: Globe },
       { name: "Users & Roles", href: "/admin/users", icon: Shield },
       { name: "Audit Logs", href: "/admin/audit-logs", icon: Activity },
     ]

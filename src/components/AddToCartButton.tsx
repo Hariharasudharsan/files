@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { useState } from "react";
 import { ShoppingCart, Check, CreditCard, Heart } from "lucide-react";
@@ -19,9 +20,11 @@ export default function AddToCartButton({ product }: { product: Product }) {
   const wishlistIds = useWishlistStore((s) => s.itemIds);
   const isWishlisted = defaultVariant ? wishlistIds.includes(defaultVariant.id) : false;
 
+  const [isSubscription, setIsSubscription] = useState(false);
+
   const handleAdd = () => {
     if (defaultVariant) {
-      addItem(product as any, defaultVariant as any, 1);
+      addItem(product as any, defaultVariant as any, 1, isSubscription);
       setJustAdded(true);
       setTimeout(() => setJustAdded(false), 1500);
     }
@@ -54,14 +57,51 @@ export default function AddToCartButton({ product }: { product: Product }) {
       
       if (!res.ok) throw new Error("Failed to update wishlist");
     } catch (err) {
-      console.error("Failed to update wishlist:", err);
+      Logger.error("Failed to update wishlist:", err);
       if (previousState) addWishlistItem(defaultVariant.id);
       else removeWishlistItem(defaultVariant.id);
     }
   };
 
+  const subDiscount = product.subscriptionDiscountPercent || 0;
+  const subPrice = defaultVariant ? Number(defaultVariant.price) * (1 - subDiscount / 100) : 0;
+
   return (
     <div className="w-full space-y-4">
+      {product.isSubscribable && (
+        <div className="flex flex-col gap-2 p-4 rounded-xl border border-primary-200 bg-primary-50">
+          <label className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-colors ${!isSubscription ? 'border-primary-500 bg-white shadow-sm' : 'border-transparent hover:bg-white/60'}`}>
+            <input 
+              type="radio" 
+              name="purchaseType" 
+              checked={!isSubscription} 
+              onChange={() => setIsSubscription(false)}
+              className="w-4 h-4 text-primary-600 focus:ring-primary-500" 
+            />
+            <div className="flex flex-1 justify-between items-center">
+              <span className="font-medium text-surface-900 text-sm">One-time purchase</span>
+              <span className="font-semibold text-surface-900 text-sm">₹{defaultVariant?.price?.toString()}</span>
+            </div>
+          </label>
+          <label className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer border transition-colors ${isSubscription ? 'border-primary-500 bg-white shadow-sm' : 'border-transparent hover:bg-white/60'}`}>
+            <input 
+              type="radio" 
+              name="purchaseType" 
+              checked={isSubscription} 
+              onChange={() => setIsSubscription(true)}
+              className="w-4 h-4 text-primary-600 focus:ring-primary-500" 
+            />
+            <div className="flex flex-1 justify-between items-center">
+              <div className="flex flex-col">
+                <span className="font-medium text-surface-900 text-sm">Subscribe & Save {subDiscount}%</span>
+                <span className="text-xs text-primary-700 mt-0.5">Auto-replenish every month</span>
+              </div>
+              <span className="font-bold text-primary-700 text-sm">₹{subPrice.toFixed(2)}</span>
+            </div>
+          </label>
+        </div>
+      )}
+
       <div className="flex gap-2 w-full">
         <Button
           size="lg"
@@ -77,7 +117,7 @@ export default function AddToCartButton({ product }: { product: Product }) {
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <ShoppingCart className="h-5 w-5" /> Add to Cart
+              <ShoppingCart className="h-5 w-5" /> Add {isSubscription ? "Subscription" : "to Cart"}
             </span>
           )}
         </Button>
@@ -97,21 +137,23 @@ export default function AddToCartButton({ product }: { product: Product }) {
       </div>
 
       {/* Dynamic Checkout Buttons (Stubs) */}
-      <div className="flex gap-2 w-full">
-        <button 
-          type="button" 
-          className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-zinc-800 text-white rounded-md py-3 text-sm font-semibold transition-colors border border-transparent"
-        >
-          <svg className="w-10 h-4 fill-current" viewBox="0 0 46 19"><path d="M19.166 18.006c-1.636 0-2.316-.27-3.411-.845-1.125-.595-1.745-.615-2.915-.615-1.18 0-1.725.01-2.905.625-1.105.58-1.92.865-3.46.865-3.32 0-6.195-2.7-7.945-5.745C-4.144 2.87 2.015-1.42 5.285.4c1.1.625 1.765 1.01 2.945 1.01 1.25 0 1.98-.445 3.12-1.05 1.545-.815 3.32-.98 4.96-.325 2.14.865 3.345 2.215 4.095 3.255-3.36 1.735-2.825 6.015.42 7.235-1.045 2.5-2.6 4.935-4.885 5.095L19.166 18.006zM13.606.316c-.22 3.18-2.655 5.61-5.465 5.43-.375-3.235 2.15-5.61 5.465-5.43z"/></svg>
-        </button>
-        <button 
-          type="button" 
-          className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-surface-50 text-surface-900 rounded-md py-3 text-sm font-semibold transition-colors border border-surface-300 shadow-sm"
-        >
-          <CreditCard className="w-5 h-5 text-blue-600" />
-          <span className="font-display">GPay</span>
-        </button>
-      </div>
+      {!isSubscription && (
+        <div className="flex gap-2 w-full">
+          <button 
+            type="button" 
+            className="flex-1 flex items-center justify-center gap-2 bg-black hover:bg-zinc-800 text-white rounded-md py-3 text-sm font-semibold transition-colors border border-transparent"
+          >
+            <svg className="w-10 h-4 fill-current" viewBox="0 0 46 19"><path d="M19.166 18.006c-1.636 0-2.316-.27-3.411-.845-1.125-.595-1.745-.615-2.915-.615-1.18 0-1.725.01-2.905.625-1.105.58-1.92.865-3.46.865-3.32 0-6.195-2.7-7.945-5.745C-4.144 2.87 2.015-1.42 5.285.4c1.1.625 1.765 1.01 2.945 1.01 1.25 0 1.98-.445 3.12-1.05 1.545-.815 3.32-.98 4.96-.325 2.14.865 3.345 2.215 4.095 3.255-3.36 1.735-2.825 6.015.42 7.235-1.045 2.5-2.6 4.935-4.885 5.095L19.166 18.006zM13.606.316c-.22 3.18-2.655 5.61-5.465 5.43-.375-3.235 2.15-5.61 5.465-5.43z"/></svg>
+          </button>
+          <button 
+            type="button" 
+            className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-surface-50 text-surface-900 rounded-md py-3 text-sm font-semibold transition-colors border border-surface-300 shadow-sm"
+          >
+            <CreditCard className="w-5 h-5 text-blue-600" />
+            <span className="font-display">GPay</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

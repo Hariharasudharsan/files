@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { checkApiAdminOrManager } from "@/lib/auth/rbac";
 import { CategoryRepository } from "@/lib/repositories/category-repository";
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: (error as any).errors }, { status: 400 });
     }
-    console.error("[POST /api/admin/categories]", error);
+    Logger.error("[POST /api/admin/categories]", error);
     import("@sentry/nextjs").then(Sentry => Sentry.captureException(error));
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

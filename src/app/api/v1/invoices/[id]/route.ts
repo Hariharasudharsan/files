@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { InvoiceService } from "@/lib/core/application/InvoiceService";
 import { getServerSession } from "next-auth";
@@ -50,7 +51,7 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error("Invoice generation error:", error);
+    Logger.error("Invoice generation error:", error);
     return NextResponse.json(
       { error: "Failed to generate invoice" },
       { status: 500 }

@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { eventBus } from "../events/EventBus";
 
@@ -11,7 +12,7 @@ export async function processOutbox() {
 
   if (events.length === 0) return;
 
-  console.log(`Processing ${events.length} outbox events...`);
+  Logger.info(`Processing ${events.length} outbox events...`);
 
   for (const record of events) {
     try {
@@ -39,7 +40,7 @@ export async function processOutbox() {
       });
 
     } catch (err) {
-      console.error(`Failed to process outbox event ${record.id}:`, err);
+      Logger.error(`Failed to process outbox event ${record.id}:`, err);
       // We do not mark as published. It will be retried on next run.
     }
   }

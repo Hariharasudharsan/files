@@ -1,4 +1,4 @@
-import { logger } from "@/lib/utils/logger";
+import { Logger as logger } from "@/lib/infrastructure/logger";
 
 export interface RetryOptions {
   attempts: number;

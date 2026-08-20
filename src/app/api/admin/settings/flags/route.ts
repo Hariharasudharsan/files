@@ -29,8 +29,20 @@ export async function POST(req: NextRequest) {
         name: data.name,
         description: data.description,
         isEnabled: data.isEnabled,
+        ...(data.rules !== undefined && { rules: data.rules }),
       }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: auth.user?.id,
+        action: "FEATURE_FLAG_CREATED",
+        entity: "FeatureFlag",
+        entityId: flag.id,
+        details: data,
+      }
+    });
+
     return NextResponse.json(flag, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to create flag" }, { status: 500 });
@@ -47,8 +59,20 @@ export async function PUT(req: NextRequest) {
       where: { id: data.id },
       data: {
         isEnabled: data.isEnabled,
+        ...(data.rules !== undefined && { rules: data.rules }),
       }
     });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: auth.user?.id,
+        action: "FEATURE_FLAG_UPDATED",
+        entity: "FeatureFlag",
+        entityId: flag.id,
+        details: data,
+      }
+    });
+
     return NextResponse.json(flag);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update flag" }, { status: 500 });

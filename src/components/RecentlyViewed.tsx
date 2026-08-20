@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { useEffect, useState } from "react";
 import type { Product } from "@/lib/core/domain/entities/product";
@@ -26,7 +27,7 @@ export function RecordRecentlyViewed({ product }: { product: Product }) {
       
       localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(items));
     } catch (err) {
-      console.error("Failed to record recently viewed:", err);
+      Logger.error("Failed to record recently viewed:", err);
     }
   }, [product]);
 
@@ -48,7 +49,7 @@ export default function RecentlyViewed({ currentProductId }: { currentProductId?
         setProducts(items.slice(0, 4));
       }
     } catch (err) {
-      console.error("Failed to load recently viewed:", err);
+      Logger.error("Failed to load recently viewed:", err);
     }
   }, [currentProductId]);
 

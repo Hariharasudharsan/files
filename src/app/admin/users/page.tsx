@@ -67,9 +67,9 @@ export default async function AdminUsersPage() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
+                    <a href={`/admin/users/${user.id}`} className="inline-block p-2 text-surface-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-primary-50">
                       <MoreHorizontal className="w-5 h-5" />
-                    </button>
+                    </a>
                   </td>
                 </tr>
               ))}

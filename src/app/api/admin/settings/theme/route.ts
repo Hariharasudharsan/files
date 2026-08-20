@@ -28,6 +28,17 @@ export async function POST(req: NextRequest) {
       update: { value: config },
       create: { key: "THEME_CONFIG", value: config },
     });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: auth.user?.id,
+        action: "THEME_CONFIG_UPDATED",
+        entity: "Settings",
+        entityId: setting.id,
+        details: config,
+      }
+    });
+
     return NextResponse.json(setting.value);
   } catch (error) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

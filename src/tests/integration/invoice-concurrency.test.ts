@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/lib/infrastructure/database/prisma';
 import { OrderService } from '@/lib/core/application/OrderService';
@@ -57,7 +58,7 @@ describe('Invoice Sequence Concurrency', () => {
     );
 
     const results = await Promise.all(promises);
-    console.log("Results:", results);
+    Logger.info("Results:", results);
 
     const invoices = await prisma.invoice.findMany();
     expect(invoices.length).toBe(5);

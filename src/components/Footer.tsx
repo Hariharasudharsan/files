@@ -97,7 +97,7 @@ export default function Footer() {
               <li><Link href="/category/appalam" className="hover:text-primary-400 transition-colors">Appalams</Link></li>
               <li><Link href="/category/vadam" className="hover:text-primary-400 transition-colors">Vadams</Link></li>
               <li><Link href="/category/vathal" className="hover:text-primary-400 transition-colors">Vathals</Link></li>
-              <li><Link href="/category/combo-packs" className="hover:text-primary-400 transition-colors">Combo Packs</Link></li>
+              <li><Link href="/bundles" className="hover:text-primary-400 transition-colors">Combo Packs</Link></li>
               <li><Link href="/search" className="hover:text-primary-400 transition-colors">All Products</Link></li>
             </ul>
           </div>
@@ -108,7 +108,7 @@ export default function Footer() {
             <ul className="space-y-4 text-sm">
               <li><Link href="/faq" className="hover:text-primary-400 transition-colors">FAQs</Link></li>
               <li><Link href="/track-order" className="hover:text-primary-400 transition-colors">Track Your Order</Link></li>
-              <li><Link href="/shipping-policy" className="hover:text-primary-400 transition-colors">Shipping Policy</Link></li>
+              <li><Link href="/shipping" className="hover:text-primary-400 transition-colors">Shipping Policy</Link></li>
               <li><Link href="/returns" className="hover:text-primary-400 transition-colors">Returns & Refunds</Link></li>
               <li><Link href="/contact" className="hover:text-primary-400 transition-colors">Contact Us</Link></li>
             </ul>

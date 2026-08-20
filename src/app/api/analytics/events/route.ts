@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { analytics } from "@/lib/core/application/analytics-service";
 
@@ -7,7 +8,7 @@ export async function POST(req: NextRequest) {
     
     // Asynchronously track the event so we don't block the client
     // In a highly-scalable production app, this would go into a message queue (Kafka/Redis)
-    analytics.trackEvent(body).catch(e => console.error(e));
+    analytics.trackEvent(body).catch(e => Logger.error(e));
 
     return NextResponse.json({ success: true });
   } catch (error) {

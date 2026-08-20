@@ -14,7 +14,7 @@ export default async function AdminCategoriesPage() {
           <h1 className="font-display text-3xl font-bold text-surface-950">Categories</h1>
           <p className="text-surface-500 mt-1">Organize your products into hierarchical categories.</p>
         </div>
-        <Link href="/admin/categories/new">
+        <Link href="#">
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add Category
           </Button>

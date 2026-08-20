@@ -17,4 +17,11 @@ export class InventoryRepository implements IRepository<InventorySnapshot, strin
   async delete(id: string): Promise<boolean> {
     return true;
   }
+  static async releaseReservations(orderId: string) {
+    const { prisma } = await import("@/lib/infrastructure/database/prisma");
+    await prisma.inventoryReservation.updateMany({
+      where: { orderId, status: 'ACTIVE' },
+      data: { status: 'RELEASED' }
+    });
+  }
 }

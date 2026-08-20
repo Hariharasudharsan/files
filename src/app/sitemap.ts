@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
@@ -33,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
     });
   } catch (e) {
-    console.warn("Database unreachable during build. Skipping products fetch for sitemap.");
+    Logger.warn("Database unreachable during build. Skipping products fetch for sitemap.");
   }
 
   const productRoutes = products.map((product) => ({
@@ -51,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
     });
   } catch (e) {
-    console.warn("Database unreachable during build. Skipping categories fetch for sitemap.");
+    Logger.warn("Database unreachable during build. Skipping categories fetch for sitemap.");
   }
 
   const categoryRoutes = categories.map((category) => ({

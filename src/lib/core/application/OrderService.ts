@@ -23,7 +23,7 @@ export interface CreateOrderDTO {
     whatsappOptIn?: boolean;
     gstin?: string;
   };
-  items: Array<{ productVariantId: string; qty: number }>;
+  items: Array<{ productVariantId: string; qty: number; bundleRuleId?: string }>;
   couponCode?: string;
   paymentMethod?: string;
 }
@@ -96,8 +96,47 @@ export class OrderService {
         productVariantId: i.productVariantId,
         qty: i.qty,
         taxRate: v?.taxRate || 0,
+        bundleRuleId: i.bundleRuleId
       };
     });
+
+    const bundleIds = Array.from(new Set(dto.items.filter(i => i.bundleRuleId).map(i => i.bundleRuleId!)));
+    const bundles = await prisma.bundleRule.findMany({ where: { id: { in: bundleIds } } });
+    const bundlesMap = new Map(bundles.map(b => [b.id, { id: b.id, price: b.price.toNumber(), size: b.size }]));
+
+    const [prepaidFlag, shippingFlag, b2bFlag] = await Promise.all([
+      prisma.featureFlag.findUnique({ where: { key: "PREPAID_DISCOUNT" } }),
+      prisma.featureFlag.findUnique({ where: { key: "SHIPPING_CALCULATOR" } }),
+      prisma.featureFlag.findUnique({ where: { key: "b2b_tier" } })
+    ]);
+
+    let prepaidDiscountPercent = 0;
+    if (prepaidFlag?.isEnabled && prepaidFlag.rules && dto.paymentMethod !== 'COD') {
+      const pRules: any = prepaidFlag.rules;
+      if (pRules.percentage) prepaidDiscountPercent = Number(pRules.percentage);
+    }
+
+    let shippingBaseRate = 50;
+    if (shippingFlag?.isEnabled && shippingFlag.rules) {
+      const sRules: any = shippingFlag.rules;
+      shippingBaseRate = sRules.defaultRate || 50;
+      if (sRules.zones && dto.contact.pincode) {
+        for (const prefix in sRules.zones) {
+          if (dto.contact.pincode.startsWith(prefix)) {
+            shippingBaseRate = sRules.zones[prefix].rate !== undefined ? sRules.zones[prefix].rate : shippingBaseRate;
+            break;
+          }
+        }
+      }
+    }
+
+    let b2bMinOrderValue = undefined;
+    let b2bMinOrderQty = undefined;
+    if (b2bFlag?.isEnabled && b2bFlag.rules) {
+      const bRules: any = b2bFlag.rules;
+      if (bRules.minOrderValue) b2bMinOrderValue = Number(bRules.minOrderValue);
+      if (bRules.minOrderQty) b2bMinOrderQty = Number(bRules.minOrderQty);
+    }
 
     // Use pure PricingService
     const pricing = PricingService.calculate(
@@ -105,8 +144,13 @@ export class OrderService {
       variantMap,
       couponData,
       isB2B,
+      bundlesMap,
       dto.contact.state,
-      env.sellerState
+      env.sellerState,
+      prepaidDiscountPercent,
+      shippingBaseRate,
+      b2bMinOrderValue,
+      b2bMinOrderQty
     );
 
     const order = await prisma.$transaction(async (tx) => {
@@ -251,12 +295,12 @@ export class OrderService {
             amount: amount,
             provider: 'razorpay',
             transactionId: transactionId,
-            status: 'captured',
+            status: 'CAPTURED',
           },
         });
 
         await tx.inventoryReservation.updateMany({
-          where: { orderId, status: { in: ['ACTIVE', 'active'] } },
+          where: { orderId, status: 'ACTIVE' },
           data: { status: 'COMMITTED' }
         });
 
@@ -328,6 +372,139 @@ export class OrderService {
         }
       }
     });
+  }
+
+  /**
+   * Generates a new order from a recurring subscription payment webhook.
+   */
+  static async generateReplenishmentOrder(subscription: any, transactionId: string, amount: number) {
+    // 1. Find the user's most recent order containing this product to copy address & variant
+    const lastOrderWithProduct = await prisma.orderItem.findFirst({
+      where: {
+        order: { userId: subscription.userId },
+        productVariant: { productId: subscription.productId }
+      },
+      orderBy: { order: { createdAt: 'desc' } },
+      include: {
+        order: true,
+        productVariant: { include: { product: true } }
+      }
+    });
+
+    if (!lastOrderWithProduct) {
+      Logger.error("Cannot generate replenishment: No previous order found for subscription", { subscriptionId: subscription.id });
+      return;
+    }
+
+    const { order: previousOrder, productVariant } = lastOrderWithProduct;
+
+    // 2. Calculate Pricing (with subscription discount)
+    const discountPercent = productVariant.product.subscriptionDiscountPercent || 0;
+    const basePrice = productVariant.price.toNumber();
+    const discountedPrice = basePrice * (1 - discountPercent / 100);
+    const subTotal = discountedPrice * subscription.qty;
+    
+    // Simplistic tax calculation for replenishment (assuming 0 shipping for simplicity or same logic)
+    const taxRate = productVariant.product.gstRate ? productVariant.product.gstRate.toNumber() : 0;
+    const isInterstate = previousOrder.shippingAddress && (previousOrder.shippingAddress as any).state !== getServerEnv().sellerState;
+    const taxFactor = taxRate / 100;
+    const taxAmount = subTotal * taxFactor;
+
+    const cgstAmount = isInterstate ? 0 : taxAmount / 2;
+    const sgstAmount = isInterstate ? 0 : taxAmount / 2;
+    const igstAmount = isInterstate ? taxAmount : 0;
+    const total = subTotal + taxAmount;
+
+    // 3. Create the Order
+    const newOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          userId: subscription.userId,
+          subTotal,
+          taxTotal: taxAmount,
+          cgstTotal: cgstAmount,
+          sgstTotal: sgstAmount,
+          igstTotal: igstAmount,
+          shippingTotal: 0, // Assume free shipping for subscriptions
+          discountTotal: (basePrice - discountedPrice) * subscription.qty,
+          total: total, // Wait, amount from razorpay webhook might be different, but we trust razorpay amount for payment tracking
+          status: OrderStatus.CONFIRMED,
+          paymentMethod: 'RAZORPAY_SUBSCRIPTION',
+          paymentStatus: PaymentStatus.CAPTURED,
+          fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
+          shippingAddress: previousOrder.shippingAddress || {},
+          billingAddress: previousOrder.billingAddress || {},
+          items: {
+            create: [{
+              productVariantId: productVariant.id,
+              qty: subscription.qty,
+              rate: discountedPrice,
+              taxRate: taxRate,
+              taxAmount: taxAmount,
+              cgstAmount,
+              sgstAmount,
+              igstAmount,
+              total: subTotal + taxAmount
+            }]
+          }
+        }
+      });
+
+      // Commit payment transaction using Razorpay amount
+      await tx.paymentTransaction.create({
+        data: {
+          orderId: order.id,
+          amount: amount,
+          provider: 'razorpay',
+          transactionId: transactionId,
+          status: 'CAPTURED',
+        },
+      });
+
+      // Generate invoice
+      await OrderService.generateInvoiceRecord(tx, order.id, getServerEnv());
+
+      // Update inventory (Commit directly since payment is captured)
+      const level = await tx.inventoryLevel.findFirst({
+        where: { productVariantId: productVariant.id, available: { gte: subscription.qty } }
+      });
+      if (level) {
+        await tx.inventoryLevel.update({
+          where: { id: level.id },
+          data: { 
+            available: { decrement: subscription.qty },
+            committed: { increment: subscription.qty }
+          }
+        });
+      } else {
+        Logger.warn("Replenishment order created but insufficient stock", { orderId: order.id });
+      }
+
+      const event = new OrderCreatedEvent(order.id, order.userId, amount, false, undefined);
+      await eventBus.publishWithinTransaction(tx, event);
+
+      const orderPaidEvent = new OrderPaidEvent(order.id, amount, transactionId);
+      await eventBus.publishWithinTransaction(tx, orderPaidEvent);
+
+      return order;
+    });
+
+    Logger.info("Replenishment order successfully generated", { orderId: newOrder.id, subscriptionId: subscription.id });
+    
+    // Update next billing date
+    let newDate = new Date();
+    if (subscription.frequency === "MONTHLY") {
+      newDate.setMonth(newDate.getMonth() + 1);
+    } else if (subscription.frequency === "WEEKLY") {
+      newDate.setDate(newDate.getDate() + 7);
+    }
+    
+    await prisma.customerSubscription.update({
+      where: { id: subscription.id },
+      data: { nextBillingDate: newDate, updatedAt: new Date() }
+    });
+
+    return newOrder;
   }
 }
 

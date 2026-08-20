@@ -48,6 +48,19 @@ export class PostgresSearchAdapter implements ISearchAdapter {
       };
     }
 
+    if (filters?.spiceLevel && filters.spiceLevel.length > 0) {
+      where.spiceLevel = { in: filters.spiceLevel };
+    }
+    if (filters?.dietType && filters.dietType.length > 0) {
+      where.dietType = { in: filters.dietType };
+    }
+    if (filters?.region && filters.region.length > 0) {
+      where.region = { in: filters.region };
+    }
+    if (filters?.mealPairing && filters.mealPairing.length > 0) {
+      where.mealPairing = { in: filters.mealPairing };
+    }
+
     // Run query
     try {
       const [total, records] = await Promise.all([

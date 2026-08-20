@@ -1,9 +1,9 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-// IMPORTANT: Protect this route in production with session checking (e.g., NextAuth/Auth.js)!
 
 import { checkApiAdminOrManager } from "@/lib/auth/rbac";
 
@@ -20,6 +20,16 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB limit
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: "File exceeds 5MB limit" }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -40,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(media, { status: 201 });
   } catch (error) {
-    console.error("Upload error:", error);
+    Logger.error("Upload error:", error);
     return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
   }
 }
@@ -57,7 +67,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(mediaFiles);
   } catch (error) {
-    console.error("Fetch media error:", error);
+    Logger.error("Fetch media error:", error);
     return NextResponse.json({ error: "Failed to fetch media" }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { EventEmitter } from 'events';
 import { DomainEvent } from '../../core/domain/events/DomainEvent';
 
@@ -24,7 +25,7 @@ export class EventBus {
       try {
         await handler(event);
       } catch (err) {
-        console.error(`Error handling event ${eventType}:`, err);
+        Logger.error(`Error handling event ${eventType}:`, err);
       }
     });
   }

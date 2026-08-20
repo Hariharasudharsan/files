@@ -48,6 +48,71 @@ enum AddressType {
   SHIPPING
 }
 
+enum PaymentTransactionStatus {
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum InventoryReservationStatus {
+  ACTIVE
+  COMMITTED
+  RELEASED
+}
+
+enum ShipmentStatus {
+  PENDING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+enum TrackingStatus {
+  PENDING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+enum DeliveryAttemptStatus {
+  FAILED
+  SUCCESS
+}
+
+enum WebhookEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+enum ERPSyncStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum ReturnRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  RECEIVED
+}
+
+enum RefundStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum SampleRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+}
+
 // ----------------------------------------------------
 // Core E-Commerce Entities
 // ----------------------------------------------------
@@ -119,6 +184,21 @@ model Product {
   hsnCode             String?
   gstRate             Decimal @default(0) @db.Decimal(5, 2)
 
+  // Preparation Guides
+  fryingTemp          String?
+  airFryerSetting     String?
+  microwaveTime       String?
+
+  // Dynamic Filters
+  spiceLevel          String?
+  dietType            String?
+  region              String?
+  mealPairing         String?
+
+  // Subscriptions
+  isSubscribable              Boolean @default(false)
+  subscriptionDiscountPercent Float   @default(0)
+
   // Merchandising & Discoverability
   isFeatured     Boolean  @default(false)
   searchKeywords String[] // Array of keywords
@@ -142,6 +222,9 @@ model Product {
   images      ProductImage[]
   collections ProductCollection[]
   tags        ProductTag[]
+  badges      ProductBadge[]
+  bundleRules BundleRuleProduct[]
+  subscriptions CustomerSubscription[]
 
   relatedProducts            RelatedProduct[]           @relation("ProductToRelated")
   relatedTo                  RelatedProduct[]           @relation("RelatedToProduct")
@@ -182,6 +265,28 @@ model ProductTag {
   tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([productId, tagId])
+}
+
+model Badge {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  icon      String?
+  bgColor   String?
+  textColor String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products ProductBadge[]
+}
+
+model ProductBadge {
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge   @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@id([productId, badgeId])
 }
 
 model RelatedProduct {
@@ -225,6 +330,7 @@ model ProductVariant {
   height      Float?
 
   // State
+  isBestValue Boolean  @default(false)
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -260,6 +366,7 @@ model Review {
   title      String?
   comment    String? @db.Text
   isApproved Boolean @default(false)
+  isFeatured Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -323,6 +430,8 @@ model User {
   referrals               Referral[]              @relation("Referrer")
   referredBy              Referral?               @relation("ReferredUser")
   giftCards               GiftCard[]
+  subscriptions           CustomerSubscription[]
+  sampleRequests          SampleRequest[]
 }
 
 model Address {
@@ -401,11 +510,51 @@ model Coupon {
   validFrom     DateTime
   validUntil    DateTime
   isActive      Boolean  @default(true)
+  isPromoted    Boolean  @default(false)
+  promotedProductId String?
+  promotedTitle     String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   orders Order[]
+}
+
+model BundleRule {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  size        Int
+  price       Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products BundleRuleProduct[]
+}
+
+model BundleRuleProduct {
+  bundleRuleId String
+  bundleRule   BundleRule @relation(fields: [bundleRuleId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([bundleRuleId, productId])
+}
+
+model CustomerSubscription {
+  id                     String   @id @default(uuid())
+  userId                 String
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId              String
+  product                Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  qty                    Int
+  frequency              String   @default("MONTHLY") // e.g. MONTHLY
+  status                 String   @default("ACTIVE") // ACTIVE, PAUSED, CANCELLED
+  razorpaySubscriptionId String?  @unique
+  nextBillingDate        DateTime
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
 model Order {
@@ -519,7 +668,7 @@ model InventoryReservation {
   orderId          String?
   qty              Int
   expiresAt        DateTime
-  status           String         @default("ACTIVE") // ACTIVE, COMMITTED, RELEASED
+  status           InventoryReservationStatus @default(ACTIVE) // ACTIVE, COMMITTED, RELEASED
   createdAt        DateTime       @default(now())
 
   @@index([status, expiresAt])
@@ -533,7 +682,7 @@ model PaymentTransaction {
   currency      String   @default("INR")
   provider      String   @default("razorpay")
   transactionId String   @unique // e.g., razorpay_payment_id
-  status        String // AUTHORIZED, CAPTURED, FAILED, REFUNDED
+  status        PaymentTransactionStatus // AUTHORIZED, CAPTURED, FAILED, REFUNDED
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -555,7 +704,7 @@ model Shipment {
   order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   trackingCode String?
   courier      String? // e.g., Delhivery, BlueDart via Shiprocket
-  status       String // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+  status       ShipmentStatus // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
   dispatchedAt DateTime?
   deliveredAt  DateTime?
   createdAt    DateTime  @default(now())
@@ -590,7 +739,7 @@ model Tracking {
   id          String   @id @default(uuid())
   shipmentId  String
   shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  status      String
+  status      TrackingStatus
   location    String?
   description String?
   timestamp   DateTime @default(now())
@@ -601,7 +750,7 @@ model DeliveryAttempt {
   shipmentId  String
   shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   attemptedAt DateTime @default(now())
-  status      String // FAILED, SUCCESS
+  status      DeliveryAttemptStatus // FAILED, SUCCESS
   reason      String?
 }
 
@@ -614,7 +763,7 @@ model WebhookEvent {
   provider    String // e.g., razorpay, erpnext, shiprocket
   eventType   String // e.g., payment.captured, order.shipped
   payload     Json
-  status      String    @default("PENDING") // PENDING, PROCESSING, PROCESSED, FAILED
+  status      WebhookEventStatus @default(PENDING) // PENDING, PROCESSING, PROCESSED, FAILED
   error       String?
   processedAt DateTime?
   createdAt   DateTime  @default(now())
@@ -630,6 +779,8 @@ model OutboxEvent {
   payload       Json
   published     Boolean  @default(false)
   createdAt     DateTime @default(now())
+  
+  @@index([published])
 }
 
 model ERPSync {
@@ -638,7 +789,7 @@ model ERPSync {
   entityId     String // ID in our local DB
   targetSystem String   @default("erpnext")
   targetId     String? // e.g., ERPNext Sales Order name
-  status       String // PENDING, SUCCESS, FAILED
+  status       ERPSyncStatus // PENDING, SUCCESS, FAILED
   attempts     Int      @default(0)
   lastError    String?
   orderId      String?
@@ -669,6 +820,9 @@ model CmsPage {
   title           String
   slug            String    @unique
   status          String    @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED, ARCHIVED
+  type            String    @default("PAGE") // PAGE, STORY
+  excerpt         String?   @db.Text
+  featuredImage   String?
   publishedAt     DateTime?
   activeVersionId String?
   createdAt       DateTime  @default(now())
@@ -718,10 +872,14 @@ model Footer {
 model Banner {
   id        String   @id @default(uuid())
   title     String
+  subtitle  String?
   link      String?
   mediaId   String?
   media     Media?   @relation(fields: [mediaId], references: [id])
   isActive  Boolean  @default(true)
+  validFrom DateTime?
+  validUntil DateTime?
+  sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -902,7 +1060,7 @@ model ReturnRequest {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reason    String
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED, RECEIVED
+  status    ReturnRequestStatus @default(PENDING) // PENDING, APPROVED, REJECTED, RECEIVED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -917,7 +1075,7 @@ model Refund {
   order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
   amount          Decimal        @db.Decimal(10, 2)
   reason          String?
-  status          String         @default("PENDING") // PENDING, COMPLETED, FAILED
+  status          RefundStatus   @default(PENDING) // PENDING, COMPLETED, FAILED
   transactionId   String? // Gateway refund ID
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -955,4 +1113,48 @@ model InvoiceSequence {
   year      Int      @unique
   lastValue Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------
+// B2B & Wholesale
+// ----------------------------------------------------
+
+model SampleRequest {
+  id           String              @id @default(uuid())
+  userId       String?
+  user         User?               @relation(fields: [userId], references: [id])
+  businessName String
+  contactName  String
+  email        String
+  phone        String
+  address      Json
+  status       SampleRequestStatus @default(PENDING) // PENDING, APPROVED, REJECTED, FULFILLED
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+}
+
+// ----------------------------------------------------
+// Shipping Zones & Serviceability (Phase 3)
+// ----------------------------------------------------
+
+model ShippingZone {
+  id              String               @id @default(cuid())
+  name            String
+  estimatedDays   String
+  rate            Float                @default(0)
+  isServiceable   Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  pincodes        ServiceablePincode[]
+}
+
+model ServiceablePincode {
+  pincode      String        @id
+  zoneId       String
+  zone         ShippingZone  @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([zoneId])
 }

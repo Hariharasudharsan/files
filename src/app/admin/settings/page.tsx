@@ -13,7 +13,8 @@ export default async function AdminSettingsPage() {
     storeName: businessConfig.brandName,
     supportEmail: businessConfig.supportEmail,
     metaTitle: businessConfig.seo.defaultTitle,
-    metaDescription: businessConfig.seo.defaultDescription
+    metaDescription: businessConfig.seo.defaultDescription,
+    prepaidDiscountPercent: 0
   };
 
   return (
@@ -46,6 +47,28 @@ export default async function AdminSettingsPage() {
                   type="email"
                   name="supportEmail"
                   defaultValue={configValue.supportEmail}
+                  required
+                  className="w-full rounded-xl border border-surface-300 bg-white px-4 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-surface-900">Prepaid Discount (%)</label>
+                <input
+                  type="number"
+                  name="prepaidDiscountPercent"
+                  defaultValue={configValue.prepaidDiscountPercent}
+                  min="0"
+                  max="100"
+                  required
+                  className="w-full rounded-xl border border-surface-300 bg-white px-4 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-surface-900">Happy Customers Count</label>
+                <input
+                  type="number"
+                  name="happyCustomersCount"
+                  defaultValue={configValue.happyCustomersCount || 500000}
                   required
                   className="w-full rounded-xl border border-surface-300 bg-white px-4 py-2 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 />

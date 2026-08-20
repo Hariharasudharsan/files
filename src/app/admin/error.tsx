@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { useEffect } from "react";
 import { AlertCircle, RefreshCcw } from "lucide-react";
@@ -13,7 +14,7 @@ export default function AdminError({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service like Sentry
-    console.error("[Admin Error Boundary]", error);
+    Logger.error("[Admin Error Boundary]", error);
   }, [error]);
 
   return (

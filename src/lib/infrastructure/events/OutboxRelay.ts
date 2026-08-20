@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { orderSyncQueue } from '../queue/bullmq';
 
 import { prisma } from "@/lib/infrastructure/database/prisma";
@@ -15,6 +16,8 @@ export class OutboxRelay {
 
     if (unpublishedEvents.length === 0) return;
 
+    const successfulIds: string[] = [];
+
     for (const event of unpublishedEvents) {
       try {
         // Route event to specific queue based on type
@@ -25,15 +28,19 @@ export class OutboxRelay {
         }
         // Add more routing as needed
 
-        // Mark as published
-        await prisma.outboxEvent.update({
-          where: { id: event.id },
-          data: { published: true }
-        });
+        successfulIds.push(event.id);
       } catch (error) {
-        console.error(`Failed to relay event ${event.id}`, error);
+        Logger.error(`Failed to relay event ${event.id}`, error);
         // We do not mark as published so it will be retried on next poll
       }
+    }
+
+    if (successfulIds.length > 0) {
+      // Mark all successful events as published in a single query
+      await prisma.outboxEvent.updateMany({
+        where: { id: { in: successfulIds } },
+        data: { published: true }
+      });
     }
   }
 }

@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { useState, useEffect, useRef } from "react";
 import { Search, X, Clock, TrendingUp } from "lucide-react";
@@ -36,8 +37,8 @@ export default function SearchAutocomplete({ isOpen, onClose }: { isOpen: boolea
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         setResults(data.products || []);
-      } catch (e) {
-        console.error(e);
+      } catch (e: any) {
+        Logger.error("Search error", e);
       } finally {
         setIsLoading(false);
       }

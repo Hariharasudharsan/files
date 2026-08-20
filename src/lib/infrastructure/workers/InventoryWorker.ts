@@ -5,7 +5,7 @@ export async function releaseExpiredReservations() {
   try {
     const expiredReservations = await prisma.inventoryReservation.findMany({
       where: {
-        status: { in: ['ACTIVE', 'active'] },
+        status: 'ACTIVE',
         expiresAt: { lt: new Date() }
       }
     });

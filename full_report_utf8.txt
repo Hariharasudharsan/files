@@ -1,0 +1,665 @@
+﻿<USER_REQUEST>
+# Mathuram Foods Storefront — Repository Audit Report
+
+
+
+**Repository:** github.com/Hariharasudharsan/files (branch: `master`, HEAD at time of audit)
+
+**Scope:** Full repository (~17,700 lines of TypeScript/TSX across `src/`), Prisma schema (65+ models), Docker/CI configuration, dependency tree.
+
+**Method:** Static code reading of every architecturally significant file, cross-file tracing of critical flows (auth, checkout, webhooks, ERP sync), empirical verification where possible (module resolution, `npm audit` against the real lockfile, `eslint` run against the real codebase), and targeted external verification of one library-behavior claim (NextAuth v4 middleware/session-strategy compatibility — cited below). Every finding below is tied to a specific file; nothing here is generic advice.
+
+
+
+**Sandbox limitation (read this first):** `prisma generate` could not complete in this audit environment because it needs to download engine binaries from `binaries.prisma.sh`, which this sandbox's network policy doesn't allow. This blocked a full `tsc --noEmit`, most of the Vitest suite, Playwright E2E, and `npm run build` — these are marked **UNVERIFIED** below with the reason. This is a constraint of *this audit sandbox*, not evidence of a problem in your repo — your real CI runner has open internet access. `npm install`, `npm audit`, and `eslint` **did** run for real against your actual lockfile and source, and their output below is real tool output, not inference.
+
+
+
+---
+
+
+
+## A. Executive Summary
+
+
+
+| Category | Score | Note |
+
+|---|---|---|
+
+| Architecture | 7/10 | Strong, documented, mostly-followed hexagonal design; 59% of API routes bypass the repository layer the docs mandate |
+
+| Frontend | 7/10 | Comprehensive route coverage; solid auth defense-in-depth on account pages; one duplicate-page bug found |
+
+| Backend | 7/10 | Good validation and error-handling patterns overall, with a few concrete inconsistencies (below) |
+
+| Database | 8/10 | Well-modeled Indian-tax-compliant schema, correct Decimal usage, smart atomic sequencing; some raw-string status fields and dead schema surface |
+
+| Security | 6/10 | Real strengths (HMAC webhook verification, redaction, rate limiting, zod env validation) undercut by pinned-vulnerable deps and an env-var mismatch |
+
+| Performance | Unmeasured | Build couldn't complete in-sandbox (see above); no obvious N+1s found in reviewed code paths |
+
+| Testing | 6/10 | Genuinely good coverage of the riskiest flows (pricing, invoice concurrency, webhook replay); CI test job is missing the env vars those tests need |
+
+| DevOps | 6/10 | Solid Docker/health-check/Sentry setup undercut by a deploy pipeline that **never fires** (see Critical #2) |
+
+| ERPNext Integration | 6/10 | Well-scaffolded for its deliberately-deferred state; real signature verification and queue-based retries; a few concrete gaps before flipping it on |
+
+| **Production Readiness** | **4/10** | **Two showstopper bugs (below) must be fixed before this is deployable as-is** |
+
+
+
+**Overall Project Health: 6/10** — this is a thoughtfully engineered codebase (correct server-side pricing, real webhook security, atomic invoice numbering with a dedicated concurrency test, zod-validated config) let down by two concrete, narrow, fixable blockers and a handful of real medium-severity gaps. Nothing here suggests a rewrite; it suggests a focused stabilization pass.
+
+
+
+---
+
+
+
+## B. Project Architecture Map
+
+
+
+This is a Next.js 16 (App Router) storefront for Mathuram Foods, backed by its **own Postgres database** (Prisma 7, driver adapters) as the source of truth — not by live ERPNext calls. ERPNext is treated as an external system that gets synced to asynchronously, matching your stated plan to launch standalone first:
+
+
+
+```
+
+Browser
+
+ ↓
+
+Next.js App Router (src/app) ── pages + /api route handlers
+
+ ↓
+
+NextAuth v4 (Google OAuth only, database session strategy)
+
+ ↓
+
+Application services (src/lib/core/application — OrderService, InvoiceService, PricingService)
+
+ ↓
+
+Repositories (src/lib/repositories) ─┬─ intended sole Prisma access point (see Critical/High #3)
+
+                                       │
+
+ Postgres (Prisma 7 + @prisma/adapter-pg) ←┘
+
+ ↓
+
+Outbox (OutboxEvent) → BullMQ (Redis) → Workers (Dockerfile.worker, separate process)
+
+ ↓
+
+External Services
+
+  ├── ERPNext/Frappe (FrappeClient — REST, HMAC-verified inbound webhooks)
+
+  ├── Razorpay (payments — HMAC-verified webhooks, constant-time compare)
+
+  ├── Shiprocket (shipping webhooks)
+
+  ├── WhatsApp (order notifications, abandoned-cart webhook)
+
+  ├── AWS S3 (media storage)
+
+  └── Sentry (client/edge/server error tracking)
+
+```
+
+
+
+The intended layering is documented in `src/lib/ARCHITECTURE.md` (domain → core/application → repositories → infrastructure → app/api, transactional outbox for events, `ApiError`/`withErrorHandler` for errors, a Pino-backed `Logger` for logging). Most of the codebase follows this. The two places it doesn't (API routes querying Prisma directly, and the logger duplication) are documented as findings below rather than asserted from the doc alone — I verified both against the actual source.
+
+
+
+Two small doc/code drifts, for completeness: `ARCHITECTURE.md` places domain entities at `src/lib/domain/`; the actual path is `src/lib/core/domain/`. The doc also lists Stripe as infrastructure; there is no Stripe SDK, env var, or reference anywhere in the repo — payments are Razorpay-only.
+
+
+
+---
+
+
+
+## C. Critical Issues
+
+
+
+### ISSUE-001: Admin panel is unreachable — NextAuth session strategy is incompatible with the middleware that gates it
+
+**SEVERITY:** CRITICAL
+
+**CATEGORY:** Authentication / Broken Integration
+
+**AFFECTED FILES:** `middleware.ts`, `src/modules/auth/infrastructure/authOptions.ts`, `src/app/admin/login/page.tsx`
+
+**ROOT CAUSE:** `authOptions.ts` sets `session: { strategy: "database" }` (a deliberate choice, per its own comment, "Switched to database for authorization revocation" — good instinct for instant session revocation). But `middleware.ts` protects `/admin/:path*` and `/api/admin/:path*` using `withAuth` from `next-auth/middleware`, which reads `req.nextauth.token` via `getToken()`. **NextAuth v4's `withAuth`/`getToken()` only supports the `"jwt"` session strategy** — this is stated directly in NextAuth's own docs and is a well-documented, longstanding limitation:
+
+  - NextAuth's own docs: *"the withAuth middleware only supports 'jwt' as s[ession strategy]"*
+
+  - A NextAuth maintainer/community response on this exact scenario: *"you can't use withAuth if you're using a session database strategy. It only works with a jwt session strategy."*
+
+  - A detailed write-up of the exact symptom: *"the middleware tries to retrieve the session token (JWT)... but when using the database session strategy, this token doesn't exist, and getToken returns null. This means that even if you sign in successfully, the middleware will think you're not signed in."*
+
+
+
+  With `getToken()` always returning `null`, `isAuth` in `middleware.ts` is **always `false`**, for every request, regardless of whether the visitor is actually a signed-in admin.
+
+**IMPACT:** `admin/login/page.tsx` calls `signIn("google", { callbackUrl: "/admin" })`. After a real admin successfully completes Google OAuth, NextAuth redirects the browser to `/admin` — and the middleware immediately bounces it back to `/admin/login`, because it (incorrectly) sees no token. This is a **login loop**: nobody, including legitimate ADMIN/MANAGER users, can reach the admin dashboard, product management, order management, inventory, or any other `/admin/*` or `/api/admin/*` functionality through normal navigation. Note the direction of the bug: it fails **closed** (locks everyone out) rather than open, so it is not an unauthorized-access vulnerability — it's a total-lockout functional bug. Separately, `src/app/admin/layout.tsx` and `src/lib/auth/rbac.ts` **do** implement correct, working authorization via `getServerSession()` (which is not JWT-restricted) — but that code never gets a chance to run, because the broken middleware redirects before the request reaches it.
+
+**RECOMMENDED FIX:** Pick one: (a) switch back to `session.strategy: "jwt"` and accept the revocation trade-off the code comment was trying to avoid; (b) remove `/admin` and `/api/admin` from the middleware `matcher` entirely and rely solely on the already-correct `getServerSession`/`rbac.ts` checks in `admin/layout.tsx` and each admin API route (verify every admin API route actually calls `checkApiAdminOrManager()` — most do, per this audit, but this should be a deliberate, checked decision, not an accident); or (c) migrate to Auth.js v5, which restructures middleware auth around a unified `auth()` helper that isn't JWT-only in the same way.
+
+**DEPENDENCIES:** Fixing this should happen before any other admin-facing work is validated, since none of it is currently reachable to test manually.
+
+**VERIFICATION NOTE:** This is traced from source plus authoritative external documentation with high confidence, but I could not complete a live smoke-test (attempt a real Google OAuth admin login against a running instance) in this sandbox — recommend that as the final confirmation step.
+
+
+
+### ISSUE-002: Production deploy job can never run — branch name mismatch
+
+**SEVERITY:** CRITICAL
+
+**CATEGORY:** DevOps / CI-CD
+
+**AFFECTED FILES:** `.github/workflows/ci-cd.yml`
+
+**ROOT CAUSE:** The workflow triggers `on: push/pull_request: branches: ["master"]`. The repository's actual default (and only) branch is `master` (confirmed via `git remote show origin`). But the `build-and-deploy` job is gated by `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` — checking for a branch called `main`, which does not exist in this repository.
+
+**IMPACT:** Every merge to `master` runs lint/typecheck/tests (whatever passes in that job — see ISSUE-006 below), builds and pushes a Docker image to GHCR with a SHA tag... and the `deploy` job's condition is simply never true, so the SSH-and-`docker compose up` deployment step never executes. Nothing is ever automatically deployed, silently.
+
+**RECOMMENDED FIX:** One-line fix — change `refs/heads/main` to `refs/heads/master` (or rename the branch to `main` and update `on.branches` to match, if you'd rather standardize on `main`).
+
+**DEPENDENCIES:** None — this is an isolated, trivial fix once identified. Also confirm `secrets.VPS_HOST`, `VPS_USERNAME`, `VPS_SSH_KEY`, `VPS_PROJECT_PATH`, and `DATABASE_URL` are actually populated in the repo's Actions secrets — **UNVERIFIED**, I have no access to repository settings.
+
+
+
+---
+
+
+
+## D. High Priority Issues
+
+
+
+### ISSUE-003: 59% of API routes bypass the repository layer your own architecture doc mandates
+
+**SEVERITY:** HIGH | **CATEGORY:** Architecture / Layering
+
+**AFFECTED FILES:** 19 of 32 `route.ts` files under `src/app/api/`, including both webhook handlers (`api/webhooks/razorpay`, `api/webhooks/erpnext`, `api/webhooks/shiprocket`, `api/webhooks/whatsapp`), `api/admin/media`, `api/v1/wishlist`, `api/v1/invoices/[id]`, `api/v1/orders/track`, `api/v1/orders/verify-payment`, `api/search`, `api/health`, and others (full list available on request).
+
+**ROOT CAUSE:** `src/lib/ARCHITECTURE.md` states repositories are "the only layer permitted to directly import and use `@prisma/client`." In practice, these 19 route files `import { prisma } from "@/lib/infrastructure/database/prisma"` and query it directly.
+
+**IMPACT:** Not a runtime bug — the app works — but it means the documented architecture and the actual architecture have diverged for the majority of the API surface, which undermines the stated goals of testability and a swappable data layer, and will make future refactors harder to reason about.
+
+**RECOMMENDED FIX:** Either formally amend the architecture doc to carve out an explicit exception for simple, single-model CRUD/webhook routes (a defensible, common real-world pattern), or migrate these 19 routes' queries into `src/lib/repositories/`. I'd recommend the former for the read-mostly/simple routes (health, search, wishlist) and the latter for the money-critical ones (the four webhook handlers), since those are exactly the places you'll want consistent, tested query logic.
+
+
+
+### ISSUE-004: `AUTH_SECRET` is validated at startup; NextAuth actually reads a different variable
+
+**SEVERITY:** HIGH | **CATEGORY:** Configuration / Security
+
+**AFFECTED FILES:** `src/lib/core/config/env.ts`, `src/modules/auth/infrastructure/authOptions.ts`
+
+**ROOT CAUSE:** `env.ts`'s zod schema requires `AUTH_SECRET` (`.min(32, ...)`) and **throws**, aborting boot, if it's missing or short. But `authOptions.ts` sets `secret: process.env.NEXTAUTH_SECRET` — a different env var that `env.ts`'s schema doesn't validate at all.
+
+**IMPACT:** The startup check can pass (because `AUTH_SECRET` is set) while `NEXTAUTH_SECRET` — the value NextAuth actually signs/encrypts sessions with — is unset or weak. `.env.example` does list both, so a careful operator following it exactly will avoid this, but the app's own "fail loud if misconfigured" safety net doesn't actually cover the variable that matters here.
+
+**RECOMMENDED FIX:** Add `NEXTAUTH_SECRET` to the zod schema (same `.min(32, ...)` rule), and either drop `AUTH_SECRET` or have one derive from the other, so there's exactly one secret to configure and it's the one that's enforced.
+
+
+
+### ISSUE-005: Two high-severity npm vulnerabilities are pinned in place by `package.json` `overrides`
+
+**SEVERITY:** HIGH | **CATEGORY:** Dependency Security
+
+**AFFECTED FILES:** `package.json` (`overrides` block), confirmed via `npm audit` against the real installed tree
+
+**DETAIL:** `npm audit` (real output, run against your actual lockfile in this sandbox) reports 8 vulnerabilities (1 low, 7 high). Two of the high-severity ones are specifically kept in the vulnerable range by your own `overrides`:
+
+  - `fast-uri` — override pins `^3.0.0`; vulnerable range is `3.0.0–3.1.4` (host-confusion via backslash authority injection, GHSA-7p8r-x3mc-p8w7). The override needs to move to `>=3.1.5`.
+
+  - `js-yaml` — override pins `^4.1.0`; vulnerable range is `4.0.0–4.3.0` (quadratic CPU consumption in `!!omap` resolution, GHSA-5p4m-2wfm-xmqj). Needs a version that includes the backport.
+
+  Two more are transitive, not overridden: `sharp <0.35.0` (via `next`'s image optimization — inherited `libvips` CVEs) and `deepmerge-ts <8.0.0` (via `@prisma/config`/`prisma` tooling — stack exhaustion). Fixing `deepmerge-ts` via `npm audit fix --force` would downgrade `prisma` to 6.12.0, which conflicts with your recent Prisma 7 driver-adapter migration — this one needs a deliberate decision, not an automatic fix.
+
+**RECOMMENDED FIX:** Bump the two overridden packages past their vulnerable ranges; run `npm audit fix` for `esbuild`/`fast-uri`/`js-yaml`/`sharp` (non-breaking); track the Prisma/`deepmerge-ts` one separately since forcing it breaks your v7 upgrade.
+
+
+
+### ISSUE-006: CI test job has no database/Redis — integration and E2E tests almost certainly fail (or never really run) in CI
+
+**SEVERITY:** HIGH | **CATEGORY:** Testing / CI
+
+**AFFECTED FILES:** `.github/workflows/ci-cd.yml`, `src/tests/integration/*`, `src/tests/e2e/*`, `playwright.config.ts`
+
+**ROOT CAUSE:** The `test` job runs `npx prisma generate`, typecheck, lint, and `npm run test`/Playwright, but defines no `DATABASE_URL`, `REDIS_URL`, or other required env vars, and no Postgres/Redis service containers. Your integration tests (`InvoiceService.test.ts`, `invoice-concurrency.test.ts`, `webhook-replay.test.ts`, `client-price.test.ts`, `financial.test.ts`) directly use `prisma` against a real database. Playwright's `webServer` config runs `npm run dev` in CI (since `reuseExistingServer: !process.env.CI` is false there) — that dev server would itself fail to serve any DB-backed route without `DATABASE_URL`.
+
+**IMPACT:** Either these jobs are currently failing in CI (in which case they may be getting ignored/not blocking merges), or they're not meaningfully exercising the code they're meant to test. Given the quality of the tests themselves (see the Testing section below), this looks like a CI wiring gap rather than a testing-discipline gap — the tests are good, they're just not resourced correctly in the pipeline.
+
+**RECOMMENDED FIX:** Add `postgres:16` and `redis:7` service containers to the `test` job (standard GitHub Actions `services:` block) and pass matching `DATABASE_URL`/`REDIS_URL` env vars, then run `prisma migrate deploy` before the test step.
+
+
+
+---
+
+
+
+## E. Medium and Low Priority Issues
+
+
+
+### MEDIUM
+
+
+
+**ISSUE-007 — Duplicate/dead Logger implementations, one of them unreachable.** `src/lib/infrastructure/logger.ts` (a file) and `src/lib/infrastructure/logger/index.ts` (a directory index, alongside it) both export a class called `Logger`. I verified empirically (a standalone Node resolution test) that when a file and a same-named directory sit side by side, Node/webpack resolve the **file** first — so `logger.ts` (console-based JSON logging, has sensitive-field redaction for `password`/`token`/`secret`/`card`/`cvv`/`signature`) wins for all 21 files that `import ... from "@/lib/infrastructure/logger"`, and `logger/index.ts` (properly Pino-backed, matching `ARCHITECTURE.md`, but with **no** redaction) is dead code. This also means the `pino`/`pino-pretty` dependencies in `package.json` are effectively unused at runtime. A *third*, simpler logger exists at `src/lib/utils/logger.ts` (no redaction either), used by exactly one file (`src/lib/utils/retry.ts`). **Fix:** delete two of the three, keep one, update the 22 import sites.
+
+
+
+**ISSUE-008 — Rate limiter check sits outside the route's own try/catch in two money-critical routes.** `src/app/api/v1/orders/init-payment/route.ts` and `src/app/api/webhooks/razorpay/route.ts` both call `RateLimiter.check(...)` *before* their `try` block starts. `src/app/api/webhooks/erpnext/route.ts` does this correctly (rate-limit call is inside its try/catch). Since `RateLimiter.check` does a Redis `MULTI`/`EXEC` round trip, a Redis hiccup during checkout or the Razorpay webhook would produce an unhandled exception instead of the app's normal structured error response. **Fix:** move both calls inside their try blocks (or give `RateLimiter.check` its own internal try/catch with an explicit fail-open-or-closed default).
+
+
+
+**ISSUE-009 — ERPNext webhook handler lacks the duplicate-delivery handling the Razorpay handler has.** `api/webhooks/razorpay/route.ts` catches the `P2002` unique-constraint error from a duplicate `webhookEvent.create` and responds appropriately (200 if already processed, 409 if concurrently processing). `api/webhooks/erpnext/route.ts` does the same `prisma.webhookEvent.create(...)` call but with no such catch — a retried ERPNext webhook delivery (normal, expected behavior from most webhook senders) will throw, and the outer catch returns a bare 500. **Fix:** replicate the same P2002-handling block from the Razorpay handler.
+
+
+
+**ISSUE-010 — CSP is present but meaningfully weakened.** `next.config.ts` sets a real Content-Security-Policy with Razorpay-specific script/frame allowlisting (good — not a wildcard), but `script-src` includes `'unsafe-inline' 'unsafe-eval'`, which substantially reduces CSP's value against XSS, and `connect-src` allows any `https:`/`ws:`/`wss:` origin, which weakens its value against data exfiltration if an XSS is ever achieved. **Fix:** consider Next.js's nonce-based CSP support (needs wiring through `middleware.ts`, which currently only handles auth) to drop `'unsafe-inline'`; scope `connect-src` to your actual API/CDN origins.
+
+
+
+**ISSUE-011 — Media upload endpoint has no file type or size validation.** `src/app/api/admin/media/route.ts` correctly checks `checkApiAdminOrManager()` before accepting an upload (see the note on the stale comment below), but nothing validates the uploaded file's MIME type or size before it's forwarded to S3 via `storageAdapter.uploadFile()`. Limited blast radius since it requires an authenticated admin/manager, but still worth closing. **Fix:** whitelist allowed MIME types and cap `file.size` before upload.
+
+
+
+**ISSUE-012 — Validated `paymentMethod`/`couponCode` are computed and then discarded.** `validateCreateOrderPayload()` (`src/lib/validation/orders.ts`) trims and returns both fields as part of `validation.data`, but `src/app/api/v1/orders/init-payment/route.ts` reads the **raw**, unvalidated `payload.paymentMethod`/`payload.couponCode` instead. No functional bug today (neither field has extra rules beyond trimming yet), but it means validation logic added to one place silently won't apply to what's actually used. **Fix:** use `validation.data.paymentMethod`/`validation.data.couponCode` in the route.
+
+
+
+**ISSUE-013 — Several status fields are raw strings instead of enums.** `PaymentTransaction.status`, `InventoryReservation.status`, `Shipment.status`, `Tracking.status`, `DeliveryAttempt.status`, `ReturnRequest.status`, `Refund.status`, `WebhookEvent.status`, `ERPSync.status` are all `String` with a comment listing allowed values, unlike `Order.status`/`Order.paymentStatus`/`Order.fulfillmentStatus`, which use real Prisma enums. No DB-level constraint stops an invalid value from being written. **Fix:** convert to enums where the value set is genuinely fixed (most of these), or add CHECK constraints via migration if you need to keep them as strings for a reason I don't have visibility into.
+
+
+
+**ISSUE-014 — Duplicate "Shipping Policy" pages; the site links to the weaker one.** Both `src/app/shipping/page.tsx` (detailed — concrete figures: ₹999 free-delivery threshold, ₹50 flat fee, 3–7 day estimates) and `src/app/shipping-policy/page.tsx` (two generic sentences, no figures) exist as separate routes with the identical `<h1>Shipping Policy</h1>`. `src/components/Footer.tsx` links to `/shipping-policy` — the thin one. **Fix:** pick one, redirect or delete the other, repoint the footer link.
+
+
+
+**ISSUE-015 — "Cart upsell" recommendation endpoint doesn't use cart data.** `src/app/api/v1/recommendations/cart-upsell/route.ts` returns the same 3 arbitrary non-deleted products (`take: 3`, no `orderBy`, no relation to the cart) — it's a placeholder, despite a full `Recommendation` model existing in the schema for exactly this purpose (see ISSUE-018).
+
+
+
+**ISSUE-016 — `OutboxEvent` has no index on `published`.** The outbox-relay poller (`OutboxRelay.ts` / `api/cron/outbox-relay`) almost certainly filters `WHERE published = false`; there's no index supporting that query, which will slow down as the table grows.
+
+
+
+### LOW / INFO
+
+
+
+- **ISSUE-017** — 46 files under `src/` call `console.log/warn/error/debug` directly rather than the documented `Logger` facade (full list gathered during audit, available on request). Most are server-side (API routes, workers, `EventBus.ts`, `OutboxRelay.ts`, `FrappeClient.ts`) where the architecture doc's guidance applies most directly; some are client components and error boundaries, where it's more defensible.
+
+- **ISSUE-018** — A meaningful chunk of the 65-model Prisma schema has **zero** non-test application code touching it: `Referral`, `GiftCard`, `SavedSearch`, `CmsBlock`, `Navigation`, `Footer` (the DB model, not the component), `SEO`, `NotificationTemplate`, `NotificationPreference`, `Recommendation`, and the `ReturnRequest` *creation* path (some `Refund` code exists without it). `InvoiceSequence` is used, but via raw SQL, not the typed Prisma client. Given the stated standalone-first launch plan, this is a lot of schema surface (and future migration burden) for features not yet built — worth a deliberate call on what ships in v1.
+
+- **ISSUE-019** — Stale, misleading comment in `src/app/api/admin/media/route.ts`: `// IMPORTANT: Protect this route in production with session checking...` sits directly above code that already does exactly that via `checkApiAdminOrManager()`. Worth removing so a future reviewer doesn't mistake this for an actual open vulnerability.
+
+- **ISSUE-020** — `prisma/migrations/migrate-images.ts` is a loose script sitting inside the directory Prisma reserves for its own timestamped migration folders. Move it to `scripts/`.
+
+- **ISSUE-021** — Only 5 migrations exist for the entire 65-model schema, all dated within roughly a week (Aug 6–12, 2026) — consistent with a recent consolidation. One is literally named `remove_dead_webhook_and_replay_tables`, which is a good sign of active cleanup, but it also means this migration history is young and hasn't been exercised over a long period.
+
+- **ISSUE-022** — `ErpPort.ts` (`src/lib/core/domain/ports/`) imports `{ Order, User }` from `@prisma/client` without `import type`; the sibling `ShippingPort.ts` correctly uses `import type { Order }`. Minor inconsistency that softly couples the domain layer to the ORM depending on the bundler's type-elision behavior.
+
+- **ISSUE-023** — `docker-compose.yml` publishes Postgres (5432) and Redis (6379) directly on the host, and per the CI deploy step this same compose file is what's run on the VPS — confirm the VPS firewall blocks external access to those ports, or bind them to `127.0.0.1` instead.
+
+- **ISSUE-024** — Recent commit history shows the same message (`feat: implement core infrastructure and background processing`) repeated 9+ times consecutively, despite `commitlint`/`husky` being configured (they enforce *format*, not message uniqueness/usefulness). Doesn't affect runtime, hurts future archaeology.
+
+- **ISSUE-025** — `next.config.ts`'s image `remotePatterns` falls back to a wildcard hostname (`"**"`) if `NEXT_PUBLIC_IMAGE_HOST`/`ERP_BASE_URL` is unset or fails `new URL()` — in that fallback case, Next's image optimizer would fetch from any remote host.
+
+- **ISSUE-026** — 165 occurrences of `: any` / `as any` in non-test `src/` code; the ESLint config (`eslint-config-next` defaults, unmodified) doesn't flag this despite `strict: true` in `tsconfig.json`, so there's no automated guardrail against `any` creep.
+
+- **ISSUE-027** — `.dockerignore` doesn't exclude `prompt.txt` (80KB) or `.agents/` (bundled Prisma-upgrade reference skills) from the Docker **build context**. Doesn't affect final image size (the runtime stage selectively copies `public`/`.next/standalone`/`.next/static`), but slows build-context upload and cache invalidation.
+
+
+
+---
+
+
+
+## F. Broken or Incomplete Features
+
+
+
+| Feature | Status | Problem | Files | Required Action |
+
+|---|---|---|---|---|
+
+| Admin panel (all of it) | **BROKEN** | Middleware auth gate is always-false; login loop | `middleware.ts`, `authOptions.ts` | See ISSUE-001 |
+
+| Automated production deploy | **BROKEN** | Branch condition never matches | `.github/workflows/ci-cd.yml` | See ISSUE-002 |
+
+| Cart-aware upsell recommendations | **PARTIALLY WORKING** | Returns arbitrary products, ignores cart/`Recommendation` model | `api/v1/recommendations/cart-upsell/route.ts` | Implement real logic or remove the "recommendation" framing |
+
+| Referral program | **MISSING** | Schema only, zero application code | `Referral` model | Build or drop from schema |
+
+| Gift cards | **MISSING** | Schema only, zero application code | `GiftCard` model | Build or drop from schema |
+
+| Return requests (creation) | **MISSING** | Schema + relations exist, no code creates one; `Refund` has partial code | `ReturnRequest` model | Build or drop from schema |
+
+| CMS navigation/footer editing | **MISSING** | `Navigation`/`Footer` models unused; nav/footer appear hardcoded in components | `Navigation`, `Footer` models | Build or drop from schema |
+
+| Per-entity SEO metadata via CMS | **MISSING** | `SEO` model unused | `SEO` model | Confirm metadata is handled via Next's `generateMetadata` instead, then drop the model if redundant |
+
+| Saved searches | **MISSING** | Schema only | `SavedSearch` model | Build or drop |
+
+| Notification templates/preferences | **MISSING** | Schema only | `NotificationTemplate`, `NotificationPreference` | Build or drop |
+
+| CI test job | **BROKEN (as configured)** | No DB/Redis provisioned for tests that need them | `.github/workflows/ci-cd.yml` | See ISSUE-006 |
+
+
+
+---
+
+
+
+## G. Unused / Dead Code
+
+
+
+| File/Item | Reason | Safe to Remove? | Dependencies |
+
+|---|---|---|---|
+
+| `src/lib/infrastructure/logger/index.ts` | Shadowed by sibling `logger.ts`, unreachable at import time | Yes, once redaction logic is ported into whichever logger you keep | 21 files import `@/lib/infrastructure/logger` (currently resolve to the *other* file) |
+
+| `src/lib/utils/logger.ts` | Third, redundant logger; used by exactly one file | Yes | `src/lib/utils/retry.ts` — repoint its one import first |
+
+| `pino`, `pino-pretty` (package.json deps) | Only consumed by the currently-dead `logger/index.ts` | Only if you don't keep the Pino-backed logger as the survivor | — |
+
+| `src/app/shipping-policy/page.tsx` **or** `src/app/shipping/page.tsx` | Duplicate content, same purpose | Yes, pick one | `Footer.tsx` links to `shipping-policy` — repoint first if deleting that one |
+
+| `prisma/migrations/migrate-images.ts` | Not a real migration, wrong location | Move, don't delete, unless confirmed one-off/already run | Confirm it's already been executed against production before moving |
+
+| Unused Prisma models (see ISSUE-018 list) | No non-test code references them | Not yet — do not drop without a product decision on whether these features ship | Dropping requires a migration; confirm no admin UI half-references them first |
+
+
+
+Do not delete anything above without the dependency check noted in each row — per your own instructions, dependency tracing is complete for these, but production-execution history is not something I can verify from source alone.
+
+
+
+---
+
+
+
+## H. API Audit
+
+
+
+Full inventory: 32 route files under `src/app/api/`. Table below covers every route where the audit surfaced a concrete finding; routes not listed (e.g., most `api/admin/*` CRUD routes, `api/v1/reviews`, `api/v1/newsletter`) were reviewed for auth-gating and validation presence and had no findings beyond what's already covered by ISSUE-003 (direct Prisma access) and ISSUE-017 (console logging).
+
+
+
+| Endpoint | Auth | Validation | Status | Issue | Severity |
+
+|---|---|---|---|---|---|
+
+| `POST /api/v1/orders/init-payment` | Public (rate-limited) | zod-style manual validator, but bypassed for 2 fields | Working, with gaps | ISSUE-008, ISSUE-012 | MEDIUM |
+
+| `POST /api/webhooks/razorpay` | HMAC signature (constant-time) | N/A | Working, well-built | ISSUE-008 | MEDIUM |
+
+| `POST /api/webhooks/erpnext` | HMAC signature (constant-time) | N/A | Working, missing idempotency | ISSUE-009 | MEDIUM |
+
+| `GET /api/v1/recommendations/cart-upsell` | Public (rate-limited) | N/A | Stub — not personalized | ISSUE-015 | LOW |
+
+| `POST/GET /api/admin/media` | `checkApiAdminOrManager()` — correctly enforced | No file type/size check | Working, with gap | ISSUE-011, ISSUE-019 | MEDIUM |
+
+| `POST /api/auth/[...nextauth]` | Rate-limited on POST (login attempts) | N/A | **Unreachable for `/admin` flows** | ISSUE-001 | CRITICAL |
+
+| `GET /api/health` | None (intentional — health check) | N/A | Working | — | — |
+
+| `/api/admin/*` (19 routes) | Gated by broken middleware (ISSUE-001); several also have `checkApiAdminOrManager()` independently | Varies | **Effectively unreachable** until ISSUE-001 is fixed | ISSUE-001, ISSUE-003 | CRITICAL / HIGH |
+
+| `POST /api/v1/orders/verify-payment` | Not deeply audited this pass | — | UNVERIFIED | — | — |
+
+| `/api/cron/*` (3 routes) | Not deeply audited for cron-secret/auth this pass | — | **UNVERIFIED** — confirm these aren't publicly invokable without a shared secret | — | Recommend checking before launch |
+
+
+
+**UNVERIFIED, flagged explicitly per your Section 16 format:** I did not trace every one of the 32 routes to the same depth as the ones above (checkout, both major webhooks, media, auth, admin gating). The `/api/cron/*` routes in particular are worth a dedicated look — if they're not protected by a shared secret header or similar, anyone who discovers the URL could trigger `release-reservations`, `cms-publisher`, or `outbox-relay` on demand.
+
+
+
+---
+
+
+
+## I. Security Audit
+
+
+
+**Real strengths, verified in code (worth keeping, not just findings):**
+
+- Both webhook handlers use HMAC-SHA256 with `crypto.timingSafeEqual` (constant-time comparison) and fail closed if the secret env var is unset.
+
+- Checkout pricing and tax are computed **entirely server-side** from `productVariantId` + `qty` looked up against the database — the client never supplies a trusted price. This is the single most important e-commerce security property, and it's done correctly.
+
+- Coupon validation checks `isActive`, date range, global usage limit, and per-user usage limit.
+
+- `env.ts` validates required configuration with zod and **throws on boot** if misconfigured — good fail-loud behavior (see ISSUE-004 for the one gap in what it covers).
+
+- Rate limiting (Redis sorted-set sliding window) is real and applied to login, checkout, and both major webhooks.
+
+- Sensitive-field redaction exists in the (currently shadowed — ISSUE-007) logger, covering `password`/`token`/`secret`/`card`/`cvv`/`signature`.
+
+
+
+**Gaps found (severity as scored above):** ISSUE-001 (admin lockout — not an unauthorized-access hole, but breaks the ability to administer access control at all), ISSUE-004 (env secret mismatch), ISSUE-005 (pinned-vulnerable dependencies), ISSUE-010 (CSP weakened by `unsafe-inline`/`unsafe-eval` and a broad `connect-src`), ISSUE-011 (media upload has no type/size validation).
+
+
+
+**Also checked, no issues found:** No SQL injection surface (Prisma parameterizes everything; the one raw query in `OrderService.ts` uses a template literal with `$queryRaw`, which Prisma parameterizes safely, and it's system-generated data, not user input). No hardcoded secrets found in tracked source (`.env.example` contains only placeholders). `.gitignore`/`.dockerignore` correctly exclude `.env*`. GSTIN/phone/pincode validation uses real, correct-looking regex patterns.
+
+
+
+**UNVERIFIED:** I did not attempt to fuzz or penetration-test any endpoint, and could not run a dependency vulnerability scan beyond `npm audit` (no SAST/DAST tooling available in this sandbox). Cron endpoint auth (see API Audit table) is unverified.
+
+
+
+---
+
+
+
+## J. Performance — Static Review Only (build could not complete in-sandbox)
+
+
+
+I could not produce real numbers (bundle size, Lighthouse, response times) because `next build` requires the same Prisma engine binary that's blocked in this sandbox (see the note at the top). What I could check from source:
+
+
+
+- `next.config.ts` sets `output: "standalone"` — correct for a lean Docker image.
+
+- `next/image` is used with a configurable `remotePatterns` host (see ISSUE-025 for the wildcard-fallback caveat) rather than `unoptimized`, so image optimization is active.
+
+- No obvious N+1 query patterns in the routes I reviewed in depth (checkout, webhooks, account pages) — each does one shaped `findMany`/`findUnique` with the right `include`s rather than looping queries.
+
+- `OutboxEvent` missing an index (ISSUE-016) is the one concrete, verifiable performance risk found, and it's a table-growth risk, not an immediate problem.
+
+
+
+**Recommended before shipping:** run `npm run build` and `npx prisma migrate deploy` in an environment with normal internet access (your CI runner, or your own machine), then a real Lighthouse pass against a deployed preview.
+
+
+
+---
+
+
+
+## K. Recommended Project Structure
+
+
+
+The existing structure is already close to what your own `ARCHITECTURE.md` calls for, and it's a reasonable fit for a single Next.js app — I'm not going to propose a monorepo/`apps+packages` restructure here, because nothing in this codebase needs one, and introducing one would be exactly the kind of premature, dependency-blind large refactor your own audit prompt says to avoid. The structural changes actually justified by evidence in this audit are narrow:
+
+
+
+1. Resolve the `logger.ts` vs `logger/` collision (ISSUE-007) — pick one location.
+
+2. Move `prisma/migrations/migrate-images.ts` out of `prisma/migrations/` (ISSUE-020).
+
+3. Decide, and document, which of the 19 direct-Prisma API routes are an intentional exception to the repository-only rule vs. which should move (ISSUE-003) — this is a decision to record in `ARCHITECTURE.md`, not a folder reshuffle.
+
+4. Consolidate the two shipping-policy pages (ISSUE-014).
+
+
+
+---
+
+
+
+## L. Dependency Audit
+
+
+
+| Package | Status | Note |
+
+|---|---|---|
+
+| `fast-uri` (override `^3.0.0`) | **SECURITY RISK** | Vulnerable range 3.0.0–3.1.4; override needs to move past it |
+
+| `js-yaml` (override `^4.1.0`) | **SECURITY RISK** | Vulnerable range 4.0.0–4.3.0 |
+
+| `sharp` (transitive, via `next`) | **SECURITY RISK** | Inherited libvips CVEs, fix available via `npm audit fix` |
+
+| `deepmerge-ts` (transitive, via `prisma`/`@prisma/config`) | **SECURITY RISK, BLOCKED** | Fix requires downgrading `prisma` to 6.12.0 — conflicts with your v7 driver-adapter migration; needs a deliberate call |
+
+| `esbuild` (transitive, via `tsup`, worker build) | **OUTDATED** | Windows-only dev-server file-read issue; low real-world exposure here since it's only used for the worker build, not a served dev server |
+
+| `pino`, `pino-pretty` | **UNUSED (currently)** | Only consumed by the dead `logger/index.ts` (ISSUE-007) |
+
+| Everything else in `package.json` | **REQUIRED** | Each dependency I encountered during the audit (NextAuth, Prisma, BullMQ/ioredis, Razorpay, Sentry, zod, Vitest, Playwright, isomorphic-dompurify, AWS SDK) is genuinely used by the code paths I reviewed |
+
+
+
+---
+
+
+
+## M. Prioritized Fix Roadmap
+
+
+
+### PHASE 1 — Critical Stabilization
+
+**Goal:** Make the admin panel reachable and make deploys actually happen.
+
+**Issues addressed:** ISSUE-001, ISSUE-002.
+
+**Files likely affected:** `middleware.ts`, `authOptions.ts` (or a matcher change), `.github/workflows/ci-cd.yml`.
+
+**Implementation order:** Fix the CI branch condition first (trivial, zero risk). Then decide the session-strategy-vs-middleware approach for admin auth (bigger decision — see the three options under ISSUE-001) and implement it.
+
+**Risks:** If you choose to move admin auth checks fully into layouts/routes and drop middleware gating, double-check every `/admin/*` page and every `/api/admin/*` route actually calls `requireAdmin()`/`requireAdminOrManager()`/`checkApiAdminOrManager()` — this audit found most do, but "most" isn't "all" until it's checked exhaustively.
+
+**Validation:** A real admin can sign in with Google and land on `/admin` without a redirect loop; a push to `master` results in a running deploy on the VPS.
+
+**Definition of done:** Both flows work end-to-end against a real deployment, not just in local dev.
+
+
+
+### PHASE 2 — Core Functionality
+
+**Goal:** Close the gaps in checkout/webhook/ERP-sync correctness found in this audit.
+
+**Issues addressed:** ISSUE-004 through ISSUE-016.
+
+**Implementation order:** Env var fix (ISSUE-004) and dependency bumps (ISSUE-005) first — cheap, isolated. Then the two rate-limiter/try-catch fixes (ISSUE-008) and the ERPNext webhook idempotency fix (ISSUE-009) — all small, localized changes to money/integration-critical paths. Then CI test-job env provisioning (ISSUE-006), since you can't trust the rest of your fixes are validated until CI can actually run the tests you already wrote.
+
+**Risks:** Low for each individual fix; the main risk is doing the dependency bumps without testing checkout/webhooks afterward.
+
+**Validation:** `npm audit` shows the two overridden packages clear; a duplicate webhook delivery to the ERPNext endpoint returns 200/409 instead of 500; CI's test job goes green with real DB/Redis services.
+
+
+
+### PHASE 3 — Architecture & Refactoring
+
+**Goal:** Bring documented and actual architecture back into agreement.
+
+**Issues addressed:** ISSUE-003, ISSUE-007, ISSUE-013, ISSUE-018, ISSUE-020, ISSUE-022.
+
+**Implementation order:** Logger consolidation first (ISSUE-007 — small, contained, but touches 22 import sites). Then the repository-layer decision (ISSUE-003 — decide and document before moving code). Then the schema cleanup decision (ISSUE-018 — this is a product decision as much as a technical one: which of Referral/GiftCard/Returns/CMS-nav/SEO-model/SavedSearch/Notifications ship in v1).
+
+**Risks:** Schema changes (dropping unused models) require a migration and should wait until you're certain those features truly won't ship soon.
+
+**Validation:** `ARCHITECTURE.md` accurately describes the codebase after this phase; a fresh read-through by someone unfamiliar with the code should not find contradictions between doc and source.
+
+
+
+### PHASE 4 — Performance & UX
+
+**Goal:** Get real numbers, then act on them.
+
+**Issues addressed:** ISSUE-016, ISSUE-025, plus whatever a real build/Lighthouse pass surfaces that this audit couldn't measure.
+
+**Implementation order:** Run a real `npm run build` + `prisma migrate deploy` + Lighthouse pass in an unrestricted environment first — this audit's performance section is explicitly unmeasured, and Phase 4 shouldn't start blind.
+
+**Validation:** Documented before/after metrics.
+
+
+
+### PHASE 5 — Testing & Production
+
+**Goal:** Convert "tests exist and look well-written" into "tests run in CI and gate merges."
+
+**Issues addressed:** ISSUE-006 (if not already done in Phase 2), plus adding cron-endpoint auth verification (see API Audit table) and a `/api/cron/*` secret-header check if one doesn't already exist.
+
+**Validation:** A red test blocks a merge; a duplicate/replayed webhook is provably idempotent under an actual concurrent test run (you already have `webhook-replay.test.ts` and `invoice-concurrency.test.ts` — get them running in CI, don't just trust them locally).
+
+
+
+---
+
+
+
+## Final Verification (per your Section 16 format)
+
+
+
+| Item | Status |
+
+|---|---|
+
+| Every major folder inspected | Verified |
+
+| Critical user flows traced end-to-end (checkout, both payment webhooks, admin auth, account auth) | Verified |
+
+| Frontend/backend integration | Verified for the flows above; not exhaustively for all ~40 pages |
+
+| Database relationships/schema | Verified (full schema read) |
+
+| Environment configuration | Verified — found the ISSUE-004 gap |
+
+| External integrations (ERPNext, Razorpay) | Verified for signature/queue/retry behavior; **UNVERIFIED** against a live ERPNext/Razorpay instance — no credentials available |
+
+| Authentication and authorization | Verified — this is where the two biggest findings came from |
+
+| Build configuration | **UNVERIFIED** — `prisma generate` blocked by sandbox network policy (`binaries.prisma.sh` not reachable); reason given at the top of this report |
+
+| Tests | Verified by reading; **UNVERIFIED** whether they currently pass, for the same reason, plus the CI gap in ISSUE-006 |
+
+| Deployment configuration | Verified — found ISSUE-002; VPS secrets themselves **UNVERIFIED** (no access to repo settings) |
+
+
+
+If you want, I can also produce a short, standalone patch-style task list (just the file paths and one-line fixes, no prose) that's easier to hand directly to whichever model or tool you use to actually apply the changes.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-19T14:29:43+05:30.
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Gemini 3.1 Pro (High). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

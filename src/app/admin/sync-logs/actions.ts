@@ -17,7 +17,7 @@ export async function replaySync(formData: FormData) {
   await prisma.eRPSync.update({
     where: { id: logId },
     data: {
-      status: "pending",
+      status: "PENDING",
       attempts: log.attempts + 1,
       lastError: null,
     },

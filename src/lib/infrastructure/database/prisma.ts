@@ -6,7 +6,10 @@ const prismaClientSingleton = () => {
   const connectionString = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/dummy";
   const pool = new pg.Pool({ connectionString });
   const adapter = new PrismaPg(pool);
-  return new PrismaClient({ adapter });
+  return new PrismaClient({ 
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ['query', 'info', 'warn', 'error'] : ['error']
+  });
 };
 
 declare global {

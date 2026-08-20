@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 import { WhatsAppService } from "@/lib/core/application/whatsapp-service";
@@ -46,7 +47,7 @@ export async function POST() {
 
     return NextResponse.json({ message: `Successfully sent ${sentCount} abandoned cart recovery messages.` });
   } catch (error: any) {
-    console.error("Abandoned Cart Cron Error:", error);
+    Logger.error("Abandoned Cart Cron Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

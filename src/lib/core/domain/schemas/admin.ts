@@ -15,6 +15,17 @@ export const createProductSchema = z.object({
   compareAtPrice: z.number().min(0).optional(),
   itemCode: z.string().min(1),
   weightGrams: z.number().min(0).optional(),
+  
+  fryingTemp: z.string().optional(),
+  airFryerSetting: z.string().optional(),
+  microwaveTime: z.string().optional(),
+  spiceLevel: z.string().optional(),
+  dietType: z.string().optional(),
+  region: z.string().optional(),
+  mealPairing: z.string().optional(),
+  isSubscribable: z.boolean().optional().default(false),
+  subscriptionDiscountPercent: z.number().min(0).max(100).optional().default(0),
+  badgeIds: z.array(z.string()).optional().default([]),
 });
 
 export const settingsSchema = z.object({

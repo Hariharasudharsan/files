@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { ReviewRepository } from "@/lib/repositories/review-repository";
 import { getServerSession } from "next-auth/next";
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
       data: reviews
     });
   } catch (error) {
-    console.error("[GET_REVIEWS]", error);
+    Logger.error("[GET_REVIEWS]", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch reviews" },
       { status: 500 }
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
       data: review
     });
   } catch (error) {
-    console.error("[POST_REVIEW]", error);
+    Logger.error("[POST_REVIEW]", error);
     return NextResponse.json(
       { success: false, error: "Failed to submit review" },
       { status: 500 }

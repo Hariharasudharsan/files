@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/infrastructure/database/prisma";
+import { ShipmentRepository } from "@/lib/repositories/shipment-repository";
 import { Logger } from "@/lib/infrastructure/logger";
-import { eventBus } from "@/lib/infrastructure/events/EventBus";
-import { ShipmentStatusUpdatedEvent } from "@/lib/core/domain/events/DomainEvent";
 
 import { RateLimiter } from "@/lib/infrastructure/rate-limiter";
 
@@ -35,45 +33,7 @@ export async function POST(req: Request) {
     const trackingData = payload; // Can store full JSON
 
     if (awb && status) {
-      await prisma.$transaction(async (tx) => {
-        // Find shipment
-        const shipment = await tx.shipment.findFirst({
-          where: { trackingCode: awb },
-          include: { order: { include: { user: true } } }
-        });
-
-        if (shipment) {
-          // Update status
-          await tx.shipment.update({
-            where: { id: shipment.id },
-            data: { status }
-          });
-
-          // Add Tracking update log
-          await tx.tracking.create({
-            data: {
-              shipmentId: shipment.id,
-              status,
-              location: payload.current_location || "",
-              description: payload.scans?.[0]?.activity || status
-            }
-          });
-
-          // Publish Domain Event for Notifications
-          const trackingUrl = `https://shiprocket.co/tracking/${awb}`;
-          const event = new ShipmentStatusUpdatedEvent(
-            shipment.id,
-            shipment.orderId,
-            status,
-            trackingUrl,
-            shipment.order.user?.phone || ""
-          );
-          
-          await eventBus.publishWithinTransaction(tx, event);
-
-          Logger.info("Shiprocket webhook processed", { awb, status });
-        }
-      });
+      await ShipmentRepository.updateShipmentStatusAndLog(awb, status, payload);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 /**
  * Meta Cloud API Client for WhatsApp Business
  */
@@ -13,7 +14,7 @@ export class WhatsAppClient {
     this.baseUrl = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
 
     if (!this.phoneNumberId || !this.accessToken) {
-      console.warn("WhatsAppClient: Missing credentials. Messages will not be sent.");
+      Logger.warn("WhatsAppClient: Missing credentials. Messages will not be sent.");
     }
   }
 
@@ -58,7 +59,7 @@ export class WhatsAppClient {
 
   private async post(payload: any) {
     if (!this.phoneNumberId || !this.accessToken) {
-      console.log("[WhatsApp Mock] Sending:", JSON.stringify(payload, null, 2));
+      Logger.info("[WhatsApp Mock] Sending:", JSON.stringify(payload, null, 2));
       return { success: true, mock: true };
     }
 
@@ -77,7 +78,7 @@ export class WhatsAppClient {
 
       return data;
     } catch (error) {
-      console.error("[WhatsAppClient] Failed to send message:", error);
+      Logger.error("[WhatsAppClient] Failed to send message:", error);
       throw error;
     }
   }

@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Upload, Trash2, Copy, FileImageIcon } from "lucide-react";
@@ -15,8 +16,8 @@ export default function MediaLibraryPage() {
       if (res.ok) {
         return await res.json();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      Logger.error("Fetch media error", e);
     }
     return null;
   }, []);
@@ -54,8 +55,8 @@ export default function MediaLibraryPage() {
       
       const data = await fetchMediaData();
       if (data) setMedia(data);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      Logger.error("Upload error", error);
       setUploadError("Failed to upload image. Please try again.");
     } finally {
       setIsUploading(false);

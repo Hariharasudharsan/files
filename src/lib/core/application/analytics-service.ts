@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export class AnalyticsService {
@@ -22,7 +23,7 @@ export class AnalyticsService {
         },
       });
     } catch (error) {
-      console.error("[AnalyticsService] Failed to track event:", error);
+      Logger.error("[AnalyticsService] Failed to track event:", error);
       // Fail silently to not disrupt user flow
     }
   }

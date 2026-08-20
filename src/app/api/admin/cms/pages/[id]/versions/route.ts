@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(newVersion, { status: 201 });
   } catch (error) {
-    console.error("Save CMS version error:", error);
+    Logger.error("Save CMS version error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

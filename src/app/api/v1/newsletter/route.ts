@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       message: "Successfully subscribed to the newsletter!"
     });
   } catch (error) {
-    console.error("[POST_NEWSLETTER]", error);
+    Logger.error("[POST_NEWSLETTER]", error);
     return NextResponse.json(
       { success: false, error: "Failed to subscribe. Please try again later." },
       { status: 500 }

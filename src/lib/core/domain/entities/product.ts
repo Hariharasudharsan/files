@@ -28,6 +28,7 @@ export interface ProductVariant {
   weightGrams?: number | null;
   inventoryLevels?: InventoryLevel[];
   images?: Media[];
+  isBestValue?: boolean;
 }
 
 export interface Product {
@@ -51,6 +52,18 @@ export interface Product {
   tags?: string[];
   collections?: string[];
   variants: ProductVariant[];
+  isSubscribable?: boolean;
+  subscriptionDiscountPercent?: number | null;
+  fryingTemp?: string | null;
+  airFryerSetting?: string | null;
+  microwaveTime?: string | null;
+  spiceLevel?: string | null;
+  dietType?: string | null;
+  region?: string | null;
+  mealPairing?: string | null;
+  badges?: any[];
+  reviewCount?: number;
+  averageRating?: number;
   created_at: string;
   updated_at: string;
 }

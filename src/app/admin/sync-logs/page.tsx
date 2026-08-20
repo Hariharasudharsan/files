@@ -71,7 +71,7 @@ export default async function SyncLogsPage() {
                       {new Date(log.updatedAt).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {log.status === "failed" && (
+                      {log.status === "FAILED" && (
                         <form action={replaySync}>
                           <input type="hidden" name="logId" value={log.id} />
                           <button type="submit" className="px-3 py-1.5 bg-surface-100 hover:bg-surface-200 text-surface-700 text-xs font-semibold rounded-lg transition-colors border border-surface-300">
@@ -92,14 +92,14 @@ export default async function SyncLogsPage() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "success") {
+  if (status === "SUCCESS") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 border border-green-200">
         <CheckCircle2 className="h-3.5 w-3.5" /> Success
       </span>
     );
   }
-  if (status === "failed") {
+  if (status === "FAILED") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 border border-red-200">
         <AlertCircle className="h-3.5 w-3.5" /> Failed

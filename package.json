@@ -48,6 +48,7 @@
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.6",
+    "@next/bundle-analyzer": "^16.3.1",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
@@ -60,6 +61,7 @@
     "@types/react-dom": "^19",
     "@types/swagger-ui-react": "^5.18.0",
     "@vitejs/plugin-react": "^6.0.5",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
     "eslint-config-prettier": "^10.1.8",
@@ -77,8 +79,8 @@
     "vitest": "^4.1.10"
   },
   "overrides": {
-    "fast-uri": "^3.0.0",
-    "js-yaml": "^4.1.0",
+    "fast-uri": "^3.1.5",
+    "js-yaml": "^4.3.0",
     "postcss": "^8.5.22"
   },
   "prisma": {

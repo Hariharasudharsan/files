@@ -4,7 +4,7 @@ This document outlines the strict boundaries and architectural patterns used in 
 
 ## Directory Structure
 
-- `src/lib/domain/`
+- `src/lib/core/domain/`
   - **Core Entities & Events:** Contains raw interfaces and data models (e.g., `StorefrontOrder`, `ProductVariant`).
   - **Rules:** Must NOT depend on Next.js, Prisma, or external integrations. Only raw TypeScript types and pure business rules.
 
@@ -17,12 +17,13 @@ This document outlines the strict boundaries and architectural patterns used in 
   - **Rules:** The only layer permitted to directly import and use `@prisma/client`.
 
 - `src/lib/infrastructure/`
-  - **External Adapters:** Integrations with 3rd-party services (Redis, BullMQ, Pino, Stripe, Razorpay).
+  - **External Adapters:** Integrations with 3rd-party services (Redis, BullMQ, Pino, Razorpay).
   - **Rules:** Implements interfaces defined in the core. Must be easily swappable without affecting application services.
 
 - `src/app/api/`
   - **Delivery Mechanism (Controllers):** Next.js App Router endpoints.
   - **Rules:** Must only parse requests, validate input schemas (Zod), invoke application services, and format responses. Business logic belongs in `src/lib/core`.
+  - **Exceptions:** Simple, single-model CRUD and read-mostly routes (e.g., `/api/health`, `/api/search`) are permitted to query `@prisma/client` directly. Money-critical and complex integration routes (e.g., webhooks, checkout) MUST use the repository layer.
 
 ## Important Patterns
 

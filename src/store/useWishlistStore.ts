@@ -1,4 +1,5 @@
 "use client";
+import { Logger } from "@/lib/infrastructure/logger";
 
 import { create } from "zustand";
 
@@ -39,7 +40,7 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
         set({ hasHydrated: true }); // e.g. 401 Unauthorized
       }
     } catch (e) {
-      console.error("Failed to fetch wishlist", e);
+      Logger.error("Failed to fetch wishlist", e);
       set({ hasHydrated: true });
     } finally {
       set({ isLoading: false });

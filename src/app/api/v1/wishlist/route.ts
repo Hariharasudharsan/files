@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/infrastructure/database/prisma";
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ items: wishlist?.items || [] });
   } catch (error) {
-    console.error("Wishlist GET Error:", error);
+    Logger.error("Wishlist GET Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, item: wishlistItem });
   } catch (error) {
-    console.error("Wishlist POST Error:", error);
+    Logger.error("Wishlist POST Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -126,7 +127,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Wishlist DELETE Error:", error);
+    Logger.error("Wishlist DELETE Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

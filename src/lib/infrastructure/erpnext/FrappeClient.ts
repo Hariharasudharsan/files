@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import crypto from "crypto";
 
 /**
@@ -14,7 +15,7 @@ export class FrappeClient {
     this.apiSecret = process.env.ERPNEXT_API_SECRET || "";
 
     if (!this.apiKey || !this.apiSecret) {
-      console.warn("FrappeClient: ERPNEXT_API_KEY or ERPNEXT_API_SECRET is missing. Sync operations will fail.");
+      Logger.warn("FrappeClient: ERPNEXT_API_KEY or ERPNEXT_API_SECRET is missing. Sync operations will fail.");
     }
   }
 
@@ -90,7 +91,7 @@ export class FrappeClient {
   verifyWebhookSignature(payload: string, signature: string): boolean {
     const webhookSecret = process.env.ERPNEXT_WEBHOOK_SECRET || "";
     if (!webhookSecret) {
-      console.error("[FrappeClient] Critical: Webhook secret not configured. Failing closed.");
+      Logger.error("[FrappeClient] Critical: Webhook secret not configured. Failing closed.");
       return false;
     }
 

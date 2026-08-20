@@ -39,6 +39,25 @@ export default function NewCmsPage() {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-6">
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-semibold text-surface-900 mb-2">Content Type</label>
+            <select name="type" className="w-full border-surface-300 rounded-lg px-4 py-2 bg-white">
+              <option value="PAGE">Standard Page</option>
+              <option value="STORY">Story / Blog Post</option>
+            </select>
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-sm font-semibold text-surface-900 mb-2">Featured Image URL (Optional)</label>
+            <input type="text" name="featuredImage" className="w-full border-surface-300 rounded-lg px-4 py-2" placeholder="/images/stories/sun-drying.jpg" />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-surface-900 mb-2">Excerpt (For Stories)</label>
+          <textarea name="excerpt" rows={3} className="w-full border-surface-300 rounded-lg px-4 py-2 text-sm" placeholder="A short summary of the story for the listing page..."></textarea>
+        </div>
+
         <div>
           <label className="block text-sm font-semibold text-surface-900 mb-2">Content (Markdown)</label>
           <textarea required name="content" rows={15} className="w-full border-surface-300 rounded-lg px-4 py-3 font-mono text-sm" placeholder="# Welcome to our page..."></textarea>

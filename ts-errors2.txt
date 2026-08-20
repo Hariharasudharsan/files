@@ -1,0 +1,95 @@
+npm notice run mathuram-foods-storefront@0.1.0 npx
+npm notice run tsc --noEmit
+.next/dev/types/validator.ts(603,31): error TS2344: Type 'typeof import("D:/files/src/app/api/admin/products/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/products/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: Request, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ error: string; }> | NextResponse<{ product: { badges: { productId: string; badgeId: string; }[]; } & { id: string; ... 29 more ...; primaryImageId: string | null; }; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+src/app/[lang]/[slug]/page.tsx(55,49): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/[lang]/account/wishlist/WishlistList.tsx(32,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/[lang]/product/[slug]/page.tsx(81,24): error TS2339: Property 'badges' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(81,42): error TS2339: Property 'badges' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(83,28): error TS2339: Property 'badges' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(135,25): error TS2339: Property 'fryingTemp' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(135,47): error TS2339: Property 'airFryerSetting' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(135,74): error TS2339: Property 'microwaveTime' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(142,30): error TS2339: Property 'fryingTemp' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(145,69): error TS2339: Property 'fryingTemp' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(148,30): error TS2339: Property 'airFryerSetting' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(151,69): error TS2339: Property 'airFryerSetting' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(154,30): error TS2339: Property 'microwaveTime' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(157,69): error TS2339: Property 'microwaveTime' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(164,25): error TS2339: Property 'spiceLevel' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(164,47): error TS2339: Property 'dietType' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(164,67): error TS2339: Property 'region' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(164,85): error TS2339: Property 'mealPairing' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(166,28): error TS2339: Property 'spiceLevel' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(166,186): error TS2339: Property 'spiceLevel' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(167,28): error TS2339: Property 'dietType' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(167,189): error TS2339: Property 'dietType' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(168,28): error TS2339: Property 'region' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(168,187): error TS2339: Property 'region' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(169,28): error TS2339: Property 'mealPairing' does not exist on type 'Product'.
+src/app/[lang]/product/[slug]/page.tsx(169,190): error TS2339: Property 'mealPairing' does not exist on type 'Product'.
+src/app/admin/cms/media/page.tsx(20,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/admin/cms/media/page.tsx(59,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/admin/cms/pages/[id]/builder/page.tsx(25,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/admin/cms/pages/[id]/builder/page.tsx(94,20): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/app/admin/sync-logs/actions.ts(20,7): error TS2820: Type '"pending"' is not assignable to type 'ERPSyncStatus | EnumERPSyncStatusFieldUpdateOperationsInput | undefined'. Did you mean '"PENDING"'?
+src/app/admin/sync-logs/page.tsx(74,24): error TS2367: This comparison appears to be unintentional because the types 'ERPSyncStatus' and '"failed"' have no overlap.
+src/app/api/admin/badges/route.ts(20,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/categories/route.ts(30,50): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/cms/pages/[id]/versions/route.ts(69,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/coupons/route.ts(35,47): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/coupons/route.ts(53,46): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/media/route.ts(53,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/media/route.ts(70,40): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/orders/[id]/route.ts(28,47): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/products/[id]/route.ts(28,52): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/products/[id]/route.ts(77,47): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/app/api/admin/products/[id]/route.ts(79,52): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/products/route.ts(25,48): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/admin/settings/route.ts(26,48): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/newsletter/route.ts(37,39): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/reviews/route.ts(36,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/reviews/route.ts(91,35): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/wishlist/route.ts(45,41): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/wishlist/route.ts(93,42): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/app/api/v1/wishlist/route.ts(130,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/components/AddToCartButton.tsx(60,50): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/components/AddToCartButton.tsx(66,31): error TS2339: Property 'subscriptionDiscountPercent' does not exist on type 'Product'.
+src/components/AddToCartButton.tsx(71,16): error TS2339: Property 'isSubscribable' does not exist on type 'Product'.
+src/components/ProductCard.tsx(88,50): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/components/RecentlyViewed.tsx(30,57): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/components/RecentlyViewed.tsx(52,55): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/components/SearchAutocomplete.tsx(41,22): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/lib/core/application/analytics-service.ts(26,65): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/core/application/AuditLogService.ts(36,69): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/core/application/OrderService.ts(260,13): error TS2820: Type '"captured"' is not assignable to type 'PaymentTransactionStatus'. Did you mean '"CAPTURED"'?
+src/lib/core/application/OrderService.ts(265,54): error TS2820: Type '"active"' is not assignable to type 'InventoryReservationStatus'. Did you mean '"ACTIVE"'?
+src/lib/core/application/OrderService.ts(422,11): error TS2820: Type '"captured"' is not assignable to type 'PaymentTransactionStatus'. Did you mean '"CAPTURED"'?
+src/lib/core/application/OrderService.ts(445,82): error TS2345: Argument of type 'null' is not assignable to parameter of type 'string | undefined'.
+src/lib/infrastructure/events/EventBus.ts(28,60): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/events/OutboxRelay.ts(35,59): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/events/subscribers/AuditSubscriber.ts(24,67): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/events/subscribers/AuditSubscriber.ts(40,64): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/events/subscribers/AuditSubscriber.ts(56,72): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/whatsapp/WhatsAppClient.ts(62,47): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Record<string, any>'.
+src/lib/infrastructure/whatsapp/WhatsAppClient.ts(81,64): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/workers/InventoryWorker.ts(8,34): error TS2820: Type '"active"' is not assignable to type 'InventoryReservationStatus'. Did you mean '"ACTIVE"'?
+src/lib/infrastructure/workers/OutboxWorker.ts(43,68): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/lib/infrastructure/workers/PaymentWorker.ts(60,9): error TS2322: Type 'string' is not assignable to type 'ERPSyncStatus'.
+src/lib/infrastructure/workers/WebhookWorker.ts(14,11): error TS2367: This comparison appears to be unintentional because the types 'WebhookEventStatus | undefined' and '"processed"' have no overlap.
+src/lib/infrastructure/workers/WebhookWorker.ts(33,17): error TS2820: Type '"processed"' is not assignable to type 'WebhookEventStatus | EnumWebhookEventStatusFieldUpdateOperationsInput | undefined'. Did you mean '"PROCESSED"'?
+src/lib/repositories/order-repository.ts(95,9): error TS2820: Type '"captured"' is not assignable to type 'PaymentTransactionStatus'. Did you mean '"CAPTURED"'?
+src/lib/repositories/shipment-repository.ts(28,11): error TS2322: Type 'string' is not assignable to type 'TrackingStatus'.
+src/store/useCartStore.ts(64,75): error TS2339: Property 'subscriptionDiscountPercent' does not exist on type 'Product'.
+src/store/useCartStore.ts(72,50): error TS2339: Property 'subscriptionDiscountPercent' does not exist on type 'Product'.
+src/store/useWishlistStore.ts(43,48): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Record<string, any> | undefined'.
+src/tests/integration/webhook-replay.test.ts(73,9): error TS2820: Type '"processed"' is not assignable to type 'WebhookEventStatus | undefined'. Did you mean '"PROCESSED"'?
+src/tests/unit/domain/PricingService.test.ts(16,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Map<string, BundleData>'.
+src/tests/unit/domain/PricingService.test.ts(37,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Map<string, BundleData>'.
+src/tests/unit/domain/PricingService.test.ts(59,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Map<string, BundleData>'.
+src/tests/unit/domain/PricingService.test.ts(75,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Map<string, BundleData>'.

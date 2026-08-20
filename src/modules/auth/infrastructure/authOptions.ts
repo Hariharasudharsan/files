@@ -17,35 +17,65 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    session: async ({ session, user }) => {
-      if (session?.user && user) {
-        session.user.id = user.id;
-        
+    jwt: async ({ token, user }) => {
+      if (user) {
+        token.id = user.id;
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          include: {
-            role: {
-              include: { permissions: true }
-            }
-          }
+          include: { role: { include: { permissions: true } } }
         });
-        
         if (dbUser?.role) {
-          session.user.role = {
-            id: dbUser.role.id,
-            name: dbUser.role.name
-          };
-          session.user.permissions = dbUser.role.permissions.map(p => `${p.resource}:${p.action}`);
+          token.role = { id: dbUser.role.id, name: dbUser.role.name };
+          token.permissions = dbUser.role.permissions.map(p => `${p.resource}:${p.action}`);
         } else {
-          session.user.role = undefined;
-          session.user.permissions = [];
+          token.role = undefined;
+          token.permissions = [];
+        }
+      }
+      return token;
+    },
+    session: async ({ session, user, token }) => {
+      if (session?.user) {
+        if (token) {
+          session.user.id = token.id as string;
+          session.user.role = token.role as any;
+          session.user.permissions = (token.permissions as string[]) || [];
+        } else if (user) {
+          session.user.id = user.id;
+          let dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: { role: { include: { permissions: true } } }
+          });
+
+          const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+          if (dbUser && dbUser.email?.toLowerCase() === adminEmail && dbUser.role?.name !== "ADMIN") {
+            let adminRole = await prisma.role.findUnique({ where: { name: "ADMIN" } });
+            if (!adminRole) {
+              adminRole = await prisma.role.create({
+                data: { name: "ADMIN", description: "System Administrator", isSystem: true }
+              });
+            }
+            dbUser = await prisma.user.update({
+              where: { id: user.id },
+              data: { roleId: adminRole.id },
+              include: { role: { include: { permissions: true } } }
+            });
+          }
+
+          if (dbUser?.role) {
+            session.user.role = { id: dbUser.role.id, name: dbUser.role.name };
+            session.user.permissions = dbUser.role.permissions.map(p => `${p.resource}:${p.action}`);
+          } else {
+            session.user.role = undefined as any;
+            session.user.permissions = [];
+          }
         }
       }
       return session;
     },
   },
   session: {
-    strategy: "database", // Switched to database for authorization revocation
+    strategy: "database",
   },
   pages: {
     signIn: "/account/login",

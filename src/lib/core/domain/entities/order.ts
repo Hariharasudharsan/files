@@ -17,6 +17,8 @@ export interface CheckoutContact {
 export interface OrderItemInput {
   productVariantId: string;
   qty: number;
+  isSubscription?: boolean;
+  bundleRuleId?: string;
 }
 
 export interface CartItem extends ProductVariant {
@@ -26,6 +28,9 @@ export interface CartItem extends ProductVariant {
   product_image?: string;
   product_category?: string;
   qty: number;
+  isSubscription?: boolean;
+  subscriptionDiscountPercent?: number;
+  bundleRuleId?: string;
 }
 
 export type OrderStatusEnum = 

@@ -29,6 +29,8 @@ export async function listPublishedProducts(limit: number = 50): Promise<Product
       take: limit,
       include: {
         primaryImage: true,
+        badges: { include: { badge: true } },
+        reviews: { where: { isApproved: true }, select: { rating: true } },
         variants: {
           where: { isDeleted: false },
           include: {
@@ -50,6 +52,15 @@ export async function listPublishedProducts(limit: number = 50): Promise<Product
       shelf_life_days: p.shelfLifeDays,
       gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
       isFeatured: p.isFeatured,
+      badges: p.badges?.map((b: any) => ({
+        id: b.badge.id,
+        name: b.badge.name,
+        icon: b.badge.icon,
+        bgColor: b.badge.bgColor,
+        textColor: b.badge.textColor,
+      })) || [],
+      reviewCount: p.reviews?.length || 0,
+      averageRating: p.reviews?.length ? p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / p.reviews.length : 0,
       primaryImage: p.primaryImage ? {
         id: p.primaryImage.id,
         url: p.primaryImage.url,
@@ -68,6 +79,7 @@ export async function listPublishedProducts(limit: number = 50): Promise<Product
         width: v.width,
         height: v.height,
         weightGrams: v.weightGrams,
+        isBestValue: v.isBestValue,
         inventoryLevels: v.inventoryLevels?.map((il: any) => ({
           warehouseId: il.warehouseId,
           available: il.available,
@@ -105,6 +117,8 @@ export async function listPublishedProductsByCategory(categorySlug: string, limi
       take: limit,
       include: {
         primaryImage: true,
+        badges: { include: { badge: true } },
+        reviews: { where: { isApproved: true }, select: { rating: true } },
         variants: {
           where: { isDeleted: false },
           include: {
@@ -126,6 +140,15 @@ export async function listPublishedProductsByCategory(categorySlug: string, limi
       shelf_life_days: p.shelfLifeDays,
       gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
       isFeatured: p.isFeatured,
+      badges: p.badges?.map((b: any) => ({
+        id: b.badge.id,
+        name: b.badge.name,
+        icon: b.badge.icon,
+        bgColor: b.badge.bgColor,
+        textColor: b.badge.textColor,
+      })) || [],
+      reviewCount: p.reviews?.length || 0,
+      averageRating: p.reviews?.length ? p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / p.reviews.length : 0,
       primaryImage: p.primaryImage ? {
         id: p.primaryImage.id,
         url: p.primaryImage.url,
@@ -144,6 +167,7 @@ export async function listPublishedProductsByCategory(categorySlug: string, limi
         width: v.width,
         height: v.height,
         weightGrams: v.weightGrams,
+        isBestValue: v.isBestValue,
         inventoryLevels: v.inventoryLevels?.map((il: any) => ({
           warehouseId: il.warehouseId,
           available: il.available,
@@ -180,6 +204,8 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
       },
       include: {
         primaryImage: true,
+        badges: { include: { badge: true } },
+        reviews: { where: { isApproved: true }, select: { rating: true } },
         variants: {
           where: { isDeleted: false },
           include: {
@@ -203,6 +229,15 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
       shelf_life_days: p.shelfLifeDays,
       gstRate: p.gstRate ? p.gstRate.toNumber() : 0,
       isFeatured: p.isFeatured,
+      badges: p.badges?.map((b: any) => ({
+        id: b.badge.id,
+        name: b.badge.name,
+        icon: b.badge.icon,
+        bgColor: b.badge.bgColor,
+        textColor: b.badge.textColor,
+      })) || [],
+      reviewCount: p.reviews?.length || 0,
+      averageRating: p.reviews?.length ? p.reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / p.reviews.length : 0,
       primaryImage: p.primaryImage ? {
         id: p.primaryImage.id,
         url: p.primaryImage.url,
@@ -221,6 +256,7 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
         width: v.width,
         height: v.height,
         weightGrams: v.weightGrams,
+        isBestValue: v.isBestValue,
         inventoryLevels: v.inventoryLevels?.map((il: any) => ({
           warehouseId: il.warehouseId,
           available: il.available,

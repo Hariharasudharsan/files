@@ -1,3 +1,4 @@
+import { Logger } from "@/lib/infrastructure/logger";
 import { prisma } from "@/lib/infrastructure/database/prisma";
 
 export class AuditLogService {
@@ -32,7 +33,7 @@ export class AuditLogService {
     } catch (error) {
       // We don't want audit logging failures to break the main transaction,
       // but we should definitely log them to the console.
-      console.error("[AuditLogService] Failed to create audit log:", error);
+      Logger.error("[AuditLogService] Failed to create audit log:", error);
     }
   }
 }

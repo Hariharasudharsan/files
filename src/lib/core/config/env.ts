@@ -44,6 +44,7 @@ const envSchema = z.object({
 
   // Security Secrets
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
+  NEXTAUTH_SECRET: z.string().min(32, "NEXTAUTH_SECRET must be at least 32 characters"),
   // S3 / R2 Storage
   S3_ENDPOINT: z.string().url().optional(),
   S3_REGION: z.string().optional(),
@@ -53,15 +54,17 @@ const envSchema = z.object({
   S3_PUBLIC_URL: z.string().url().optional(),
 });
 
-// We cast to any to suppress TS errors during process.env parsing in Edge environments
-const parsedEnv = envSchema.safeParse(process.env as any);
+const isServer = typeof window === "undefined";
+const parsedEnv = isServer 
+  ? envSchema.safeParse(process.env as any)
+  : { success: true as const, data: process.env as any, error: null };
 
 if (!parsedEnv.success) {
   console.error("❌ Invalid environment variables:", parsedEnv.error.flatten().fieldErrors);
   throw new Error("Invalid environment variables");
 }
 
-export const env = parsedEnv.data;
+export const env = parsedEnv.data as z.infer<typeof envSchema>;
 
 export function getServerEnv() {
   return {
