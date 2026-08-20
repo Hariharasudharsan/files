@@ -1,11 +1,8 @@
-import 'dotenv/config';
-import { afterEach } from 'vitest';
+import dotenv from 'dotenv';
+import path from 'path';
 
-// Mock required env vars for tests
-process.env.RAZORPAY_KEY_ID = 'test_key';
-process.env.RAZORPAY_KEY_SECRET = 'test_secret';
-process.env.RAZORPAY_WEBHOOK_SECRET = 'test_webhook_secret';
-process.env.AUTH_SECRET = 'test_auth_secret_minimum_32_characters_long';
-process.env.NEXTAUTH_SECRET = 'test_nextauth_secret_minimum_32_characters_long';
-process.env.REDIS_URL = 'redis://localhost:6379';
-process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+// Load .env.local first (highest priority) then .env
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+import { afterEach } from 'vitest';
