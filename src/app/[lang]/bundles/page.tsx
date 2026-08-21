@@ -4,7 +4,7 @@ import { Package } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Custom Bundles | Mathuram Foods",
+  title: "Custom Bundles | Sridha's Store",
   description: "Build your own custom box of authentic South Indian sweets and savouries.",
 };
 

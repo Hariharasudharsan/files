@@ -4,8 +4,8 @@ import { ArrowRight, BookOpen } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Stories of Goodness | Mathuram Foods",
-  description: "Authentic stories behind Mathuram Foods, our heritage, and our ingredients.",
+  title: "Stories of Goodness | Sridha's Store",
+  description: "Authentic stories behind Sridha's Store, our heritage, and our ingredients.",
 };
 
 export default async function StoriesPage() {
@@ -27,7 +27,7 @@ export default async function StoriesPage() {
             Stories of Goodness
           </h1>
           <p className="text-lg text-surface-600 max-w-2xl mx-auto">
-            Discover the heritage, authentic processes, and real people behind Mathuram Foods.
+            Discover the heritage, authentic processes, and real people behind Sridha's Store.
           </p>
         </div>
 

@@ -84,6 +84,6 @@
     "postcss": "^8.5.22"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed-catalogue.ts"
   }
 }

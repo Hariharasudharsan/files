@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/infrastructure/database/prisma';
+import { checkApiAdminOrManager } from "@/lib/auth/rbac";
 
 export async function GET() {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
     const setting = await prisma.settings.findUnique({
       where: { key: "SEARCH_FILTERS_CONFIG" }
     });
@@ -22,6 +26,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await checkApiAdminOrManager();
+    if (!auth.authorized) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
+
     const body = await request.json();
     const { config } = body;
 

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 
   return {
-    title: `${page.title} | Mathuram Foods Stories`,
+    title: `${page.title} | Sridha's Store Stories`,
     description: page.excerpt || page.title,
   };
 }
